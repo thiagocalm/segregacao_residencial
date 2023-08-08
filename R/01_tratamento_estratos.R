@@ -1,7 +1,6 @@
 options(scipen = 999)
 rm(list = ls())
 
-
 # Pacotes -----------------------------------------------------------------
 
 library(pacman)
@@ -59,7 +58,7 @@ for(i in 1: length(ano)){
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0103, area_ponderacao = areap,
              idade = v4572, sexo = v0401, anos_estudo = v4300, especie_dom = v0201,
              cor_raca, v4614_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda)
+             estrato_renda, v4513)
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
@@ -89,7 +88,7 @@ for(i in 1: length(ano)){
 # Transformacao EGP
 
 ano = "2010"
-UF = c("CE", "PE","BA","MG","RJ","PR","RS","SP2_RM")
+UF = c("CE", "PE","BA","MG","RJ","PR","RS","SP2_RM","SP1")
 
 for(i in 1: length(ano)){
   ano = ano[i]
@@ -143,7 +142,7 @@ for(i in 1: length(ano)){
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0002, area_ponderacao = v0011,
              idade = v6036, sexo = v0601, anos_estudo = v6400, especie_dom = v4001,
              cor_raca, v6527_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda)
+             estrato_renda, v6513)
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)

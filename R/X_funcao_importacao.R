@@ -12,9 +12,9 @@ func_import_handl_data <- function(UF, ano) {
   if(ano == 2010){
     # unziping arquivos
 
-    # unzip(zipfile = file.path(DIR, paste0(UF,".zip")),
-    #       files = unzip(zipfile = file.path(DIR, paste0(UF,".zip")), list = TRUE)[c(2,5),1],
-    #       exdir = DIR)
+    unzip(zipfile = file.path(DIR, paste0(UF,".zip")),
+          files = unzip(zipfile = file.path(DIR, paste0(UF,".zip")), list = TRUE)[c(2,5),1],
+          exdir = DIR)
 
     # definicao do diretorio de importacao dos dados - 2010
     DIR_dom <- file.path(DIR, UF, list.files(file.path(DIR, UF))[1])
