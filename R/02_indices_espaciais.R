@@ -18,7 +18,7 @@ rm(list = ls())
 # Pacotes -----------------------------------------------------------------
 
 library(pacman)
-pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, spdep)
+pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, ggspatial)
 
 ## Importacao dos dados
 
@@ -105,11 +105,13 @@ ap_RMCampinas_2000 <- QL_2000_RMCampinas |>
 
 rm(ap_2000, sc_shp, sc_to_ap)
 
-rm_shp_2000 <- geobr::read_metro_area(year = 2001)
+rm_shp_2000 <- geobr::read_metro_area(year = 2001) |>
+  filter(code_metro == "022")
 
 # Tratamento dos dados espaciais - 2010 --------------------------------------
 
-rm_shp_2010 <- geobr::read_metro_area(year = 2010)
+rm_shp_2010 <- geobr::read_metro_area(year = 2010) |>
+  filter(name_metro == "RM Campinas")
 
 ap_2010 <- geobr::read_weighting_area() |>
   mutate(code_weighting = as.numeric(code_weighting),
@@ -145,21 +147,60 @@ rm(ap_2010)
 # visualizacao
 
 (rm_shp_2000 |>
-    filter(code_metro == 22) |>
     ggplot() +
-    geom_sf(fill = "transparent") +
     geom_sf(data = ap_RMCampinas_2000, fill = "#2b8cbe") +
+    geom_sf(fill = "transparent", colour = "black", size = .7) +
     theme_minimal() +
-    labs(title = "2000")
+    labs(title = "2000") +
+    theme(
+      plot.title = element_text(size = 12, hjust = .5, vjust = .5),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
+      panel.background = element_blank()) +
+    annotation_scale(
+      location = "bl",
+      pad_x = unit(0.0, "in"),
+      width_hint = 0.5
+    ) +
+    annotation_north_arrow(
+      location = "bl", which_north = "true",
+      pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+      style = north_arrow_fancy_orienteering
+    )
 ) +
   (rm_shp_2010 |>
-     filter(name_metro == "RM Campinas") |>
      ggplot() +
-     geom_sf(fill = "transparent") +
      geom_sf(data = ap_RMCampinas_2010, fill = "#2ca25f") +
+     geom_sf(fill = "transparent", colour = "black", size = .7) +
      theme_minimal() +
-     labs(title = "2010")
+     labs(title = "2010") +
+     theme(
+       plot.title = element_text(size = 12, hjust = .5, vjust = .5),
+       axis.text = element_blank(),
+       axis.ticks = element_blank(),
+       panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
+       panel.background = element_blank()) +
+     annotation_scale(
+       location = "bl",
+       pad_x = unit(0.0, "in"),
+       width_hint = 0.5
+     ) +
+     annotation_north_arrow(
+       location = "bl", which_north = "true",
+       pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+       style = north_arrow_fancy_orienteering
+     )
   )
+
+ggsave(
+  filename = "comparativo das APs nas RMs em 2000 e 2010.jpeg",
+  device = "jpeg",
+  path = file.path("output","mapas"),
+  width = 13,
+  height = 13,
+  units = "in"
+)
 
 # LISA - 2000 --------------------------------------------------------------
 
@@ -179,17 +220,18 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
   mutate(
     LISA_BB_value = lisa_values(gda_lisa = lisa),
     LISA_BB_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BB_map = case_when(
+    LISA_BB_centralizado = case_when(
       LISA_BB_pvalue >  0.05 ~ 0,
       (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 4,
-      (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 2,
+      (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 1,
       (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 3,
-      (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 1
+      (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_BB_map = factor(
-      LISA_BB_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_BB_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -201,17 +243,18 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
   mutate(
     LISA_BI_value = lisa_values(gda_lisa = lisa),
     LISA_BI_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BI_map = case_when(
+    LISA_BI_centralizado = case_when(
       LISA_BI_pvalue >  0.05 ~ 0,
       (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 4,
-      (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 2,
+      (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 1,
       (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 3,
-      (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 1
+      (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_BI_map = factor(
-      LISA_BI_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_BI_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -223,17 +266,18 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
   mutate(
     LISA_BS_value = lisa_values(gda_lisa = lisa),
     LISA_BS_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BS_map = case_when(
+    LISA_BS_centralizado = case_when(
       LISA_BS_pvalue >  0.05 ~ 0,
       (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 4,
-      (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 2,
+      (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 1,
       (LISA_BS_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 3,
-      (LISA_BS_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 1
+      (LISA_BS_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_BS_map = factor(
-      LISA_BS_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_BS_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -245,17 +289,18 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
   mutate(
     LISA_NB_value = lisa_values(gda_lisa = lisa),
     LISA_NB_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NB_map = case_when(
+    LISA_NB_centralizado = case_when(
       LISA_NB_pvalue >  0.05 ~ 0,
       (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 4,
-      (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 2,
+      (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 1,
       (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 3,
-      (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 1
+      (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_NB_map = factor(
-      LISA_BB_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_NB_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -267,17 +312,18 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
   mutate(
     LISA_NI_value = lisa_values(gda_lisa = lisa),
     LISA_NI_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NI_map = case_when(
+    LISA_NI_centralizado = case_when(
       LISA_NI_pvalue >  0.05 ~ 0,
       (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 4,
-      (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 2,
+      (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 1,
       (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 3,
-      (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 1
+      (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_NI_map = factor(
-      LISA_NI_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_NI_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -289,17 +335,18 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
   mutate(
     LISA_NS_value = lisa_values(gda_lisa = lisa),
     LISA_NS_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NS_map = case_when(
+    LISA_NS_centralizado = case_when(
       LISA_NS_pvalue >  0.05 ~ 0,
       (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 4,
-      (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 2,
+      (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 1,
       (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 3,
-      (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 1
+      (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_NS_map = factor(
-      LISA_NS_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_NS_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -307,7 +354,7 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
 
 # Selecao de APs sem geometria vazia
 
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |> filter(!st_is_empty(geom))
+ap_RMCampinas_2010 <- ap_RMCampinas_2010 |> filter(!st_is_empty(geom))
 
 # criacao de peso com base no método queen (mais permissivo)
 
@@ -321,17 +368,18 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
   mutate(
     LISA_BB_value = lisa_values(gda_lisa = lisa),
     LISA_BB_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BB_map = case_when(
+    LISA_BB_centralizado = case_when(
       LISA_BB_pvalue >  0.05 ~ 0,
       (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 4,
-      (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 2,
+      (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 1,
       (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 3,
-      (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 1
+      (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_BB_map = factor(
-      LISA_BB_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_BB_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -343,17 +391,18 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
   mutate(
     LISA_BI_value = lisa_values(gda_lisa = lisa),
     LISA_BI_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BI_map = case_when(
+    LISA_BI_centralizado = case_when(
       LISA_BI_pvalue >  0.05 ~ 0,
       (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 4,
-      (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 2,
+      (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 1,
       (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 3,
-      (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 1
+      (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_BI_map = factor(
-      LISA_BI_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_BI_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -365,17 +414,18 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
   mutate(
     LISA_BS_value = lisa_values(gda_lisa = lisa),
     LISA_BS_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BS_map = case_when(
+    LISA_BS_centralizado = case_when(
       LISA_BS_pvalue >  0.05 ~ 0,
-      (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 4,
-      (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 2,
-      (LISA_BS_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 3,
-      (LISA_BS_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 1
+      (LISA_BS_value - mean(LISA_BS_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 4,
+      (LISA_BS_value - mean(LISA_BS_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 1,
+      (LISA_BS_value - mean(LISA_BS_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 3,
+      (LISA_BS_value - mean(LISA_BS_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_BS_map = factor(
-      LISA_BS_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_BS_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -387,17 +437,18 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
   mutate(
     LISA_NB_value = lisa_values(gda_lisa = lisa),
     LISA_NB_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NB_map = case_when(
+    LISA_NB_centralizado = case_when(
       LISA_NB_pvalue >  0.05 ~ 0,
       (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 4,
-      (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 2,
+      (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 1,
       (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 3,
-      (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 1
+      (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_NB_map = factor(
-      LISA_BB_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_NB_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -409,17 +460,18 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
   mutate(
     LISA_NI_value = lisa_values(gda_lisa = lisa),
     LISA_NI_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NI_map = case_when(
+    LISA_NI_centralizado = case_when(
       LISA_NI_pvalue >  0.05 ~ 0,
       (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 4,
-      (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 2,
+      (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 1,
       (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 3,
-      (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 1
+      (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_NI_map = factor(
-      LISA_NI_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_NI_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
@@ -431,21 +483,87 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
   mutate(
     LISA_NS_value = lisa_values(gda_lisa = lisa),
     LISA_NS_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NS_map = case_when(
+    LISA_NS_centralizado = case_when(
       LISA_NS_pvalue >  0.05 ~ 0,
       (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 4,
-      (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 2,
+      (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 1,
       (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 3,
-      (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 1
+      (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 2,
+      TRUE ~ NA_real_
     ),
     LISA_NS_map = factor(
-      LISA_NS_map,
-      levels = c(0,1,2,3,4),
-      labels = c("Não significativo (95%)","Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto")
+      LISA_NS_centralizado,
+      levels = c(2,1,3,4,0),
+      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
     )
   )
 
+# Mapas ------------------------------------------------------------
 
-# Mapas - 2000 ------------------------------------------------------------
+anos <- c(2000,2010)
+relacoes <- c("BB","BI","BS","NB","NI","NS")
+relacoes_extensa <- c("Branco-Baixo","Branco-Intermediário","Branco-Superior",
+                     "Negro-Baixo","Negro-Intermediário","Negro-Superior")
 
-# Mapas - 2010 ------------------------------------------------------------
+for(i in seq_along(anos)){
+  ano = anos[i]
+  for(j in seq_along(relacoes)){
+    relacao = relacoes[j]
+    relacao_extensa = relacoes_extensa[j]
+
+    # Mapa
+    get(glue::glue("ap_RMCampinas_{ano}")) |>
+      select(LISA_var = glue::glue("LISA_{relacao}_map")) |>
+      filter(!is.na(LISA_var)) |>
+      ggplot() +
+      geom_sf(aes(fill = LISA_var),
+              lwd = 0) +
+      geom_sf(data = get(glue::glue("rm_shp_{ano}")),
+              fill = "transparent",
+              colour = "black", size = 0.5) +
+      scale_fill_manual(
+        values = c(
+          "Baixo-Baixo" = "#045a8d", "Alto-Baixo" = "#a6bddb","Baixo-Alto" = "#fc9272",
+          "Alto-Alto" = "#a50f15","Não significativo" =  "#f0f0f0"
+        )) +
+      guides(fill = guide_legend(title = glue::glue("LISA Map RM Campinas: {relacao_extensa}"))) +
+      labs(
+        caption = glue::glue("Fonte: IBGE, Censo Demográfico {ano}")
+      ) +
+      # tira sistema cartesiano
+      theme(
+        plot.caption = element_text(size = 8),
+        legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = .5),
+        legend.text = element_text(size = 8, hjust = 0, vjust = .9),
+        legend.position = "right",
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
+        panel.background = element_blank()) +
+      annotation_scale(
+        location = "bl",
+        pad_x = unit(0.0, "in"),
+        width_hint = 0.5
+      ) +
+      annotation_north_arrow(
+        location = "bl", which_north = "true",
+        pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+        style = north_arrow_fancy_orienteering
+      )
+    # Exportacao
+    ggsave(
+      filename = glue::glue("{ano}_LISA_{relacao}.jpeg"),
+      device = "jpeg",
+      path = file.path("output","mapas"),
+      width = 13,
+      height = 13,
+      units = "in"
+    )
+    print(paste0("Finalizamos a categoria ",relacao,"..."))
+  }
+  print(paste0("Finalizamos o ano de ",ano,"..."))
+}
+
+# Indice de Moran ---------------------------------------------------------
+
+
