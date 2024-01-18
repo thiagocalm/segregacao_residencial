@@ -65,6 +65,7 @@ for(i in 1: length(ano)){
     gc()
   }
 }
+
 rm(censo_2000_RMSalvador,censo_2000_RMFortaleza,censo_2000_RMBH,censo_2000_RMRecife,
    censo_2000_RMCuritiba,censo_2000_RMRJ,censo_2000_RMPortoAlegre,censo_2000_RMCampinas,
    censo_2000_RMSP)
@@ -72,7 +73,6 @@ rm(censo_2000_RMSalvador,censo_2000_RMFortaleza,censo_2000_RMBH,censo_2000_RMRec
 # 2010 ---------------------------------------------------------
 
 ## Importacao dos dados
-source("./R/X_funcao_indices.R")
 
 ano <- 2010
 
