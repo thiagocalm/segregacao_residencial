@@ -18,7 +18,7 @@ rm(list = ls())
 # Pacotes -----------------------------------------------------------------
 
 library(pacman)
-pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, ggspatial)
+pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, ggspatial, spdep)
 
 ## Importacao dos dados
 
@@ -38,16 +38,40 @@ for(i in 1: length(anos)){
 
     # exportacao
     if(ano == 2000){
-      assign(paste0("QL_",ano,"_",RM),resultados_QL_index_2000[[k]][[2]])
+      QL_index_total <- resultados_QL_index_2000[[k]][[1]] |>
+        select(area_ponderacao, `1`,`2`) |>
+        rename(
+          prop_branca = `1`,
+          prop_negra = `2`,
+        ) |>
+        left_join(
+          resultados_QL_index_2000[[k]][[2]],
+          by = c("area_ponderacao"),
+          keep = FALSE
+        )
+
+      assign(paste0("QL_",ano,"_",RM),QL_index_total)
     }else{
-      assign(paste0("QL_",ano,"_",RM),resultados_QL_index_2010[[k]][[2]])
+      QL_index_total <- resultados_QL_index_2010[[k]][[1]] |>
+        select(area_ponderacao, `1`,`2`) |>
+        rename(
+          prop_branca = `1`,
+          prop_negra = `2`,
+        ) |>
+        left_join(
+          resultados_QL_index_2010[[k]][[2]],
+          by = c("area_ponderacao"),
+          keep = FALSE
+        )
+
+      assign(paste0("QL_",ano,"_",RM),QL_index_total)
     }
 
     # Proximo loop
   # }
 }
 
-rm(resultados_QL_index_2000,resultados_QL_index_2010)
+rm(resultados_QL_index_2000,resultados_QL_index_2010, QL_index_total)
 
 # Tratamento dos dados espaciais - 2000 --------------------------------------
 # Seguiremos o método sugerido na Issue #152 pelo Pedro e Rafael do pacote geobr!
@@ -91,7 +115,7 @@ ap_2000 |>
   ggplot() +
   geom_sf(fill = "green")
 
-# Juncao dos dados espaciais ao QL
+# Juncao dos dados espaciais ao QL - Aqui começamos a falar da RM Campinas somente!
 
 ap_RMCampinas_2000 <- QL_2000_RMCampinas |>
   left_join(
@@ -566,4 +590,178 @@ for(i in seq_along(anos)){
 
 # Indice de Moran ---------------------------------------------------------
 
+# Nomes das variaveis
+oldnames = colnames(ap_RMCampinas_2000 |> select(starts_with(c("QL_Br","QL_Ne"))))[1:6] |>
+  as_tibble() |>
+  mutate(
+    value = str_remove(value, "QL_"),
+    value = paste0(value,"_value")
+  ) |> pull()
 
+newnames = colnames(
+  ap_RMCampinas_2000 |>
+  select(starts_with(c("QL_Br","QL_Ne")))
+) |>
+  as_tibble() |>
+  filter(value != "geom") |>
+  mutate(
+    value = str_remove(value, "QL_"),
+    value = str_replace(value, "_"," ")
+  ) |> pull()
+
+queen_w_2000 <- nb2listw(poly2nb(ap_RMCampinas_2000),zero.policy = TRUE)
+queen_w_2010 <- nb2listw(poly2nb(ap_RMCampinas_2010),zero.policy = TRUE)
+
+moran_test <- tibble(
+  ano = c(2000,2010),
+  Brancos_Baixo_value = c(
+    moran.test(ap_RMCampinas_2000$QL_Brancos_Baixo, queen_w_2000)[[3]][[1]],
+    moran.test(ap_RMCampinas_2010$QL_Brancos_Baixo, queen_w_2010)[[3]][[1]]
+  ),
+  Brancos_Baixo_pvalue = c(
+    round(moran.test(ap_RMCampinas_2000$QL_Brancos_Baixo, queen_w_2000)[[2]],4),
+    round(moran.test(ap_RMCampinas_2010$QL_Brancos_Baixo, queen_w_2010)[[2]],4)
+  ),
+  Brancos_Intermediario_value = c(
+    moran.test(ap_RMCampinas_2000$QL_Brancos_Intermediario, queen_w_2000)[[3]][[1]],
+    moran.test(ap_RMCampinas_2010$QL_Brancos_Intermediario, queen_w_2010)[[3]][[1]]
+  ),
+  Brancos_Intermediario_pvalue = c(
+    round(moran.test(ap_RMCampinas_2000$QL_Brancos_Intermediario, queen_w_2000)[[2]],4),
+    round(moran.test(ap_RMCampinas_2010$QL_Brancos_Intermediario, queen_w_2010)[[2]],4)
+  ),
+  Brancos_Superior_value = c(
+    moran.test(ap_RMCampinas_2000$QL_Brancos_Alto, queen_w_2000)[[3]][[1]],
+    moran.test(ap_RMCampinas_2010$QL_Brancos_Alto, queen_w_2010)[[3]][[1]]
+  ),
+  Brancos_Superior_pvalue = c(
+    round(moran.test(ap_RMCampinas_2000$QL_Brancos_Alto, queen_w_2000)[[2]],4),
+    round(moran.test(ap_RMCampinas_2010$QL_Brancos_Alto, queen_w_2010)[[2]],4)
+  ),
+  Negros_Baixo_value = c(
+    moran.test(ap_RMCampinas_2000$QL_Negros_Baixo, queen_w_2000)[[3]][[1]],
+    moran.test(ap_RMCampinas_2010$QL_Negros_Baixo, queen_w_2010)[[3]][[1]]
+  ),
+  Negros_Baixo_pvalue = c(
+    round(moran.test(ap_RMCampinas_2000$QL_Negros_Baixo, queen_w_2000)[[2]],4),
+    round(moran.test(ap_RMCampinas_2010$QL_Negros_Baixo, queen_w_2010)[[2]],4)
+  ),
+  Negros_Intermediario_value = c(
+    moran.test(ap_RMCampinas_2000$QL_Negros_Intermediario, queen_w_2000)[[3]][[1]],
+    moran.test(ap_RMCampinas_2010$QL_Negros_Intermediario, queen_w_2010)[[3]][[1]]
+  ),
+  Negros_Intermediario_pvalue = c(
+    round(moran.test(ap_RMCampinas_2000$QL_Negros_Intermediario, queen_w_2000)[[2]],4),
+    round(moran.test(ap_RMCampinas_2010$QL_Negros_Intermediario, queen_w_2010)[[2]],4)
+  ),
+  Negros_Superior_value = c(
+    moran.test(ap_RMCampinas_2000$QL_Negros_Alto, queen_w_2000)[[3]][[1]],
+    moran.test(ap_RMCampinas_2010$QL_Negros_Alto, queen_w_2010)[[3]][[1]]
+  ),
+  Negros_Superior_pvalue = c(
+    round(moran.test(ap_RMCampinas_2000$QL_Negros_Alto, queen_w_2000)[[2]],4),
+    round(moran.test(ap_RMCampinas_2010$QL_Negros_Alto, queen_w_2010)[[2]],4)
+  )
+) |>
+  select(-ends_with("_pvalue"))
+
+# manipulacao da tabela
+
+oldnames = colnames(moran_test)
+
+newnames = colnames(moran_test) |>
+  as_tibble() |>
+  mutate(
+    value = str_remove(value, "_value")
+  ) |> pull()
+
+moran_test <- moran_test |>
+  rename_at(vars(oldnames), ~ newnames) |>
+  pivot_longer(
+    Brancos_Baixo:Negros_Superior,
+    values_to = "Moran",
+    names_to = "Raça-classe"
+  ) |>
+  pivot_wider(
+    names_from = "ano",
+    values_from = "Moran"
+  )
+moran_test
+clipr::write_last_clip()
+
+# Mapas da proporção de negros e brancos por ano --------------------------
+
+ap_RMCampinas_2000 |>
+  select(area_ponderacao, prop_branca, prop_negra, geom) |>
+  pivot_longer(
+    prop_branca:prop_negra,
+    names_to = "cor_raca",
+    values_to = "prop"
+  ) |>
+  mutate(ano = 2000) |>
+  bind_rows(
+    ap_RMCampinas_2010 |>
+      select(area_ponderacao, prop_branca, prop_negra, geom) |>
+      pivot_longer(
+        prop_branca:prop_negra,
+        names_to = "cor_raca",
+        values_to = "prop"
+      ) |>
+      mutate(ano = 2010)
+  ) |>
+  mutate(
+    cor_raca = str_remove(cor_raca,"prop_"),
+    ano_fct = as.factor(ano),
+    cor_raca = case_when(cor_raca == "negra" ~ "Negro", TRUE ~ "Branco")
+  ) |>
+  ggplot() +
+
+  geom_sf(
+    aes(fill = prop),
+    lwd = 0
+  ) +
+  geom_sf(
+    data = rm_shp_2010,
+    fill = "transparent",
+    colour = "black",
+    size = .7
+  ) +
+  lemon::facet_rep_grid(cor_raca ~ ano_fct) +
+  scale_fill_distiller(palette = "Spectral") +
+  guides(fill = guide_colorbar(title = "Proporção da população da AP segundo cor ou raça")) +
+  labs(
+    caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
+  ) +
+  # tira sistema cartesiano
+  theme(
+    plot.caption = element_text(size = 8),
+    legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = .5),
+    legend.text = element_text(size = 8, hjust = 0, vjust = .5),
+    legend.position = "bottom",
+    axis.text = element_blank(),
+    # axis.title = element_text(size = 8, face = "bold", hjust = .5, vjust = .5),
+    axis.ticks = element_blank(),
+    panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold", size = 9, hjust = .5, vjust = .5)
+  ) +
+  annotation_scale(
+    location = "bl",
+    pad_x = unit(0.0, "in"),
+    width_hint = 0.3
+  ) +
+  annotation_north_arrow(
+    location = "bl", which_north = "true",
+    pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+    style = north_arrow_fancy_orienteering
+  )
+
+ggsave(
+  filename = "proporcao de cor ou raca das APs nas RMs em 2000 e 2010.jpeg",
+  device = "jpeg",
+  path = file.path("output","mapas"),
+  width = 13,
+  height = 13,
+  units = "in"
+)

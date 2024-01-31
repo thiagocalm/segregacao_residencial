@@ -46,11 +46,135 @@ censo_2000_RMSP <- censo_2000_SP |> filter(rm == 14)
 rm(censo_2000_BA, censo_2000_CE, censo_2000_MG, censo_2000_PE, censo_2000_PR,
    censo_2000_RJ, censo_2000_RS, censo_2000_SP)
 
+
+# 0 - Distribuicao por cor ou raca ----------------------------------------
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+RMs <- c("RMCampinas")
+k = 1
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_egp_rm <- df_rm |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        estratos_sociais = 3,
+        n = survey_total()
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            estratos_sociais = 4,
+            n = survey_total()
+          )
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          mutate(
+            estratos_sociais = case_when(
+              EGP11 %in% c(5, 1) ~ 2,
+              EGP11 %in% c(2, 8, 3) ~ 1,
+              EGP11 %in% c(4, 9, 10) ~ 0)
+          ) |>
+          group_by(estratos_sociais) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            n = survey_total()
+          ) |>
+          ungroup() |>
+          select(ano, cor_raca, estratos_sociais, everything())
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca) |>
+          summarise(
+            ano = ano,
+            estratos_sociais = 3,
+            n = survey_total()
+          ) |>
+          ungroup() |>
+          select(ano, cor_raca, estratos_sociais, everything())
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(cor_raca %in% c(1,2)) |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          group_by(cor_raca) |>
+          summarise(
+            ano = ano,
+            estratos_sociais = 4,
+            n = survey_total()
+          ) |>
+          ungroup() |>
+          select(ano, cor_raca, estratos_sociais, everything())
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(cor_raca %in% c(1,2)) |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          mutate(
+            estratos_sociais = case_when(
+              EGP11 %in% c(5, 1) ~ 2,
+              EGP11 %in% c(2, 8, 3) ~ 1,
+              EGP11 %in% c(4, 9, 10) ~ 0)
+          ) |>
+          group_by(cor_raca, estratos_sociais) |>
+          summarise(
+            ano = ano,
+            n = survey_total()
+          ) |>
+          ungroup() |>
+          select(ano, cor_raca, estratos_sociais, everything())
+      ) |>
+      select(-ends_with("_se")) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")
+             ),
+             estratos_sociais = factor(
+               estratos_sociais,
+               levels = c(3,4,0,1,2),
+               labels = c("Total","Ocupados acima de 10 anos","Baixo","Intermediário","Superior")
+             ))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_00 <- tabela_egp_rm
+    } else{
+      tabela_00 <- tabela_00 |>
+        bind_rows(tabela_egp_rm)
+    }
+    rm(tabela_egp_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 1 para o ano ",ano,"e RM ",RM,"!!!"))
+  }
+}
+
 ## 1 - classes EGP (ordenadas via renda de todas as fontes)
 
 RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
          "RMPortoAlegre","RMCampinas","RMSP")
 
+RMs <- c("RMCampinas")
+k = 1
 for(i in seq_along(ano)){
   ano = ano[i]
   for(k in seq_along(RMs)){
@@ -403,6 +527,137 @@ censo_2010_RMSP <- censo_2010_SP |> filter(rm == 20)
 
 rm(censo_2010_BA, censo_2010_CE, censo_2010_MG, censo_2010_PE, censo_2010_PR,
    censo_2010_RJ, censo_2010_RS, censo_2010_SP, censo_2010_SP1)
+
+# 0 - Distribuicao por cor ou raca ----------------------------------------
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+RMs <- c("RMCampinas")
+k = 1
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_egp_rm <- df_rm |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        estratos_sociais = 3,
+        n = survey_total()
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            estratos_sociais = 4,
+            n = survey_total()
+          )
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          mutate(
+            estratos_sociais = case_when(
+              EGP11 %in% c(5, 1) ~ 2,
+              EGP11 %in% c(2, 8, 3) ~ 1,
+              EGP11 %in% c(4, 9, 10) ~ 0)
+          ) |>
+          group_by(estratos_sociais) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            n = survey_total()
+          ) |>
+          ungroup() |>
+          select(ano, cor_raca, estratos_sociais, everything())
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca) |>
+          summarise(
+            ano = ano,
+            estratos_sociais = 3,
+            n = survey_total()
+          ) |>
+          ungroup() |>
+          select(ano, cor_raca, estratos_sociais, everything())
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(cor_raca %in% c(1,2)) |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          group_by(cor_raca) |>
+          summarise(
+            ano = ano,
+            estratos_sociais = 4,
+            n = survey_total()
+          ) |>
+          ungroup() |>
+          select(ano, cor_raca, estratos_sociais, everything())
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(cor_raca %in% c(1,2)) |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          mutate(
+            estratos_sociais = case_when(
+              EGP11 %in% c(5, 1) ~ 2,
+              EGP11 %in% c(2, 8, 3) ~ 1,
+              EGP11 %in% c(4, 9, 10) ~ 0)
+          ) |>
+          group_by(cor_raca, estratos_sociais) |>
+          summarise(
+            ano = ano,
+            n = survey_total()
+          ) |>
+          ungroup() |>
+          select(ano, cor_raca, estratos_sociais, everything())
+      ) |>
+      select(-ends_with("_se")) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")
+             ),
+             estratos_sociais = factor(
+               estratos_sociais,
+               levels = c(3,4,0,1,2),
+               labels = c("Total","Ocupados acima de 10 anos","Baixo","Intermediário","Superior")
+             ))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_00_10 <- tabela_egp_rm
+    } else{
+      tabela_00_10 <- tabela_00_10 |>
+        bind_rows(tabela_egp_rm)
+    }
+    rm(tabela_egp_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 1 para o ano ",ano,"e RM ",RM,"!!!"))
+  }
+}
+
+tabela_00 <- tabela_00 |>
+  mutate(ano = as.double(ano)) |>
+  bind_rows(tabela_00_10) |>
+  filter(!is.na(estratos_sociais)) |>
+  arrange(ano,cor_raca)
+
+tabela_00
+
+clipr::write_last_clip()
 
 ## 1 - classes EGP (ordenadas via renda de todas as fontes)
 
