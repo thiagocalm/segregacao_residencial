@@ -90,7 +90,7 @@ sc_to_ap <- read_delim(
 
 # importacao do arquivo com setores censitarios
 
-sc_shp <- geobr::read_census_tract(code_tract = "all", year = 2000) |>
+sc_shp <- geobr::read_census_tract(code_tract = "all", year = 2010) |>
   mutate(code_tract = as.numeric(code_tract),
          code_muni = as.numeric(code_muni))
 
@@ -127,7 +127,13 @@ ap_RMCampinas_2000 <- QL_2000_RMCampinas |>
   mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |>
   st_as_sf()
 
-rm(ap_2000, sc_shp, sc_to_ap)
+# Recaptura de poligonos vazios
+
+poligonos_vazios <- ap_RMCampinas_2000 |>
+  select(area_ponderacao, code_munic, geom) |>
+  filter(st_is_empty(geom))
+
+rm(ap_2000, sc_shp, sc_to_ap, poligonos_vazios)
 
 rm_shp_2000 <- geobr::read_metro_area(year = 2001) |>
   filter(code_metro == "022")
@@ -137,38 +143,62 @@ rm_shp_2000 <- geobr::read_metro_area(year = 2001) |>
 rm_shp_2010 <- geobr::read_metro_area(year = 2010) |>
   filter(name_metro == "RM Campinas")
 
-ap_2010 <- geobr::read_weighting_area() |>
-  mutate(code_weighting = as.numeric(code_weighting),
+# importacao dos arquivos auxiliares
+
+sc_to_ap <- read_delim(
+  file = file.path("input","2010","2010_Composicao das Areas de Ponderacao.txt"),
+  delim = "\t",
+  col_names = c("area_ponderacao","setor_censitario"),
+  skip = 2,
+  locale = locale(encoding = "UTF-8")
+)
+
+# importacao do arquivo com setores censitarios
+
+sc_shp <- geobr::read_census_tract(code_tract = "all", year = 2010) |>
+  mutate(code_tract = as.numeric(code_tract),
          code_muni = as.numeric(code_muni))
+
+# juncao dos dados de ap na base de shp para sc
+
+ap_2010 <- sc_to_ap |>
+  left_join(
+    sc_shp,
+    by = c("setor_censitario" = "code_tract"),
+    keep = FALSE
+  ) |>
+  filter(!is.na(code_muni)) |>
+  distinct()
+
+ap_2010 <- ap_2010 |>
+  as.data.frame() |>
+  st_as_sf() |>
+  group_by(area_ponderacao) |>
+  summarise()
+
 
 ap_2010 |> ggplot() + geom_sf(fill = "grey")
 
 ap_RMCampinas_2010 <- QL_2010_RMCampinas |>
   left_join(
     ap_2010,
-    by = c("area_ponderacao" = "code_weighting"),
+    by = c("area_ponderacao"),
     keep = FALSE
   ) |>
   distinct() |>
   mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |>
   st_as_sf()
 
-# ap_RMCampinas_2010 <- read_sf(dsn = "./input/2010", layer = "RMCAM2010 urbano pop area de ponderação")
-#
-# ap_RMCampinas_2010 <- QL_2010_RMCampinas |>
-#   left_join(
-#     ap_RMCampinas_2010 |> mutate(aps = as.numeric(aps)),
-#     by = c("area_ponderacao" = "aps"),
-#     keep = FALSE
-#   ) |>
-#   distinct() |>
-#   select(-starts_with(c("pop","QL","Br","Ne","Re"))) |>
-#   mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |> View()
-#   st_as_sf()
+# Recaptura de poligonos vazios
+
+poligonos_vazios <- ap_RMCampinas_2010 |>
+  select(area_ponderacao, code_munic, geom) |>
+  filter(st_is_empty(geom))
 
 rm(ap_2010)
 
-# visualizacao
+
+# Visualizacao de ambas os anos conjuntamente -----------------------------
 
 (rm_shp_2000 |>
     ggplot() +
@@ -227,10 +257,6 @@ ggsave(
 )
 
 # LISA - 2000 --------------------------------------------------------------
-
-# Selecao de APs sem geometria vazia
-
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |> filter(!st_is_empty(geom))
 
 # criacao de peso com base no método queen (mais permissivo)
 
@@ -375,10 +401,6 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
   )
 
 # LISA - 2010 --------------------------------------------------------------
-
-# Selecao de APs sem geometria vazia
-
-ap_RMCampinas_2010 <- ap_RMCampinas_2010 |> filter(!st_is_empty(geom))
 
 # criacao de peso com base no método queen (mais permissivo)
 
