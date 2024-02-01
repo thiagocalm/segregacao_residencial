@@ -159,3 +159,10 @@ save(resultados_D_index_2000, file = "./output/resultados_D_indice_2000.RData")
 save(resultados_D_index_2010, file = "./output/resultados_D_indice_2010.RData")
 save(resultados_QL_index_2000, file = "./output/resultados_QL_indice_2000.RData")
 save(resultados_QL_index_2010, file = "./output/resultados_QL_indice_2010.RData")
+
+
+QL_2000_RMCampinas$geral_sintese
+QL_2000_RMCampinas$classe_sintese
+
+View(QL_2010_RMCampinas$geral_sintese)
+View(QL_2010_RMCampinas$classe_sintese)
