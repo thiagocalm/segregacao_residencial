@@ -177,7 +177,7 @@ ap_2010 <- ap_2010 |>
   summarise()
 
 
-ap_2010 |> ggplot() + geom_sf(fill = "grey")
+# ap_2010 |> ggplot() + geom_sf(fill = "grey")
 
 ap_RMCampinas_2010 <- QL_2010_RMCampinas |>
   left_join(
@@ -256,11 +256,54 @@ ggsave(
   units = "in"
 )
 
+
+# Visualizacao dos dados da RM com nomes dos muncis -----------------------
+
+rm_shp_2010 |>
+  ggplot() +
+  geom_sf(data = ap_RMCampinas_2010, fill = "#f7f7f7", color = "#d9d9d9") +
+  geom_sf(fill = "transparent", colour = "black", size = .9) +
+  geom_sf_text(
+    aes(label = name_muni),
+    size = 3,
+    color = "black",
+    fontface = "bold",
+    check_overlap = TRUE,
+    fun.geometry = sf::st_centroid
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, hjust = .5, vjust = .5),
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_line(color = "#ffffff",linewidth = .01),
+    panel.background = element_blank()) +
+  annotation_scale(
+    location = "bl",
+    pad_x = unit(0.0, "in"),
+    width_hint = 0.5
+  ) +
+  annotation_north_arrow(
+    location = "bl", which_north = "true",
+    pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+    style = north_arrow_fancy_orienteering
+  )
+
+ggsave(
+  filename = "RM de Campinas e seus municipios.jpeg",
+  device = "jpeg",
+  path = file.path("output","mapas"),
+  width = 13,
+  height = 13,
+  units = "in"
+)
+
 # LISA - 2000 --------------------------------------------------------------
 
 # criacao de peso com base no método queen (mais permissivo)
 
-queen_w <- queen_weights(ap_RMCampinas_2000)
+queen_w <- queen_weights(ap_RMCampinas_2000, include_lower_order = TRUE)
 
 # Branco - Baixo
 
@@ -271,7 +314,7 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
     LISA_BB_value = lisa_values(gda_lisa = lisa),
     LISA_BB_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_BB_centralizado = case_when(
-      LISA_BB_pvalue >  0.05 ~ 0,
+      LISA_BB_pvalue >  0.1 ~ 0,
       (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 4,
       (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 1,
       (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 3,
@@ -294,7 +337,7 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
     LISA_BI_value = lisa_values(gda_lisa = lisa),
     LISA_BI_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_BI_centralizado = case_when(
-      LISA_BI_pvalue >  0.05 ~ 0,
+      LISA_BI_pvalue >  0.1  ~ 0,
       (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 4,
       (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 1,
       (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 3,
@@ -317,7 +360,7 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
     LISA_BS_value = lisa_values(gda_lisa = lisa),
     LISA_BS_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_BS_centralizado = case_when(
-      LISA_BS_pvalue >  0.05 ~ 0,
+      LISA_BS_pvalue >  0.1  ~ 0,
       (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 4,
       (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 1,
       (LISA_BS_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 3,
@@ -340,7 +383,7 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
     LISA_NB_value = lisa_values(gda_lisa = lisa),
     LISA_NB_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_NB_centralizado = case_when(
-      LISA_NB_pvalue >  0.05 ~ 0,
+      LISA_NB_pvalue >  0.1  ~ 0,
       (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 4,
       (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 1,
       (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 3,
@@ -363,7 +406,7 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
     LISA_NI_value = lisa_values(gda_lisa = lisa),
     LISA_NI_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_NI_centralizado = case_when(
-      LISA_NI_pvalue >  0.05 ~ 0,
+      LISA_NI_pvalue >  0.1  ~ 0,
       (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 4,
       (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 1,
       (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 3,
@@ -386,7 +429,7 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
     LISA_NS_value = lisa_values(gda_lisa = lisa),
     LISA_NS_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_NS_centralizado = case_when(
-      LISA_NS_pvalue >  0.05 ~ 0,
+      LISA_NS_pvalue >  0.1  ~ 0,
       (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 4,
       (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 1,
       (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 3,
@@ -404,7 +447,7 @@ ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
 
 # criacao de peso com base no método queen (mais permissivo)
 
-queen_w <- queen_weights(ap_RMCampinas_2010)
+queen_w <- queen_weights(ap_RMCampinas_2010, include_lower_order = TRUE)
 
 # Branco - Baixo
 
@@ -415,7 +458,7 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
     LISA_BB_value = lisa_values(gda_lisa = lisa),
     LISA_BB_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_BB_centralizado = case_when(
-      LISA_BB_pvalue >  0.05 ~ 0,
+      LISA_BB_pvalue >  0.1  ~ 0,
       (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 4,
       (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 1,
       (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 3,
@@ -438,7 +481,7 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
     LISA_BI_value = lisa_values(gda_lisa = lisa),
     LISA_BI_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_BI_centralizado = case_when(
-      LISA_BI_pvalue >  0.05 ~ 0,
+      LISA_BI_pvalue >  0.1  ~ 0,
       (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 4,
       (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 1,
       (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 3,
@@ -461,7 +504,7 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
     LISA_BS_value = lisa_values(gda_lisa = lisa),
     LISA_BS_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_BS_centralizado = case_when(
-      LISA_BS_pvalue >  0.05 ~ 0,
+      LISA_BS_pvalue >  0.1  ~ 0,
       (LISA_BS_value - mean(LISA_BS_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 4,
       (LISA_BS_value - mean(LISA_BS_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 1,
       (LISA_BS_value - mean(LISA_BS_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 3,
@@ -484,7 +527,7 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
     LISA_NB_value = lisa_values(gda_lisa = lisa),
     LISA_NB_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_NB_centralizado = case_when(
-      LISA_NB_pvalue >  0.05 ~ 0,
+      LISA_NB_pvalue >  0.1  ~ 0,
       (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 4,
       (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 1,
       (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 3,
@@ -507,7 +550,7 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
     LISA_NI_value = lisa_values(gda_lisa = lisa),
     LISA_NI_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_NI_centralizado = case_when(
-      LISA_NI_pvalue >  0.05 ~ 0,
+      LISA_NI_pvalue >  0.1  ~ 0,
       (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 4,
       (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 1,
       (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 3,
@@ -530,7 +573,7 @@ ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
     LISA_NS_value = lisa_values(gda_lisa = lisa),
     LISA_NS_pvalue = lisa_pvalues(gda_lisa = lisa),
     LISA_NS_centralizado = case_when(
-      LISA_NS_pvalue >  0.05 ~ 0,
+      LISA_NS_pvalue >  0.1  ~ 0,
       (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 4,
       (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 1,
       (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 3,
@@ -584,7 +627,7 @@ for(i in seq_along(anos)){
         legend.position = "right",
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
+        panel.grid = element_line(color = "#ffffff",linewidth = .01),
         panel.background = element_blank()) +
       annotation_scale(
         location = "bl",
@@ -631,8 +674,17 @@ newnames = colnames(
     value = str_replace(value, "_"," ")
   ) |> pull()
 
-queen_w_2000 <- nb2listw(poly2nb(ap_RMCampinas_2000),zero.policy = TRUE)
-queen_w_2010 <- nb2listw(poly2nb(ap_RMCampinas_2010),zero.policy = TRUE)
+# Configurando para ajuste de poligonos sem vizinhanca
+
+set.ZeroPolicyOption(TRUE)
+get.ZeroPolicyOption()
+
+# Gerando matriz para moran
+
+queen_w_2000 <- nb2listw(poly2nb(ap_RMCampinas_2000), style = "W", zero.policy = TRUE)
+queen_w_2010 <- nb2listw(poly2nb(ap_RMCampinas_2010), style = "W", zero.policy = TRUE)
+
+# gerando base com moran
 
 moran_test <- tibble(
   ano = c(2000,2010),
@@ -708,10 +760,87 @@ moran_test <- moran_test |>
     names_from = "ano",
     values_from = "Moran"
   )
+
 moran_test
 clipr::write_last_clip()
 
 # Mapas da proporção de negros e brancos por ano --------------------------
+
+# Importacao dos dados do censo para criar variaveis
+
+anos <- c(2000,2010)
+
+RMs <- c("RMCampinas")
+
+for(i in 1: length(anos)){
+  ano = anos[i]
+  for(k in 1: length(RMs)){
+    RM = RMs[k]
+    # Importacao dos dados
+    load(file.path("./dados",paste0("censo_tratado_",ano,"_",RM,".RData")))
+
+    # exportacao
+    assign(paste0("censo_",ano,"_",RM),censo)
+
+    # Proximo loop
+    print(paste0("Finalizamos a RM: ",RM,"!!!"))
+    rm(censo)
+    gc()
+  }
+}
+
+ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
+  left_join(
+    censo_2000_RMCampinas |>
+      filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp)) |>
+      select(area_ponderacao, cor_raca, peso) |>
+      summarise(
+        n = sum(peso),
+        .by = c(cor_raca, area_ponderacao)
+      ) |>
+      filter(cor_raca != 0) |>
+      group_by(cor_raca) |>
+      mutate(
+        prop_ap = round((n/sum(n))*100,2)
+      ) |>
+      ungroup() |>
+      mutate(cor_raca = factor(cor_raca, levels = c(1,2), labels = c("Branco","Negro"))) |>
+      select(-n) |>
+      pivot_wider(
+        names_from = cor_raca,
+        values_from = prop_ap
+      ),
+    by = c("area_ponderacao"),
+    keep = FALSE
+  )
+
+ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
+  left_join(
+    censo_2010_RMCampinas |>
+      filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp)) |>
+      select(area_ponderacao, cor_raca, peso) |>
+      summarise(
+        n = sum(peso),
+        .by = c(cor_raca, area_ponderacao)
+      ) |>
+      filter(cor_raca != 0) |>
+      group_by(cor_raca) |>
+      mutate(
+        prop_ap = round((n/sum(n))*100,2)
+      ) |>
+      ungroup() |>
+      mutate(cor_raca = factor(cor_raca, levels = c(1,2), labels = c("Branco","Negro"))) |>
+      select(-n) |>
+      pivot_wider(
+        names_from = cor_raca,
+        values_from = prop_ap
+      ),
+    by = c("area_ponderacao"),
+    keep = FALSE
+  )
+
+
+# Mapa 1 - Proporcao de brancos e negros por ap
 
 ap_RMCampinas_2000 |>
   select(area_ponderacao, prop_branca, prop_negra, geom) |>
@@ -734,10 +863,10 @@ ap_RMCampinas_2000 |>
   mutate(
     cor_raca = str_remove(cor_raca,"prop_"),
     ano_fct = as.factor(ano),
+    prop = round((prop*100),2),
     cor_raca = case_when(cor_raca == "negra" ~ "Negro", TRUE ~ "Branco")
   ) |>
   ggplot() +
-
   geom_sf(
     aes(fill = prop),
     lwd = 0
@@ -750,20 +879,20 @@ ap_RMCampinas_2000 |>
   ) +
   lemon::facet_rep_grid(cor_raca ~ ano_fct) +
   scale_fill_distiller(palette = "Spectral") +
-  guides(fill = guide_colorbar(title = "Proporção da população da AP segundo cor ou raça")) +
+  guides(fill = guide_colorbar(title = "Parcela (%) da população ocupada acima de 10 anos\nde cada AP por cor ou raça")) +
   labs(
     caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
   ) +
   # tira sistema cartesiano
   theme(
     plot.caption = element_text(size = 8),
-    legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = .5),
+    legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = 1),
     legend.text = element_text(size = 8, hjust = 0, vjust = .5),
     legend.position = "bottom",
     axis.text = element_blank(),
     # axis.title = element_text(size = 8, face = "bold", hjust = .5, vjust = .5),
     axis.ticks = element_blank(),
-    panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
+    panel.grid = element_line(color = "#ffffff",linewidth = .01),
     panel.background = element_blank(),
     strip.background = element_blank(),
     strip.text = element_text(face = "bold", size = 9, hjust = .5, vjust = .5)
@@ -781,6 +910,81 @@ ap_RMCampinas_2000 |>
 
 ggsave(
   filename = "proporcao de cor ou raca das APs nas RMs em 2000 e 2010.jpeg",
+  device = "jpeg",
+  path = file.path("output","mapas"),
+  width = 13,
+  height = 13,
+  units = "in"
+)
+
+# Mapa 2 - Distribuicao relativa de brancos e negros na RM
+
+ap_RMCampinas_2000 |>
+  select(area_ponderacao, Branco, Negro, geom) |>
+  pivot_longer(
+    Branco:Negro,
+    names_to = "cor_raca",
+    values_to = "prop"
+  ) |>
+  mutate(ano = 2000) |>
+  bind_rows(
+    ap_RMCampinas_2010 |>
+      select(area_ponderacao, Branco, Negro, geom) |>
+      pivot_longer(
+        Branco:Negro,
+        names_to = "cor_raca",
+        values_to = "prop"
+      ) |>
+      mutate(ano = 2010)
+  ) |>
+  mutate(
+    cor_raca = as.factor(cor_raca),
+    ano_fct = as.factor(ano)
+  ) |>
+  ggplot() +
+  geom_sf(
+    aes(fill = prop),
+    lwd = 0
+  ) +
+  geom_sf(
+    data = rm_shp_2010,
+    fill = "transparent",
+    colour = "black",
+    size = .7
+  ) +
+  lemon::facet_rep_grid(cor_raca ~ ano_fct) +
+  scale_fill_distiller(palette = "Spectral") +
+  guides(fill = guide_colorbar(title = "Distribuição relativa (%) da população ocupada acima de 10 anos\nde cada cor ou raça por AP")) +
+  labs(
+    caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
+  ) +
+  # tira sistema cartesiano
+  theme(
+    plot.caption = element_text(size = 8),
+    legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = 1),
+    legend.text = element_text(size = 8, hjust = 0, vjust = .5),
+    legend.position = "bottom",
+    axis.text = element_blank(),
+    # axis.title = element_text(size = 8, face = "bold", hjust = .5, vjust = .5),
+    axis.ticks = element_blank(),
+    panel.grid = element_line(color = "#ffffff",linewidth = .01),
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold", size = 9, hjust = .5, vjust = .5)
+  ) +
+  annotation_scale(
+    location = "bl",
+    pad_x = unit(0.0, "in"),
+    width_hint = 0.3
+  ) +
+  annotation_north_arrow(
+    location = "bl", which_north = "true",
+    pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+    style = north_arrow_fancy_orienteering
+  )
+
+ggsave(
+  filename = "distribuicao relativa da pop das APs por cor ou raca.jpeg",
   device = "jpeg",
   path = file.path("output","mapas"),
   width = 13,
