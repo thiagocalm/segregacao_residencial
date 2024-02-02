@@ -869,6 +869,7 @@ ap_RMCampinas_2000 |>
   ggplot() +
   geom_sf(
     aes(fill = prop),
+    color = "transparent",
     lwd = 0
   ) +
   geom_sf(
@@ -944,6 +945,7 @@ ap_RMCampinas_2000 |>
   ggplot() +
   geom_sf(
     aes(fill = prop),
+    color = "transparent",
     lwd = 0
   ) +
   geom_sf(
