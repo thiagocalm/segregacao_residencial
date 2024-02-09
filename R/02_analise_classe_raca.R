@@ -65,6 +65,7 @@ for(i in seq_along(ano)){
 
     # tabela de cada rm
     tabela_egp_rm <- df_rm |>
+      filter(idade >= 10) |>
       summarise(
         ano = ano,
         cor_raca = 0,
@@ -73,7 +74,7 @@ for(i in seq_along(ano)){
       ) |>
       bind_rows(
         df_rm |>
-          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          filter(idade >= 10 & PO == 1) |>
           summarise(
             ano = ano,
             cor_raca = 0,
@@ -102,6 +103,7 @@ for(i in seq_along(ano)){
       bind_rows(
         df_rm |>
           filter(cor_raca %in% c(1,2)) |>
+          filter(idade >= 10) |>
           group_by(cor_raca) |>
           summarise(
             ano = ano,
@@ -114,7 +116,7 @@ for(i in seq_along(ano)){
       bind_rows(
         df_rm |>
           filter(cor_raca %in% c(1,2)) |>
-          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          filter(idade >= 10 & PO == 1) |>
           group_by(cor_raca) |>
           summarise(
             ano = ano,
@@ -143,6 +145,7 @@ for(i in seq_along(ano)){
           select(ano, cor_raca, estratos_sociais, everything())
       ) |>
       select(-ends_with("_se")) |>
+      filter(!is.na(estratos_sociais)) |>
       mutate(RM = RM,
              cor_raca = factor(
                cor_raca,
@@ -546,6 +549,7 @@ for(i in seq_along(ano)){
 
     # tabela de cada rm
     tabela_egp_rm <- df_rm |>
+      filter(idade >= 10) |>
       summarise(
         ano = ano,
         cor_raca = 0,
@@ -554,7 +558,7 @@ for(i in seq_along(ano)){
       ) |>
       bind_rows(
         df_rm |>
-          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          filter(idade >= 10 & PO == 1) |>
           summarise(
             ano = ano,
             cor_raca = 0,
@@ -583,6 +587,7 @@ for(i in seq_along(ano)){
       bind_rows(
         df_rm |>
           filter(cor_raca %in% c(1,2)) |>
+          filter(idade >= 10) |>
           group_by(cor_raca) |>
           summarise(
             ano = ano,
@@ -595,7 +600,7 @@ for(i in seq_along(ano)){
       bind_rows(
         df_rm |>
           filter(cor_raca %in% c(1,2)) |>
-          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
+          filter(idade >= 10 & PO == 1) |>
           group_by(cor_raca) |>
           summarise(
             ano = ano,
@@ -624,6 +629,7 @@ for(i in seq_along(ano)){
           select(ano, cor_raca, estratos_sociais, everything())
       ) |>
       select(-ends_with("_se")) |>
+      filter(!is.na(estratos_sociais)) |>
       mutate(RM = RM,
              cor_raca = factor(
                cor_raca,
@@ -638,9 +644,9 @@ for(i in seq_along(ano)){
 
     # juncao de RMs
     if(k == 1){
-      tabela_00_10 <- tabela_egp_rm
+      tabela_10 <- tabela_egp_rm
     } else{
-      tabela_00_10 <- tabela_00_10 |>
+      tabela_10 <- tabela_10 |>
         bind_rows(tabela_egp_rm)
     }
     rm(tabela_egp_rm, df_rm)
@@ -649,15 +655,14 @@ for(i in seq_along(ano)){
   }
 }
 
-tabela_00 <- tabela_00 |>
+tabela_00_10 <- tabela_00 |>
   mutate(ano = as.double(ano)) |>
-  bind_rows(tabela_00_10) |>
+  bind_rows(tabela_10) |>
   filter(!is.na(estratos_sociais)) |>
-  arrange(ano,cor_raca)
+  arrange(ano,cor_raca) |>
+  mutate(across(n, ~ round(.,0)))
 
-tabela_00
-
-clipr::write_last_clip()
+clipr::write_clip(tabela_00_10)
 
 ## 1 - classes EGP (ordenadas via renda de todas as fontes)
 
