@@ -621,9 +621,9 @@ for(i in seq_along(anos)){
       ) +
       # tira sistema cartesiano
       theme(
-        plot.caption = element_text(size = 8),
-        legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = .5),
-        legend.text = element_text(size = 8, hjust = 0, vjust = .9),
+        plot.caption = element_blank(),
+        legend.title = element_text(face = "bold", size = 12, hjust = 0, vjust = .5),
+        legend.text = element_text(size = 12, hjust = 0, vjust = .9),
         legend.position = "right",
         axis.text = element_blank(),
         axis.ticks = element_blank(),
@@ -886,17 +886,17 @@ ap_RMCampinas_2000 |>
   ) +
   # tira sistema cartesiano
   theme(
-    plot.caption = element_text(size = 8),
-    legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = 1),
-    legend.text = element_text(size = 8, hjust = 0, vjust = .5),
+    plot.caption = element_blank(),
+    legend.title = element_text(face = "bold", size = 12, hjust = 0, vjust = 1),
+    legend.text = element_text(size = 12, hjust = 0, vjust = .5),
     legend.position = "bottom",
     axis.text = element_blank(),
-    # axis.title = element_text(size = 8, face = "bold", hjust = .5, vjust = .5),
+    axis.title = element_text(size = 12),
     axis.ticks = element_blank(),
     panel.grid = element_line(color = "#ffffff",linewidth = .01),
     panel.background = element_blank(),
     strip.background = element_blank(),
-    strip.text = element_text(face = "bold", size = 9, hjust = .5, vjust = .5)
+    strip.text = element_text(face = "bold", size = 12, hjust = .5, vjust = .5)
   ) +
   annotation_scale(
     location = "bl",
