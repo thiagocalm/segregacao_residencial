@@ -52,8 +52,6 @@ rm(censo_2000_BA, censo_2000_CE, censo_2000_MG, censo_2000_PE, censo_2000_PR,
 RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
          "RMPortoAlegre","RMCampinas","RMSP")
 
-RMs <- c("RMCampinas")
-k = 1
 for(i in seq_along(ano)){
   ano = ano[i]
   for(k in seq_along(RMs)){
@@ -176,8 +174,6 @@ for(i in seq_along(ano)){
 RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
          "RMPortoAlegre","RMCampinas","RMSP")
 
-RMs <- c("RMCampinas")
-k = 1
 for(i in seq_along(ano)){
   ano = ano[i]
   for(k in seq_along(RMs)){
@@ -536,8 +532,6 @@ rm(censo_2010_BA, censo_2010_CE, censo_2010_MG, censo_2010_PE, censo_2010_PR,
 RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
          "RMPortoAlegre","RMCampinas","RMSP")
 
-RMs <- c("RMCampinas")
-k = 1
 for(i in seq_along(ano)){
   ano = ano[i]
   for(k in seq_along(RMs)){
@@ -644,9 +638,9 @@ for(i in seq_along(ano)){
 
     # juncao de RMs
     if(k == 1){
-      tabela_10 <- tabela_egp_rm
+      tabela_00_2010 <- tabela_egp_rm
     } else{
-      tabela_10 <- tabela_10 |>
+      tabela_00_2010 <- tabela_00_2010 |>
         bind_rows(tabela_egp_rm)
     }
     rm(tabela_egp_rm, df_rm)
@@ -654,15 +648,6 @@ for(i in seq_along(ano)){
     print(paste0("Finalizamos a Tabela 1 para o ano ",ano,"e RM ",RM,"!!!"))
   }
 }
-
-tabela_00_10 <- tabela_00 |>
-  mutate(ano = as.double(ano)) |>
-  bind_rows(tabela_10) |>
-  filter(!is.na(estratos_sociais)) |>
-  arrange(ano,cor_raca) |>
-  mutate(across(n, ~ round(.,0)))
-
-clipr::write_clip(tabela_00_10)
 
 ## 1 - classes EGP (ordenadas via renda de todas as fontes)
 
@@ -984,6 +969,65 @@ for(i in seq_along(ano)){
 }
 
 # Juncao e exportacao dos dados -------------------------------------------
+
+## Tabela 0
+
+tabela_00_10 <- tabela_00 |>
+  mutate(ano = as.double(ano)) |>
+  bind_rows(tabela_00_2010)
+
+tabela0 <- tabela_00 |>
+  mutate(ano = as.numeric(ano)) |>
+  bind_rows(tabela_00_2010) |>
+  filter(!is.na(estratos_sociais)) |>
+  arrange(ano,cor_raca) |>
+  mutate(across(n, ~ round(.,0))) #|>
+  # pivot_longer(Total:Brancos, names_to = "cor_raca", values_to = "prop") |>
+  # mutate(
+  #   EGP11 = factor(
+  #     EGP11,
+  #     levels = c(1:11),
+  #     labels = c("I. Profissionais, nivel alto","II. Profissionais, nivel baixo",
+  #                "IIIa. Não manuais, de rotina, nivel alto","IIIb. Não manuais, de rotina, nivel baixo",
+  #                "IVa2. Proprietários e empregadores","IVc1. Empregadores rurais","IVc2. Agricultores para consumo",
+  #                "V. Técnicos e supervisores do trabalho manual","VI. Manuais qualificados",
+  #                "VIIa. Manuais semi ou não qualificados","VIIb. Trabalhadores da agricultura")
+  #   )) |>
+  # arrange(desc(inc)) |>
+  # select(-inc)
+
+tabela0 <- ftable(xtabs(prop ~ ano + RM + EGP11 + cor_raca,
+                        tabela0),
+                  row.vars = c("ano","EGP11"),
+                  col.vars = c("RM","cor_raca")) %>%
+  stats:::format.ftable(quote = FALSE, dec = ",") %>%
+  trimws() %>%
+  as.data.frame()
+
+# Montagem da tabela
+
+titulo <- matrix(ncol = dim(tabela1)[2], nrow = 2)
+titulo[1,1] <- "Tabela: População urbana residente em RMs selecionadas classificada via EGP11, segundo cor ou raça - Brasil, 2000-2010"
+
+nota <- matrix(ncol = dim(tabela1)[2], nrow = 7)
+nota[2,1] <- "Fonte: IBGE/Censo Demográfico brasileiro."
+nota[4,1] <- "Nota:"
+nota[5,1] <- "1. Foi considerada somente a população residente em área urbana."
+nota[6,1] <- "2. Por população negra, entende-se aquelas pessoas autodeclaradas pretas ou pardas."
+
+tabela_export <- rbind(titulo,tabela1, nota)
+
+# Salvando arquivo
+
+write.xlsx(
+  tabela_export,
+  file = "./output/Tabela - classe e raca.xlsx",
+  row.names = FALSE,
+  col.names = FALSE,
+  sheetName = "tabela 00 - Descritivo geral",
+  append = TRUE,
+  showNA = FALSE
+)
 
 ## Tabela 1
 
