@@ -11,7 +11,12 @@ pacman::p_load(tidyverse, srvyr, readr)
 source("./R/X_funcao_egp.R")
 
 # Importacao dos dados ----------------------------------------------------
-tabela_cnae <- readxl::read_excel("./docs/tabela_conversao_cbo_cnae.xlsx", 6)
+
+# Relacao de classificacao CNAE
+tabela_cnae <- readxl::read_excel("./docs/tabela_conversao_cbo_cnae.xlsx", 7)
+
+# Relacao de classificacao CBO
+tabela_cbo <- readxl::read_excel("./docs/tabela_conversao_cbo_cnae.xlsx", 3)
 
 # 2000 --------------------------------------------------------------------
 
@@ -104,6 +109,8 @@ for(i in 1: length(ano)){
       var_cnae_censo = "v6471",
       var_cnae_compatibilizacao = "CNAE_Dom2",
       compatibilizacao_cnae = TRUE,
+      var_cbo_compatibilizacao = "CBO2002_4d",
+      compatibilizacao_cbo = TRUE,
       construir_var_pea = TRUE,
       var_trabalhando = "v6910",
       var_afastado = "v0652",
