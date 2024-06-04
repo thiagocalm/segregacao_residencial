@@ -5,6 +5,8 @@ func_tratamento_classes_egp <- function(
     dados = censo,
     dados_cnae = tabela_cnae,
     dados_cbo = tabela_cbo,
+    dados_ajuste_cnae = tabela_cnae_ajuste,
+    dados_ajuste_cbo = tabela_cbo_ajuste,
     var_cnae_censo = "v4462",
     var_cnae_compatibilizacao = "CNAE_Dom",
     compatibilizacao_cnae = TRUE,
@@ -14,6 +16,7 @@ func_tratamento_classes_egp <- function(
     var_trabalhando = "v0439",
     var_afastado = "v0440",
     var_aprendiz = "v0441",
+    var_trabalho_cultivo = "v0442",
     var_trabalho_consumo = "v0443",
     var_buscou_emprego = "v0455",
     var_posicao_ocupacao = "v0447",
@@ -25,32 +28,83 @@ func_tratamento_classes_egp <- function(
 
   ## criacao da base menor de trabalho
 
+  print(paste0("Começando processo de compatibilização..."))
+
   # Compatibilizacao da CNAE
   if(compatibilizacao_cnae == TRUE){
     if(var_cnae_compatibilizacao == "CNAE_Dom"){
+
+      # Ajuste de nomes de variaveis e de algumas variaveis importantes no processamento
       censo_processing <- dados |>
-        select(id_dom, id_pes, all_of(var_cnae_censo), var_trabalhando = all_of(var_trabalhando),
-               var_afastado = all_of(var_afastado), var_aprendiz = all_of(var_aprendiz),
+        select(id_dom, id_pes,
+               var_cnae_censo = all_of(var_cnae_censo),
+               var_trabalhando = all_of(var_trabalhando),
+               var_afastado = all_of(var_afastado),
+               var_aprendiz = all_of(var_aprendiz),
+               var_trabalho_cultivo = all_of(var_trabalho_cultivo),
                var_trabalho_consumo = all_of(var_trabalho_consumo),
                var_buscou_emprego = all_of(var_buscou_emprego),
                var_posicao_ocupacao = all_of(var_posicao_ocupacao),
                var_codigo_ocupacao = all_of(var_codigo_ocupacao)) |>
+        mutate(
+          var_cnae_censo = case_when(
+            var_cnae_censo == 14004 ~ 14003, # Extracao de outros minerais nao especificados
+            var_cnae_censo == 18999 ~ 18002, # Confecção sob medida de artigos do vestuário e acessórios
+            var_cnae_censo == 23400 ~ 23020, # Fabricação de produtos do refino do petróleo
+            var_cnae_censo == 45999 ~ 45001, # Atividades de construção em geral
+            var_cnae_censo == 53999 ~ 53101, # Comércio varejista realizado em postos móveis, etc.
+            var_cnae_censo == 55999 ~ 55010, # Alojamento
+            var_cnae_censo == 60999 ~ 60040, # Transporte terrestre de passageiros
+            var_cnae_censo == 75999 ~ 75012, # Administração pública estadual
+            var_cnae_censo == 80999 ~ 80090, # Outras atividades de ensino
+            var_cnae_censo == 85999 ~ 85013, # Outras atividades de saude
+            TRUE ~ var_cnae_censo
+          )
+        )
+
+      # Juncao dos dados
+      censo_processing <- censo_processing |>
         left_join(
           dados_cnae[,c(var_cnae_compatibilizacao, "CNAE_Dom2")] |> distinct(),
-          by = c("v4462" = "CNAE_Dom"),
-          keep = TRUE)
+          by = c(var_cnae_censo = var_cnae_compatibilizacao),
+          keep = TRUE,
+          relationship = "many-to-many",
+          multiple = "first")
     } else{
+      # Ajuste de nomes de variaveis
+
       censo_processing <- dados |>
-        select(id_dom, id_pes, all_of(var_cnae_censo), var_trabalhando = all_of(var_trabalhando),
-               var_afastado = all_of(var_afastado), var_aprendiz = all_of(var_aprendiz),
+        select(id_dom, id_pes,
+               var_cnae_censo = all_of(var_cnae_censo),
+               var_trabalhando = all_of(var_trabalhando),
+               var_afastado = all_of(var_afastado),
+               var_aprendiz = all_of(var_aprendiz),
                var_trabalho_consumo = all_of(var_trabalho_consumo),
                var_buscou_emprego = all_of(var_buscou_emprego),
                var_posicao_ocupacao = all_of(var_posicao_ocupacao),
-               var_codigo_ocupacao = all_of(var_codigo_ocupacao)) |>
+               var_codigo_ocupacao = all_of(var_codigo_ocupacao))
+
+      # Ajuste de CNAEs faltantes via tabela relacional
+      censo_processing <- censo_processing |>
+        left_join(
+          dados_ajuste_cnae,
+          by = c(var_cnae_censo = "cod_original"),
+          keep = TRUE,
+          relationship = "many-to-many",
+          multiple = "first") |>
+        mutate(
+          var_cnae_censo = case_when(is.na(cod_ajuste) ~ var_cnae_censo, TRUE ~ cod_ajuste)
+        ) |>
+        select(-starts_with("cod_"))
+
+      # Juncao dos dados
+      censo_processing <- censo_processing |>
         left_join(
           dados_cnae[,var_cnae_compatibilizacao] |> distinct(),
-          by = c("v6471" = "CNAE_Dom2"),
-          keep = TRUE)
+          by = c(var_cnae_censo = var_cnae_compatibilizacao),
+          keep = TRUE,
+          relationship = "many-to-many",
+          multiple = "first")
     }
   } else{
     censo_processing <- censo |>
@@ -60,25 +114,91 @@ func_tratamento_classes_egp <- function(
   # Compatibilizacao da CBO
   if(compatibilizacao_cbo == TRUE){
     if(var_cbo_compatibilizacao == "CBO_Domiciliar"){
-      censo_processing <- dados |>
+      # Ajuste na variavel que sera utilizada na compatibilizacao
+      censo_processing <- censo_processing |>
         mutate(
-          var_codigo_ocupacao = as.character(var_codigo_ocupacao)
-        ) |>
+          var_codigo_ocupacao = case_when(
+            var_codigo_ocupacao == 1219 ~ 1210, # Diretores de empresas gerais
+            var_codigo_ocupacao == 5221 ~ 5199, # Outros trabalhadores dos serviços
+            var_codigo_ocupacao == 3162 ~ 3161, # Tecnico em geologia, geotecnologia, etc.
+            var_codigo_ocupacao == 2121 ~ 2123, # Especialista em informatica
+            var_codigo_ocupacao == 9922 ~ 9921, # Trabalhadores elementares de servico de manutencao
+            TRUE ~ var_codigo_ocupacao
+          )
+        )
+
+      # Juncao dos dados
+      censo_processing <- censo_processing |>
         left_join(
-          dados_cbo[,c(var_cnae_compatibilizacao, "isco88")] |> distinct(),
-          by = c("v4462" = "CBO_Domiciliar"),
-          keep = TRUE)
+          dados_cbo[,c(var_cbo_compatibilizacao, "isco88")] |> distinct(),
+          by = c(var_codigo_ocupacao = var_cbo_compatibilizacao),
+          keep = TRUE,
+          relationship = "many-to-many",
+          multiple = "first") |>
+        mutate(
+          isco88 = case_when(is.na(var_codigo_ocupacao) ~ NA_integer_, TRUE ~ isco88)
+        )
     } else{
-      censo_processing <- dados |>
-        mutate(
-          var_codigo_ocupacao = as.character(var_codigo_ocupacao)
-        ) |>
+      # Ajuste na variavel que sera utilizada na compatibilizacao
+      censo_processing <- censo_processing |>
         left_join(
-          dados_cbo[,c(var_cnae_compatibilizacao, "isco88")] |> distinct(),
-          by = c("v6471" = "CBO2002_4d"),
-          keep = TRUE)
+          dados_ajuste_cbo |> select(starts_with("cod_")),
+          by = c(var_codigo_ocupacao = "cod_original"),
+          keep = TRUE,
+          relationship = "many-to-many",
+          multiple = "first") |>
+        mutate(
+          var_codigo_ocupacao = case_when(is.na(cod_ajuste) ~ var_codigo_ocupacao, TRUE ~ cod_ajuste)
+        ) |>
+        select(-starts_with("cod_"))
+
+      # Juncao dos dados
+      censo_processing <- censo_processing |>
+        left_join(
+          dados_cbo[,c(var_cbo_compatibilizacao, "isco88")] |> distinct(),
+          by = c(var_codigo_ocupacao = var_cbo_compatibilizacao),
+          keep = TRUE,
+          relationship = "many-to-many",
+          multiple = "first") |>
+        mutate(
+          isco88 = case_when(is.na(var_codigo_ocupacao) ~ NA_integer_, TRUE ~ isco88)
+        )
     }
   }
+
+  # gerando base de controle sobre processo de compatibilizacao
+  if(var_cnae_compatibilizacao == "CNAE_Dom"){
+    tabela <- censo_processing |>
+      mutate(
+        sucessos_cnae = case_when(var_cnae_censo == CNAE_Dom ~ 1, TRUE ~ 0),
+        sucessos_cbo = case_when(var_codigo_ocupacao == CBO_Domiciliar ~ 1, TRUE ~ 0)
+      ) |>
+      summarise(
+        sucessos_cnae = sum(sucessos_cnae),
+        sucessos_cbo = sum(sucessos_cbo),
+        valores_validos_cbo = n_distinct(id_pes[!is.na(var_codigo_ocupacao)]),
+        valores_validos_cnae = n_distinct(id_pes[!is.na(var_cnae_censo)]),
+        perc_sucessos_cnae = round(100*(sucessos_cnae/valores_validos_cnae),2),
+        perc_sucessos_cbo = round(100*(sucessos_cbo/valores_validos_cbo),2)
+      )
+  } else{
+    tabela <- censo_processing |>
+      mutate(
+        sucessos_cnae = case_when(var_cnae_censo == CNAE_Dom2 ~ 1, TRUE ~ 0),
+        sucessos_cbo = case_when(var_codigo_ocupacao == CBO2002_4d ~ 1, TRUE ~ 0)
+      ) |>
+      summarise(
+        sucessos_cnae = sum(sucessos_cnae),
+        sucessos_cbo = sum(sucessos_cbo),
+        valores_validos_cbo = n_distinct(id_pes[!is.na(var_codigo_ocupacao)]),
+        valores_validos_cnae = n_distinct(id_pes[!is.na(var_cnae_censo)]),
+        perc_sucessos_cnae = round(100*(sucessos_cnae/valores_validos_cnae),2),
+        perc_sucessos_cbo = round(100*(sucessos_cbo/valores_validos_cbo),2)
+      )
+  }
+
+  print(paste0("Começando processo de criacao de variaveis..."))
+
 
   # criando variavesi de PEA, PO e PosicaoOcupacao
   if(var_cnae_compatibilizacao == "CNAE_Dom"){
@@ -88,6 +208,7 @@ func_tratamento_classes_egp <- function(
           var_trabalhando == 1 ~ 1,
           var_trabalhando != 1 & var_afastado == 1 ~ 1,
           var_trabalhando != 1 & var_aprendiz == 1 ~ 1,
+          var_trabalhando != 1 & var_trabalho_cultivo == 1 ~ 1,
           var_trabalhando != 1 & var_trabalho_consumo == 1 ~ 1,
           var_trabalhando != 1 & var_buscou_emprego == 1 ~ 1,
           TRUE ~ 0),
@@ -95,6 +216,7 @@ func_tratamento_classes_egp <- function(
           var_trabalhando == 1 ~ 1,
           var_trabalhando != 1 & var_afastado == 1 ~ 1,
           var_trabalhando != 1 & var_aprendiz == 1 ~ 1,
+          var_trabalhando != 1 & var_trabalho_cultivo == 1 ~ 1,
           var_trabalhando != 1 & var_trabalho_consumo == 1 ~ 1,
           var_trabalhando != 1 & var_buscou_emprego == 1 &
             var_afastado != 1 &
@@ -106,8 +228,7 @@ func_tratamento_classes_egp <- function(
           var_posicao_ocupacao %in% c(1,2,3,4) ~ 1, #empregado
           var_posicao_ocupacao == 5 ~ 2, #empregador
           var_posicao_ocupacao == 6 ~ 3) #conta propria
-      ) |>
-      filter(PO == 1)
+      )
   } else{
     censo_processing <- censo_processing |>
       mutate(
@@ -133,8 +254,7 @@ func_tratamento_classes_egp <- function(
           var_posicao_ocupacao %in% c(1,2,3,4) ~ 1, #empregado
           var_posicao_ocupacao == 6 ~ 2, #empregador
           var_posicao_ocupacao == 5 ~ 3) #conta propria
-      ) |>
-      filter(PO == 1)
+      )
   }
 
   # Processamento das variaveis ISIC, ISCO, EGP
@@ -732,12 +852,18 @@ func_tratamento_classes_egp <- function(
         TRUE ~ EGP11)
     ) |>
     select(-c(var_trabalhando, var_afastado, var_aprendiz, var_trabalho_consumo,
-              var_buscou_emprego, var_posicao_ocupacao,var_codigo_ocupacao,all_of(var_cnae_censo)))
+              var_buscou_emprego, var_posicao_ocupacao,var_codigo_ocupacao,any_of(var_cnae_censo)))
 
   censo <- dados |>
     left_join(censo_processing,
               by = c("id_dom","id_pes"),
               keep = FALSE)
 
-  return(censo)
+  # Lista que será retornada do processo
+  results <- list(
+    censo = censo,
+    tabela = tabela
+  )
+
+  return(results)
 }

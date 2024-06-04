@@ -165,7 +165,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_egp_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 1 para o ano ",ano,"e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 1 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -232,7 +232,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_egp_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 1 para o ano ",ano,"e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 1 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -290,7 +290,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_inc_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 2 para o ano ",ano,"e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 2 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -319,7 +319,7 @@ for(i in seq_along(ano)){
 
     assign(paste0("censo_",ano,"_",RM),censo)
     rm(censo)
-    print(paste0("Finalizamos criacao de estratos para o ano ",ano," e RM ",RM,"!!!"))
+    print(paste0("Finalizamos criacao de estratos para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -414,7 +414,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_estratos_rm, df_renda, df_egp)
     gc()
-    print(paste0("Finalizamos a Tabela 3 para o ano ",ano," e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 3 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -480,7 +480,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_estratos_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 4 para o ano ",ano," e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 4 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -645,7 +645,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_egp_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 1 para o ano ",ano,"e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 1 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -714,7 +714,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_egp_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 1 para o ano ",ano,"e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 1 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -774,7 +774,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_inc_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 2 para o ano ",ano,"e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 2 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -803,7 +803,7 @@ for(i in seq_along(ano)){
 
     assign(paste0("censo_",ano,"_",RM),censo)
     rm(censo)
-    print(paste0("Finalizamos criacao de estratos para o ano ",ano," e RM ",RM,"!!!"))
+    print(paste0("Finalizamos criacao de estratos para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -898,7 +898,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_estratos_rm, df_renda, df_egp)
     gc()
-    print(paste0("Finalizamos a Tabela 3 para o ano ",ano," e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 3 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -964,7 +964,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_estratos_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 4 para o ano ",ano," e RM ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 4 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -972,33 +972,16 @@ for(i in seq_along(ano)){
 
 ## Tabela 0
 
-tabela_00_10 <- tabela_00 |>
-  mutate(ano = as.double(ano)) |>
-  bind_rows(tabela_00_2010)
-
 tabela0 <- tabela_00 |>
   mutate(ano = as.numeric(ano)) |>
   bind_rows(tabela_00_2010) |>
   filter(!is.na(estratos_sociais)) |>
   arrange(ano,cor_raca) |>
-  mutate(across(n, ~ round(.,0))) #|>
-  # pivot_longer(Total:Brancos, names_to = "cor_raca", values_to = "prop") |>
-  # mutate(
-  #   EGP11 = factor(
-  #     EGP11,
-  #     levels = c(1:11),
-  #     labels = c("I. Profissionais, nivel alto","II. Profissionais, nivel baixo",
-  #                "IIIa. Não manuais, de rotina, nivel alto","IIIb. Não manuais, de rotina, nivel baixo",
-  #                "IVa2. Proprietários e empregadores","IVc1. Empregadores rurais","IVc2. Agricultores para consumo",
-  #                "V. Técnicos e supervisores do trabalho manual","VI. Manuais qualificados",
-  #                "VIIa. Manuais semi ou não qualificados","VIIb. Trabalhadores da agricultura")
-  #   )) |>
-  # arrange(desc(inc)) |>
-  # select(-inc)
+  mutate(across(n, ~ round(.,0)))
 
-tabela0 <- ftable(xtabs(prop ~ ano + RM + EGP11 + cor_raca,
+tabela0 <- ftable(xtabs(n ~ ano + RM + estratos_sociais + cor_raca,
                         tabela0),
-                  row.vars = c("ano","EGP11"),
+                  row.vars = c("ano","estratos_sociais"),
                   col.vars = c("RM","cor_raca")) %>%
   stats:::format.ftable(quote = FALSE, dec = ",") %>%
   trimws() %>%
@@ -1006,22 +989,22 @@ tabela0 <- ftable(xtabs(prop ~ ano + RM + EGP11 + cor_raca,
 
 # Montagem da tabela
 
-titulo <- matrix(ncol = dim(tabela1)[2], nrow = 2)
-titulo[1,1] <- "Tabela: População urbana residente em RMs selecionadas classificada via EGP11, segundo cor ou raça - Brasil, 2000-2010"
+titulo <- matrix(ncol = dim(tabela0)[2], nrow = 2)
+titulo[1,1] <- "Tabela: População urbana residente em RMs selecionadas classificada via subgrupos, segundo cor ou raça - Brasil, 2000-2010"
 
-nota <- matrix(ncol = dim(tabela1)[2], nrow = 7)
+nota <- matrix(ncol = dim(tabela0)[2], nrow = 7)
 nota[2,1] <- "Fonte: IBGE/Censo Demográfico brasileiro."
 nota[4,1] <- "Nota:"
 nota[5,1] <- "1. Foi considerada somente a população residente em área urbana."
 nota[6,1] <- "2. Por população negra, entende-se aquelas pessoas autodeclaradas pretas ou pardas."
 
-tabela_export <- rbind(titulo,tabela1, nota)
+tabela_export <- rbind(titulo,tabela0, nota)
 
 # Salvando arquivo
 
 write.xlsx(
   tabela_export,
-  file = "./output/Tabela - classe e raca.xlsx",
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 00 - Descritivo geral",
@@ -1072,7 +1055,7 @@ tabela_export <- rbind(titulo,tabela1, nota)
 
 write.xlsx(
   tabela_export,
-  file = "./output/Tabela - classe e raca.xlsx",
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 01 - EGP",
@@ -1122,7 +1105,7 @@ tabela_export <- rbind(titulo,tabela2, nota)
 
 write.xlsx(
   tabela_export,
-  file = "./output/Tabela - classe e raca.xlsx",
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 02 - classes via renda",
@@ -1171,7 +1154,7 @@ tabela_export <- rbind(titulo,tabela3, nota)
 
 write.xlsx(
   tabela_export,
-  file = "./output/Tabela - classe e raca.xlsx",
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 03 - classes egp e renda",
@@ -1218,7 +1201,7 @@ tabela_export <- rbind(titulo,tabela4, nota)
 
 write.xlsx(
   tabela_export,
-  file = "./output/Tabela - classe e raca.xlsx",
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 04 - classes egp por renda",

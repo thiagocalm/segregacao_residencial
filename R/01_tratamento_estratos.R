@@ -14,9 +14,11 @@ source("./R/X_funcao_egp.R")
 
 # Relacao de classificacao CNAE
 tabela_cnae <- readxl::read_excel("./docs/tabela_conversao_cbo_cnae.xlsx", 7)
+tabela_cnae_ajuste <- readxl::read_excel("./docs/tabela_ajustes_cbo_cnae_2010.xlsx", 1)
 
 # Relacao de classificacao CBO
 tabela_cbo <- readxl::read_excel("./docs/tabela_conversao_cbo_cnae.xlsx", 3)
+tabela_cbo_ajuste <- readxl::read_excel("./docs/tabela_ajustes_cbo_cnae_2010.xlsx", 2)
 
 # 2000 --------------------------------------------------------------------
 
@@ -24,7 +26,7 @@ tabela_cbo <- readxl::read_excel("./docs/tabela_conversao_cbo_cnae.xlsx", 3)
 
 ano = "2000"
 UF = c("CE", "PE","BA","MG","RJ","PR","RS","SP")
-
+k = 1
 for(i in 1: length(ano)){
   ano = ano[i]
   for(k in 1: length(UF)){
@@ -33,7 +35,30 @@ for(i in 1: length(ano)){
     load(file.path("./dados",paste0("censo_",ano,"_",uf,".RData")))
 
     # aplicacao da funcao para conversao
-    censo <- func_tratamento_classes_egp(dados = censo)
+    db <- func_tratamento_classes_egp(dados = censo)
+
+    # base com os devidos tratamentos
+    censo <- db[[1]]
+
+    # criando arquivo de controle do processo de compatibilizacao CNAE/CBO
+    if(k == 1){
+      tabela <- db[[2]] |>
+        mutate(
+          uf = uf,
+          ano = ano,
+          .before = everything()
+        )
+    } else{
+      tabela <- tabela |>
+        bind_rows(
+          db[[2]] |>
+            mutate(
+              uf = uf,
+              ano = ano,
+              .before = everything()
+            )
+        )
+    }
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
@@ -77,6 +102,8 @@ for(i in 1: length(ano)){
 
 ## Exportacao
 
+# exportacao da base
+
 for(i in 1: length(ano)){
   ano = ano[i]
   for(k in 1: length(UF)){
@@ -88,13 +115,17 @@ for(i in 1: length(ano)){
   rm(censo)
 }
 
+# exportacao da tabela de controle de compatibilizacao
+
+write_csv2(tabela, file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv"))
+
 # 2010 --------------------------------------------------------------------
 
 # Transformacao EGP
 
 ano = "2010"
 UF = c("CE", "PE","BA","MG","RJ","PR","RS","SP2_RM","SP1")
-
+k = 1
 for(i in 1: length(ano)){
   ano = ano[i]
   for(k in 1: length(UF)){
@@ -103,7 +134,7 @@ for(i in 1: length(ano)){
     load(file.path("./dados",paste0("censo_",ano,"_",uf,".RData")))
 
     # aplicacao da funcao para conversao
-    censo <- func_tratamento_classes_egp(
+    db <- func_tratamento_classes_egp(
       dados = censo,
       dados_cnae = tabela_cnae,
       var_cnae_censo = "v6471",
@@ -120,6 +151,29 @@ for(i in 1: length(ano)){
       var_posicao_ocupacao = "v0648",
       var_codigo_ocupacao = "v6461"
     )
+
+    # base com os devidos tratamentos
+    censo <- db[[1]]
+
+    # criando arquivo de controle do processo de compatibilizacao CNAE/CBO
+    if(k == 1){
+      tabela <- db[[2]] |>
+        mutate(
+          uf = uf,
+          ano = ano,
+          .before = everything()
+        )
+    } else{
+      tabela <- tabela |>
+        bind_rows(
+          db[[2]] |>
+            mutate(
+              uf = uf,
+              ano = ano,
+              .before = everything()
+            )
+        )
+    }
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
@@ -163,6 +217,7 @@ for(i in 1: length(ano)){
 
 ## Exportacao
 
+# exportacao da base
 for(i in 1: length(ano)){
   ano = ano[i]
   for(k in 1: length(UF)){
@@ -177,3 +232,18 @@ for(i in 1: length(ano)){
   }
   rm(censo)
 }
+
+# exportacao da tabela de controle de compatibilizacao
+if(file.exists(file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv"))){
+  tabela <- read_csv2(
+    file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv")
+  ) |>
+    bind_rows(
+      tabela |>
+        mutate(ano = as.numeric(ano))
+    )
+  write_csv2(tabela, file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv"))
+} else{
+  write_csv2(tabela, file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv"))
+}
+
