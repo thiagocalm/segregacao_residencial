@@ -181,11 +181,11 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
-      filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
     tabela_egp_rm <- df_rm |>
+      filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
       group_by(EGP11) |>
       summarise(
         ano = ano,
@@ -196,6 +196,7 @@ for(i in seq_along(ano)){
       select(-ends_with("_se")) |>
       bind_rows(
         df_rm |>
+          filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
           filter(cor_raca %in% c(1,2)) |>
           group_by(cor_raca, EGP11) |>
           summarise(
@@ -248,11 +249,11 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
-      filter(idade >= 10) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
     tabela_inc_rm <- df_rm |>
+      filter(idade >= 10) |>
       group_by(estrato_renda) |>
       summarise(
         ano = ano,
@@ -263,6 +264,7 @@ for(i in seq_along(ano)){
       select(-ends_with("_se")) |>
       bind_rows(
         df_rm |>
+          filter(idade >= 10) |>
           filter(cor_raca %in% c(1,2)) |>
           group_by(cor_raca, estrato_renda) |>
           summarise(
@@ -337,33 +339,33 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_renda <- get(glue::glue("censo_{ano}_{RM}")) |>
-      filter(idade >= 10) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     df_egp <- get(glue::glue("censo_{ano}_{RM}")) |>
-      filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp)) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
     tabela_estratos_rm <- df_egp |>
+      filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp)) |>
       group_by(estratos_sociais_egp) |>
       summarise(
         tipo = "EGP",
         ano = ano,
         cor_raca = 0,
-        n = round(survey_total(na.rm = T)*100,0),
+        n = round(survey_total(na.rm = T),0),
         prop = round(survey_mean(na.rm = T)*100,2)
       ) |>
       select(-ends_with("_se")) |>
       select(tipo, estratos_sociais = estratos_sociais_egp, ano, cor_raca, n, prop) |>
       bind_rows(
         df_egp |>
+          filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp)) |>
           filter(cor_raca %in% c(1,2)) |>
           group_by(cor_raca, estratos_sociais_egp) |>
           summarise(
             tipo = "EGP",
             ano = ano,
-            n = round(survey_total(na.rm = T)*100,0),
+            n = round(survey_total(na.rm = T),0),
             prop = round(survey_mean(na.rm = T)*100,2)
           ) |>
           select(-ends_with("_se")) |>
@@ -371,12 +373,13 @@ for(i in seq_along(ano)){
       ) |>
       bind_rows(
         df_renda |>
+          filter(idade >= 10) |>
           group_by(estratos_sociais_renda) |>
           summarise(
             tipo = "Renda per capita",
             ano = ano,
             cor_raca = 0,
-            n = round(survey_total(na.rm = T)*100,0),
+            n = round(survey_total(na.rm = T),0),
             prop = round(survey_mean(na.rm = T)*100,2)
           ) |>
           select(-ends_with("_se")) |>
@@ -384,12 +387,13 @@ for(i in seq_along(ano)){
       ) |>
       bind_rows(
         df_renda |>
+          filter(idade >= 10) |>
           filter(cor_raca %in% c(1,2)) |>
           group_by(cor_raca, estratos_sociais_renda) |>
           summarise(
             tipo = "Renda per capita",
             ano = ano,
-            n = round(survey_total(na.rm = T)*100,0),
+            n = round(survey_total(na.rm = T),0),
             prop = round(survey_mean(na.rm = T)*100,2)
           ) |>
           select(-ends_with("_se")) |>
@@ -433,26 +437,27 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
-      filter(idade >= 10) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
     tabela_estratos_rm <- df_rm |>
+      filter(idade >= 10) |>
       group_by(estratos_sociais_egp, estratos_sociais_renda) |>
       summarise(
         ano = ano,
         cor_raca = 0,
-        n = round(survey_total(na.rm = T)*100,0)
+        n = round(survey_total(na.rm = T),0)
       ) |>
       select(-ends_with("_se")) |>
       select(ano, cor_raca, estratos_sociais_egp, estratos_sociais_renda, n) |>
       bind_rows(
         df_rm |>
+          filter(idade >= 10) |>
           filter(cor_raca %in% c(1,2)) |>
           group_by(cor_raca, estratos_sociais_egp, estratos_sociais_renda) |>
           summarise(
             ano = ano,
-            n = round(survey_total(na.rm = T)*100,0)
+            n = round(survey_total(na.rm = T),0)
           ) |>
           select(-ends_with("_se")) |>
           select(ano, cor_raca, estratos_sociais_egp, estratos_sociais_renda, n)
@@ -835,7 +840,7 @@ for(i in seq_along(ano)){
         tipo = "EGP",
         ano = ano,
         cor_raca = 0,
-        n = round(survey_total(na.rm = T)*100,0),
+        n = round(survey_total(na.rm = T),0),
         prop = round(survey_mean(na.rm = T)*100,2)
       ) |>
       select(-ends_with("_se")) |>
@@ -847,7 +852,7 @@ for(i in seq_along(ano)){
           summarise(
             tipo = "EGP",
             ano = ano,
-            n = round(survey_total(na.rm = T)*100,0),
+            n = round(survey_total(na.rm = T),0),
             prop = round(survey_mean(na.rm = T)*100,2)
           ) |>
           select(-ends_with("_se")) |>
@@ -860,7 +865,7 @@ for(i in seq_along(ano)){
             tipo = "Renda per capita",
             ano = ano,
             cor_raca = 0,
-            n = round(survey_total(na.rm = T)*100,0),
+            n = round(survey_total(na.rm = T),0),
             prop = round(survey_mean(na.rm = T)*100,2)
           ) |>
           select(-ends_with("_se")) |>
@@ -873,7 +878,7 @@ for(i in seq_along(ano)){
           summarise(
             tipo = "Renda per capita",
             ano = ano,
-            n = round(survey_total(na.rm = T)*100,0),
+            n = round(survey_total(na.rm = T),0),
             prop = round(survey_mean(na.rm = T)*100,2)
           ) |>
           select(-ends_with("_se")) |>
@@ -926,7 +931,7 @@ for(i in seq_along(ano)){
       summarise(
         ano = ano,
         cor_raca = 0,
-        n = round(survey_total(na.rm = T)*100,0)
+        n = round(survey_total(na.rm = T),0)
       ) |>
       select(-ends_with("_se")) |>
       select(ano, cor_raca, estratos_sociais_egp, estratos_sociais_renda, n) |>
@@ -936,7 +941,7 @@ for(i in seq_along(ano)){
           group_by(cor_raca, estratos_sociais_egp, estratos_sociais_renda) |>
           summarise(
             ano = ano,
-            n = round(survey_total(na.rm = T)*100,0)
+            n = round(survey_total(na.rm = T),0)
           ) |>
           select(-ends_with("_se")) |>
           select(ano, cor_raca, estratos_sociais_egp, estratos_sociais_renda, n)
@@ -1173,8 +1178,8 @@ tabela4 <- tabela_04 |> mutate(ano = as.numeric(ano)) |>
 tabela4 <- ftable(xtabs(n ~ ano + RM + estratos_sociais_egp + estratos_sociais_renda +
                           cor_raca,
                         tabela4),
-                  row.vars = c("ano","estratos_sociais_renda"),
-                  col.vars = c("RM","cor_raca","estratos_sociais_egp")) %>%
+                  row.vars = c("ano","estratos_sociais_renda","estratos_sociais_egp"),
+                  col.vars = c("RM","cor_raca")) %>%
   stats:::format.ftable(quote = FALSE, dec = ",") %>%
   trimws() %>%
   as.data.frame()
