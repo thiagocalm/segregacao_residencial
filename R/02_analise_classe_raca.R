@@ -1178,8 +1178,8 @@ tabela4 <- tabela_04 |> mutate(ano = as.numeric(ano)) |>
 tabela4 <- ftable(xtabs(n ~ ano + RM + estratos_sociais_egp + estratos_sociais_renda +
                           cor_raca,
                         tabela4),
-                  row.vars = c("ano","estratos_sociais_renda","estratos_sociais_egp"),
-                  col.vars = c("RM","cor_raca")) %>%
+                  row.vars = c("ano","estratos_sociais_renda"),
+                  col.vars = c("RM","cor_raca","estratos_sociais_egp")) %>%
   stats:::format.ftable(quote = FALSE, dec = ",") %>%
   trimws() %>%
   as.data.frame()
