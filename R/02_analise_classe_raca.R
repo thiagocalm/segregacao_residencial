@@ -165,7 +165,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_egp_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 1 para o ano ",ano," e ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 0 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -650,7 +650,7 @@ for(i in seq_along(ano)){
     }
     rm(tabela_egp_rm, df_rm)
     gc()
-    print(paste0("Finalizamos a Tabela 1 para o ano ",ano," e ",RM,"!!!"))
+    print(paste0("Finalizamos a Tabela 0 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
