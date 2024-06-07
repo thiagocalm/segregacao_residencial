@@ -117,21 +117,45 @@ ap_2000 |>
 
 # Juncao dos dados espaciais ao QL - Aqui começamos a falar da RM Campinas somente!
 
-ap_RMCampinas_2000 <- QL_2000_RMCampinas |>
-  left_join(
-    ap_2000,
-    by = c("area_ponderacao"),
-    keep = FALSE
-  ) |>
-  distinct() |>
-  mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |>
-  st_as_sf()
+RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
+         "RMRJ","RMSalvador","RMSP")
 
-# Recaptura de poligonos vazios
+for(k in 1: length(RMs)){
 
-poligonos_vazios <- ap_RMCampinas_2000 |>
-  select(area_ponderacao, code_munic, geom) |>
-  filter(st_is_empty(geom))
+  RM = RMs[k]
+
+  ap_RM_2000 <- get(glue::glue("QL_2000_{RM}")) |>
+    left_join(
+      ap_2000,
+      by = c("area_ponderacao"),
+      keep = FALSE
+    ) |>
+    distinct() |>
+    mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |>
+    st_as_sf()
+
+  # Recaptura de poligonos vazios
+
+  poligonos_vazios <- ap_RM_2000 |>
+    select(area_ponderacao, code_munic, geom) |>
+    filter(st_is_empty(geom))
+
+  # retorno do contingente de poligonos vazios
+
+  print(paste0("poligonos vazios para a ", RM," foi de ", dim(poligonos_vazios)[[1]]))
+
+  assign(paste0("ap_",RM,"_",2000),ap_RM_2000)
+}
+
+# ap_RMCampinas_2000 <- QL_2000_RMCampinas |>
+#   left_join(
+#     ap_2000,
+#     by = c("area_ponderacao"),
+#     keep = FALSE
+#   ) |>
+#   distinct() |>
+#   mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |>
+#   st_as_sf()
 
 rm(ap_2000, sc_shp, sc_to_ap, poligonos_vazios)
 
@@ -178,21 +202,41 @@ ap_2010 <- ap_2010 |>
 
 # Juntando os dados de QL com os dados espaciais - AQUI COMEÇAMOS O DE CAMPINAS!
 
-ap_RMCampinas_2010 <- QL_2010_RMCampinas |>
-  left_join(
-    ap_2010,
-    by = c("area_ponderacao"),
-    keep = FALSE
-  ) |>
-  distinct() |>
-  mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |>
-  st_as_sf()
+RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
+         "RMRJ","RMSalvador","RMSP")
 
-# Recaptura de poligonos vazios
+for(k in 1: length(RMs)){
 
-poligonos_vazios <- ap_RMCampinas_2010 |>
-  select(area_ponderacao, code_munic, geom) |>
-  filter(st_is_empty(geom))
+  RM = RMs[k]
+
+  ap_RM_2010 <- get(glue::glue("QL_2010_{RM}")) |>
+    left_join(
+      ap_2010,
+      by = c("area_ponderacao"),
+      keep = FALSE
+    ) |>
+    distinct() |>
+    mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |>
+    st_as_sf()
+
+  # Recaptura de poligonos vazios
+
+  poligonos_vazios <- ap_RM_2010 |>
+    select(area_ponderacao, code_munic, geom) |>
+    filter(st_is_empty(geom))
+
+  # Recaptura de poligonos vazios
+
+  poligonos_vazios <- ap_RM_2010 |>
+    select(area_ponderacao, code_munic, geom) |>
+    filter(st_is_empty(geom))
+
+  # retorno do contingente de poligonos vazios
+
+  print(paste0("poligonos vazios para a ", RM," foi de ", dim(poligonos_vazios)[[1]]))
+
+  assign(paste0("ap_",RM,"_",2010),ap_RM_2010)
+}
 
 rm(ap_2010)
 
@@ -258,45 +302,57 @@ ggsave(
 
 # Visualizacao dos dados da RM com nomes dos muncis -----------------------
 
-rm_shp_2010 |>
-  ggplot() +
-  geom_sf(data = ap_RMCampinas_2010, fill = "#f7f7f7", color = "#d9d9d9") +
-  geom_sf(fill = "transparent", colour = "black", size = .9) +
-  geom_sf_text(
-    aes(label = name_muni),
-    size = 3,
-    color = "black",
-    fontface = "bold",
-    check_overlap = TRUE,
-    fun.geometry = sf::st_centroid
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(size = 12, hjust = .5, vjust = .5),
-    axis.text = element_blank(),
-    axis.title = element_blank(),
-    axis.ticks = element_blank(),
-    panel.grid = element_line(color = "#ffffff",linewidth = .01),
-    panel.background = element_blank()) +
-  annotation_scale(
-    location = "bl",
-    pad_x = unit(0.0, "in"),
-    width_hint = 0.5
-  ) +
-  annotation_north_arrow(
-    location = "bl", which_north = "true",
-    pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
-    style = north_arrow_fancy_orienteering
+RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
+         "RMRJ","RMSalvador","RMSP")
+
+for(k in 1: length(RMs)){
+
+  RM <- RMs[k]
+
+  ap_RM <- get(glue::glue("ap_{RM}_2010"))
+
+  rm_shp_2010 |>
+    ggplot() +
+    geom_sf(data = ap_RM, fill = "#f7f7f7", color = "#d9d9d9") +
+    geom_sf(fill = "transparent", colour = "black", size = .9) +
+    geom_sf_text(
+      aes(label = name_muni),
+      size = 3,
+      color = "black",
+      fontface = "bold",
+      check_overlap = TRUE,
+      fun.geometry = sf::st_centroid
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 12, hjust = .5, vjust = .5),
+      axis.text = element_blank(),
+      axis.title = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_line(color = "#ffffff",linewidth = .01),
+      panel.background = element_blank()) +
+    annotation_scale(
+      location = "bl",
+      pad_x = unit(0.0, "in"),
+      width_hint = 0.5
+    ) +
+    annotation_north_arrow(
+      location = "bl", which_north = "true",
+      pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+      style = north_arrow_fancy_orienteering
+    )
+
+  ggsave(
+    filename = glue::glue("{RM} e seus municipios.jpeg"),
+    device = "jpeg",
+    path = file.path("output","mapas"),
+    width = 13,
+    height = 13,
+    units = "in"
   )
 
-ggsave(
-  filename = "RM de Campinas e seus municipios.jpeg",
-  device = "jpeg",
-  path = file.path("output","mapas"),
-  width = 13,
-  height = 13,
-  units = "in"
-)
+  print(paste0("Fim para a RM de: ",RM,"..."))
+}
 
 # LISA - 2000 --------------------------------------------------------------
 
