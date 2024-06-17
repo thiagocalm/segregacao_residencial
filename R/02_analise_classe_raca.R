@@ -489,6 +489,65 @@ for(i in seq_along(ano)){
   }
 }
 
+## 5 - Tabela limite p90
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+ano = 2000
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_limites_renda_rm <- df_rm |>
+      filter(idade >= 10 & decimos_renda == 10) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        min = round(min(renda_pc_def,na.rm = T),0),
+        max = round(max(renda_pc_def,na.rm = T),0)
+      ) |>
+      select(-ends_with("_se")) |>
+      select(ano, cor_raca, min, max) |>
+      bind_rows(
+        df_rm |>
+          filter(idade >= 10 & decimos_renda == 10) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca) |>
+          summarise(
+            ano = ano,
+            min = round(min(renda_pc_def,na.rm = T),0),
+            max = round(max(renda_pc_def,na.rm = T),0)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, min, max)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_05 <- tabela_limites_renda_rm
+    } else{
+      tabela_05 <- tabela_05 |>
+        bind_rows(tabela_limites_renda_rm)
+    }
+    rm(tabela_limites_renda_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 5 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
 rm(censo_2000_RMBH, censo_2000_RMCampinas, censo_2000_RMCuritiba, censo_2000_RMFortaleza,
    censo_2000_RMPortoAlegre, censo_2000_RMRecife, censo_2000_RMRJ, censo_2000_RMSalvador,
    censo_2000_RMSP)
@@ -973,6 +1032,65 @@ for(i in seq_along(ano)){
   }
 }
 
+## 5 - Tabela limite p90
+
+ano = 2010
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_limites_renda_rm <- df_rm |>
+      filter(idade >= 10 & decimos_renda == 10) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        min = round(min(renda_pc_def,na.rm = T),0),
+        max = round(max(renda_pc_def,na.rm = T),0)
+      ) |>
+      select(-ends_with("_se")) |>
+      select(ano, cor_raca, min, max) |>
+      bind_rows(
+        df_rm |>
+          filter(idade >= 10 & decimos_renda == 10) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca) |>
+          summarise(
+            ano = ano,
+            min = round(min(renda_pc_def,na.rm = T),0),
+            max = round(max(renda_pc_def,na.rm = T),0)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, min, max)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_05_2010 <- tabela_limites_renda_rm
+    } else{
+      tabela_05_2010 <- tabela_05_2010 |>
+        bind_rows(tabela_limites_renda_rm)
+    }
+    rm(tabela_limites_renda_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 5 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
 # Juncao e exportacao dos dados -------------------------------------------
 
 ## Tabela 0
@@ -1126,8 +1244,8 @@ tabela3 <- tabela_03 |> mutate(ano = as.numeric(ano)) |>
   mutate(
     medida = factor(
       medida,
-      levels = c("n","prop"),
-      labels = c("N","%")))
+      levels = c("prop","n"),
+      labels = c("%","N")))
 
 tabela3 <- ftable(xtabs(valores ~ ano + RM + estratos_sociais + cor_raca + tipo + medida,
                         tabela3),
@@ -1210,6 +1328,54 @@ write.xlsx(
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 04 - classes egp por renda",
+  append = TRUE,
+  showNA = FALSE
+)
+
+## Tabela 5
+
+tabela5 <- tabela_05 |> mutate(ano = as.numeric(ano)) |>
+  bind_rows(tabela_05_2010) |>
+  pivot_longer(min:max, names_to = "medida", values_to = "valores") |>
+  mutate(
+    medida = factor(
+      medida,
+      levels = c("min","max"),
+      labels = c("Mínimo","Máximo")))
+
+
+tabela5 <- ftable(xtabs(valores ~ medida + ano + RM  + cor_raca,
+                        tabela5),
+                  row.vars = c("RM"),
+                  col.vars = c("ano","cor_raca","medida")) %>%
+  stats:::format.ftable(quote = FALSE, dec = ",") %>%
+  trimws() %>%
+  as.data.frame()
+
+# Montagem da tabela
+
+titulo <- matrix(ncol = dim(tabela5)[2], nrow = 2)
+titulo[1,1] <- "Tabela: Valores mínimos e máximos dos 10% mais ricos (percentil 91 a 100) da renda domiciliar per capita, por cor ou raça e RMs selecionadas - Brasil, 2000-2010"
+
+nota <- matrix(ncol = dim(tabela5)[2], nrow = 11)
+nota[2,1] <- "Fonte: IBGE/Censo Demográfico brasileiro."
+nota[3,1] <- "Nota:"
+nota[4,1] <- "1. Foi considerada somente a população residente em área urbana com no mínimo 10 anos."
+nota[5,1] <- "2. Por população negra, entende-se aquelas pessoas autodeclaradas pretas ou pardas."
+nota[6,1] <- "3. A renda foi deflacionada para 01/08/2022 com base na data de referência de cada recenseamento."
+nota[7,1] <- "4. A distribuição da renda foi calculada com base na distribuição da renda domiciliar per capita para cada UF."
+
+
+tabela_export <- rbind(titulo,tabela5, nota)
+
+# Salvando arquivo
+
+write.xlsx(
+  tabela_export,
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
+  row.names = FALSE,
+  col.names = FALSE,
+  sheetName = "tabela 05 - renda min e max",
   append = TRUE,
   showNA = FALSE
 )

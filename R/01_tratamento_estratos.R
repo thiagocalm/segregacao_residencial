@@ -83,12 +83,15 @@ for(i in 1: length(ano)){
       mutate(renda_pc_def = sum(renda_pc_def)) |>
       ungroup() |>
       mutate(renda_pc_def = renda_pc_def/n_pes_dom) |>
-      mutate(estrato_renda = ntile(renda_pc_def, 5)) |>
+      mutate(
+        estrato_renda = ntile(renda_pc_def, 5),
+        decimos_renda = ntile(renda_pc_def, 10)
+      ) |>
       mutate(peso = p001/10^8) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0103, area_ponderacao = areap,
              idade = v4572, sexo = v0401, anos_estudo = v4300, especie_dom = v0201,
              cor_raca, v4614_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda, v4513)
+             estrato_renda,decimos_renda, v4513)
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
@@ -198,12 +201,15 @@ for(i in 1: length(ano)){
       mutate(renda_pc_def = sum(renda_pc_def)) |>
       ungroup() |>
       mutate(renda_pc_def = renda_pc_def/n_pes_dom) |>
-      mutate(estrato_renda = ntile(renda_pc_def, 5)) |>
+      mutate(
+        estrato_renda = ntile(renda_pc_def, 5),
+        decimos_renda = ntile(renda_pc_def, 10)
+      ) |>
       mutate(peso = v0010/10^13) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0002, area_ponderacao = v0011,
              idade = v6036, sexo = v0601, anos_estudo = v6400, especie_dom = v4001,
              cor_raca, v6527_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda, v6513)
+             estrato_renda,decimos_renda, v6513)
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
