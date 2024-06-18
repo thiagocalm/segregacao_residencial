@@ -202,7 +202,7 @@ for(i in seq_along(ano)){
           summarise(
             ano = ano,
             prop = round(survey_mean(na.rm = T)*100,2),
-            inc = 0
+            inc = survey_mean(v4614_defl, na.rm = T)
           ) |>
           select(-ends_with("_se")) |>
           select(EGP11, ano, cor_raca, prop, inc)
@@ -213,15 +213,6 @@ for(i in seq_along(ano)){
                levels = c(0,1,2),
                labels = c("Total","Brancos","Negros")
              )) |>
-      pivot_wider(names_from = cor_raca, values_from = prop) |>
-      mutate(Total = if_else(is.na(Total), 0 , Total),
-             Brancos = if_else(is.na(Brancos), 0 , Brancos),
-             Negros = if_else(is.na(Negros), 0 , Negros)) |>
-      reframe(inc = sum(inc),
-              Total = sum(Total),
-              Negros = sum(Negros),
-              Brancos = sum(Brancos),
-              .by = c(ano, RM, EGP11)) |>
       arrange(desc(inc))
 
     # juncao de RMs
@@ -747,7 +738,7 @@ for(i in seq_along(ano)){
           summarise(
             ano = ano,
             prop = round(survey_mean(na.rm = T)*100,2),
-            inc = 0
+            inc = survey_mean(v6527_defl, na.rm = T)
           ) |>
           select(-ends_with("_se")) |>
           select(EGP11, ano, cor_raca, prop, inc)
@@ -757,17 +748,7 @@ for(i in seq_along(ano)){
                cor_raca,
                levels = c(0,1,2),
                labels = c("Total","Brancos","Negros")
-             )) |>
-      pivot_wider(names_from = cor_raca, values_from = prop) |>
-      mutate(Total = if_else(is.na(Total), 0 , Total),
-             Brancos = if_else(is.na(Brancos), 0 , Brancos),
-             Negros = if_else(is.na(Negros), 0 , Negros)) |>
-      reframe(inc = sum(inc),
-              Total = sum(Total),
-              Negros = sum(Negros),
-              Brancos = sum(Brancos),
-              .by = c(ano, RM, EGP11)) |>
-      arrange(desc(inc))
+             ))
 
     # juncao de RMs
     if(k == 1){
@@ -1139,8 +1120,12 @@ write.xlsx(
 
 tabela1 <- tabela_01 |> mutate(ano = as.numeric(ano)) |>
   bind_rows(tabela_01_2010) |>
-  pivot_longer(Total:Brancos, names_to = "cor_raca", values_to = "prop") |>
+  pivot_longer(prop:inc, names_to = "medida", values_to = "valores") |>
   mutate(
+    medida = factor(
+      medida,
+      levels = c("prop","inc"),
+      labels = c("%","Renda per capita")),
     EGP11 = factor(
       EGP11,
       levels = c(1:11),
@@ -1150,13 +1135,12 @@ tabela1 <- tabela_01 |> mutate(ano = as.numeric(ano)) |>
                  "V. Técnicos e supervisores do trabalho manual","VI. Manuais qualificados",
                  "VIIa. Manuais semi ou não qualificados","VIIb. Trabalhadores da agricultura")
     )) |>
-  arrange(desc(inc)) |>
-  select(-inc)
+  arrange(cor_raca, desc(medida))
 
-tabela1 <- ftable(xtabs(prop ~ ano + RM + EGP11 + cor_raca,
+tabela1 <- ftable(xtabs(valores ~ medida + ano + RM + EGP11 + cor_raca,
                              tabela1),
                        row.vars = c("ano","EGP11"),
-                       col.vars = c("RM","cor_raca")) %>%
+                       col.vars = c("RM","cor_raca", "medida")) %>%
   stats:::format.ftable(quote = FALSE, dec = ",") %>%
   trimws() %>%
   as.data.frame()
