@@ -59,6 +59,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
@@ -181,6 +182,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
@@ -240,6 +242,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
@@ -330,9 +333,11 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_renda <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     df_egp <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
@@ -428,6 +433,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
@@ -494,6 +500,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
@@ -536,6 +543,145 @@ for(i in seq_along(ano)){
     rm(tabela_limites_renda_rm, df_rm)
     gc()
     print(paste0("Finalizamos a Tabela 5 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
+## 6 - Tabela para todos os decimos por diferentes recortes de RDPC
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+ano = 2000
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(idade >= 10) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_renda_rm <- df_rm |>
+      # geral
+      group_by(decimos_renda_br) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        tipo = "geral",
+        valor = survey_mean(renda_pc_def, na.rm = T)
+      ) |>
+      select(-ends_with("_se")) |>
+      select(ano, cor_raca, tipo, decimos = decimos_renda_br, valor) |>
+      # urbano
+      bind_rows(
+        df_rm |>
+          filter(situacao_dom == 1) |>
+          group_by(decimos_renda_situacao) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            tipo = "urbano",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_situacao, valor)
+      ) |>
+      # metropolitano
+      bind_rows(
+        df_rm |>
+          group_by(decimos_renda_rm) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            tipo = "metropolitano",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_rm, valor)
+      ) |>
+      # metropolitano e urbano
+      bind_rows(
+        df_rm |>
+          filter(situacao_dom == 1) |>
+          group_by(decimos_renda_rm_situacao) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            tipo = "metropolitano_urb",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_rm_situacao, valor)
+      ) |>
+      bind_rows(
+        df_rm |>
+          # geral e raca
+          group_by(cor_raca, decimos_renda_br) |>
+          summarise(
+            ano = ano,
+            tipo = "geral",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_br, valor)
+      ) |>
+      # urbano e raca
+      bind_rows(
+        df_rm |>
+          filter(situacao_dom == 1) |>
+          group_by(cor_raca, decimos_renda_situacao) |>
+          summarise(
+            ano = ano,
+            tipo = "urbano",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_situacao, valor)
+      ) |>
+      # metropolitano e raca
+      bind_rows(
+        df_rm |>
+          group_by(cor_raca, decimos_renda_rm) |>
+          summarise(
+            ano = ano,
+            tipo = "metropolitano",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_rm, valor)
+      ) |>
+      # metropolitano e urbano e raca
+      bind_rows(
+        df_rm |>
+          filter(situacao_dom == 1) |>
+          group_by(cor_raca, decimos_renda_rm_situacao) |>
+          summarise(
+            ano = ano,
+            tipo = "metropolitano_urb",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_rm_situacao, valor)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_06 <- tabela_renda_rm
+    } else{
+      tabela_06 <- tabela_06 |>
+        bind_rows(tabela_renda_rm)
+    }
+    rm(tabela_renda_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 6 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -594,6 +740,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
@@ -718,6 +865,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       filter(idade >= 10 & PO == 1 & !is.na(EGP11)) |>
       as_survey_design(ids = id_pes, weights = peso)
 
@@ -777,6 +925,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       filter(idade >= 10) |>
       as_survey_design(ids = id_pes, weights = peso)
 
@@ -866,10 +1015,12 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_renda <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       filter(idade >= 10) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     df_egp <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp)) |>
       as_survey_design(ids = id_pes, weights = peso)
 
@@ -962,6 +1113,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       filter(idade >= 10) |>
       as_survey_design(ids = id_pes, weights = peso)
 
@@ -1027,6 +1179,7 @@ for(i in seq_along(ano)){
 
     # definindo dados
     df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
       as_survey_design(ids = id_pes, weights = peso)
 
     # tabela de cada rm
@@ -1069,6 +1222,145 @@ for(i in seq_along(ano)){
     rm(tabela_limites_renda_rm, df_rm)
     gc()
     print(paste0("Finalizamos a Tabela 5 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
+## 6 - Tabela para todos os decimos por diferentes recortes de RDPC
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+ano = 2010
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(idade >= 10) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_renda_rm <- df_rm |>
+      # geral
+      group_by(decimos_renda_br) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        tipo = "geral",
+        valor = survey_mean(renda_pc_def, na.rm = T)
+      ) |>
+      select(-ends_with("_se")) |>
+      select(ano, cor_raca, tipo, decimos = decimos_renda_br, valor) |>
+      # urbano
+      bind_rows(
+        df_rm |>
+          filter(situacao_dom == 1) |>
+          group_by(decimos_renda_situacao) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            tipo = "urbano",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_situacao, valor)
+      ) |>
+      # metropolitano
+      bind_rows(
+        df_rm |>
+          group_by(decimos_renda_rm) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            tipo = "metropolitano",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_rm, valor)
+      ) |>
+      # metropolitano e urbano
+      bind_rows(
+        df_rm |>
+          filter(situacao_dom == 1) |>
+          group_by(decimos_renda_rm_situacao) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            tipo = "metropolitano_urb",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_rm_situacao, valor)
+      ) |>
+      bind_rows(
+        df_rm |>
+          # geral e raca
+          group_by(cor_raca, decimos_renda_br) |>
+          summarise(
+            ano = ano,
+            tipo = "geral",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_br, valor)
+      ) |>
+      # urbano e raca
+      bind_rows(
+        df_rm |>
+          filter(situacao_dom == 1) |>
+          group_by(cor_raca, decimos_renda_situacao) |>
+          summarise(
+            ano = ano,
+            tipo = "urbano",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_situacao, valor)
+      ) |>
+      # metropolitano e raca
+      bind_rows(
+        df_rm |>
+          group_by(cor_raca, decimos_renda_rm) |>
+          summarise(
+            ano = ano,
+            tipo = "metropolitano",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_rm, valor)
+      ) |>
+      # metropolitano e urbano e raca
+      bind_rows(
+        df_rm |>
+          filter(situacao_dom == 1) |>
+          group_by(cor_raca, decimos_renda_rm_situacao) |>
+          summarise(
+            ano = ano,
+            tipo = "metropolitano_urb",
+            valor = survey_mean(renda_pc_def, na.rm = T)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, tipo, decimos = decimos_renda_rm_situacao, valor)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_06_2010 <- tabela_renda_rm
+    } else{
+      tabela_06_2010 <- tabela_06_2010 |>
+        bind_rows(tabela_renda_rm)
+    }
+    rm(tabela_renda_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 6 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -1360,6 +1652,69 @@ write.xlsx(
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 05 - renda min e max",
+  append = TRUE,
+  showNA = FALSE
+)
+
+
+## Tabela 6
+
+tabela6 <- tabela_06 |> mutate(ano = as.numeric(ano)) |>
+  bind_rows(tabela_06_2010) |>
+  select(ano, RM, cor_raca, tipo, decimos, valor)
+
+tabela6 <- tabela6 |>
+  bind_rows(
+    tabela6 |>
+      group_by(ano, cor_raca, tipo, decimos) |>
+      summarise(
+        RM = "Brasil",
+        valor = mean(valor)
+      ) |>
+      select(ano, RM, cor_raca, tipo, decimos, valor)
+  ) |>
+  mutate(
+    situacao = case_when(tipo %in% c("geral", "metropolitano") ~ "Geral", TRUE ~ "Urbano")
+  ) |>
+  mutate(
+    situacao = factor(
+      situacao,
+      levels = c("Geral","Urbano"),
+      labels = c("Geral","Urbano")))
+
+
+tabela6 <- ftable(xtabs(valor ~ situacao + ano + RM  + cor_raca + decimos,
+                        tabela6),
+                  row.vars = c("ano", "decimos"),
+                  col.vars = c("RM","cor_raca","situacao")) %>%
+  stats:::format.ftable(quote = FALSE, dec = ",") %>%
+  trimws() %>%
+  as.data.frame()
+
+# Montagem da tabela
+
+titulo <- matrix(ncol = dim(tabela5)[2], nrow = 2)
+titulo[1,1] <- "Tabela: Renda domiciliar per capita média por décimo da distribuição, cor ou raça e RMs selecionadas - Brasil, 2000-2010"
+
+nota <- matrix(ncol = dim(tabela5)[2], nrow = 11)
+nota[2,1] <- "Fonte: IBGE/Censo Demográfico brasileiro."
+nota[3,1] <- "Nota:"
+nota[4,1] <- "1. Foi considerada somente a população residente com no mínimo 10 anos."
+nota[5,1] <- "2. Por população negra, entende-se aquelas pessoas autodeclaradas pretas ou pardas."
+nota[6,1] <- "3. A renda foi deflacionada para 01/08/2022 com base na data de referência de cada recenseamento."
+nota[7,1] <- "4. A distribuição da renda foi calculada com base na distribuição da renda domiciliar per capita para cada UF. Sendo o valor para 'Brasil' uma representação da média entre as RMs."
+
+
+tabela_export <- rbind(titulo,tabela5, nota)
+
+# Salvando arquivo
+
+write.xlsx(
+  tabela_export,
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
+  row.names = FALSE,
+  col.names = FALSE,
+  sheetName = "tabela 06 - renda media por decimos",
   append = TRUE,
   showNA = FALSE
 )
