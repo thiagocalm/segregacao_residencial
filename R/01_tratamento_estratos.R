@@ -76,7 +76,7 @@ for(i in 1: length(ano)){
   ano = ano[i]
   for(k in 1: length(UF)){
     uf = UF[k]
-    # Importacao dos dados
+    # Rendimento geral
     censo <- get(glue::glue("censo_{ano}_{uf}")) |>
       mutate(renda_pc_def = case_when(is.na(v4614_defl) ~ 0, TRUE ~ v4614_defl)) |>
       group_by(id_dom) |>
@@ -85,13 +85,40 @@ for(i in 1: length(ano)){
       mutate(renda_pc_def = renda_pc_def/n_pes_dom) |>
       mutate(
         estrato_renda = ntile(renda_pc_def, 5),
-        decimos_renda = ntile(renda_pc_def, 10)
+        decimos_renda_br = ntile(renda_pc_def, 10)
       ) |>
       mutate(peso = p001/10^8) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0103, area_ponderacao = areap,
-             idade = v4572, sexo = v0401, anos_estudo = v4300, especie_dom = v0201,
+             idade = v4572, sexo = v0401, anos_estudo = v4300, especie_dom = v0201, situacao_dom = v1006,
              cor_raca, v4614_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda,decimos_renda, v4513)
+             estrato_renda,decimos_renda_br, v4513)
+
+    # Rendimento urbano-rural
+
+    censo <- censo |>
+      group_by(situacao_dom) |>
+      mutate(
+        decimos_renda_situacao = ntile(renda_pc_def, 10)
+      ) |>
+      ungroup()
+
+    # Rendimento metropolitano
+
+    censo <- censo |>
+      group_by(rm) |>
+      mutate(
+        decimos_renda_rm = ntile(renda_pc_def, 10)
+      ) |>
+      ungroup()
+
+    # Rendimento urbano e metropolitano
+
+    censo <- censo |>
+      group_by(rm, situacao_dom) |>
+      mutate(
+        decimos_renda_rm_situacao = ntile(renda_pc_def, 10)
+      ) |>
+      ungroup()
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
@@ -203,13 +230,40 @@ for(i in 1: length(ano)){
       mutate(renda_pc_def = renda_pc_def/n_pes_dom) |>
       mutate(
         estrato_renda = ntile(renda_pc_def, 5),
-        decimos_renda = ntile(renda_pc_def, 10)
+        decimos_renda_br = ntile(renda_pc_def, 10)
       ) |>
       mutate(peso = v0010/10^13) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0002, area_ponderacao = v0011,
-             idade = v6036, sexo = v0601, anos_estudo = v6400, especie_dom = v4001,
+             idade = v6036, sexo = v0601, anos_estudo = v6400, especie_dom = v4001, situacao_dom = v1006,
              cor_raca, v6527_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda,decimos_renda, v6513)
+             estrato_renda,decimos_renda_br, v6513)
+
+    # Rendimento urbano-rural
+
+    censo <- censo |>
+      group_by(situacao_dom) |>
+      mutate(
+        decimos_renda_situacao = ntile(renda_pc_def, 10)
+      ) |>
+      ungroup()
+
+    # Rendimento metropolitano
+
+    censo <- censo |>
+      group_by(rm) |>
+      mutate(
+        decimos_renda_rm = ntile(renda_pc_def, 10)
+      ) |>
+      ungroup()
+
+    # Rendimento urbano e metropolitano
+
+    censo <- censo |>
+      group_by(rm, situacao_dom) |>
+      mutate(
+        decimos_renda_rm_situacao = ntile(renda_pc_def, 10)
+      ) |>
+      ungroup()
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
