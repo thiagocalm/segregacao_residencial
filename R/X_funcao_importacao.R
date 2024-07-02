@@ -12,9 +12,9 @@ func_import_handl_data <- function(UF, ano) {
   if(ano == 2010){
     # unziping arquivos
 
-    unzip(zipfile = file.path(DIR, paste0(UF,".zip")),
-          files = unzip(zipfile = file.path(DIR, paste0(UF,".zip")), list = TRUE)[c(2,5),1],
-          exdir = DIR)
+    # unzip(zipfile = file.path(DIR, paste0(UF,".zip")),
+    #       files = unzip(zipfile = file.path(DIR, paste0(UF,".zip")), list = TRUE)[c(2,5),1],
+    #       exdir = DIR)
 
     # definicao do diretorio de importacao dos dados - 2010
     DIR_dom <- file.path(DIR, UF, list.files(file.path(DIR, UF))[1])
@@ -39,11 +39,10 @@ func_import_handl_data <- function(UF, ano) {
         col_names = sas_imput$domicilio$varname
       )
     ) |>
-      filter(v1006 == 1 &
-               v1004 %in% c("03","05","07","08","13","14","16","17","26")) |>
+      filter(v1004 %in% c("03","05","07","08","13","14","16","17","26")) |>
       mutate(id_dom = v0300) |>
-      select(-c(v0102, v1002, v1003, v0104,v0105, v0300, v0400, v1001, v1004,
-                areap, v1005, v1006, v1007,p001, starts_with("m")))
+      select(-c(v0102, v1002, v1003, v0104,v0105, v1006, v0300, v0400, v1001, v1004,
+                areap, v1005, v1007,p001, starts_with("m")))
 
     print(paste0("Domicilios para ",UF, " e ano ",ano, " importados!"))
 
@@ -54,8 +53,7 @@ func_import_handl_data <- function(UF, ano) {
         col_names = sas_imput$pessoa$varname
       )
     ) |>
-      filter(v1006 == 1 &
-               v1004 %in% c("03","05","07","08","13","14","16","17","26")) |>
+      filter(v1004 %in% c("03","05","07","08","13","14","16","17","26")) |>
       mutate(id_pes = as.numeric(paste0(v0300, v0400)),
              id_dom = v0300) |>
       select(-c(v0300, starts_with("m")))
@@ -67,7 +65,7 @@ func_import_handl_data <- function(UF, ano) {
 
     # selecionando variaveis a serem utilizadas
 
-    vars <- c("id_dom", "id_pes", "v1004", "v0103","v1007", "areap","p001", "v0408",
+    vars <- c("id_dom", "id_pes", "v1004", "v0103","v1006","v1007", "areap","p001", "v0408",
               "v4572","v0401","v4300","v0439","v0440","v0441","v0442","v0443","v0444",
               "v0447","v0448","v0449","v0450","v0455","v0456","v4452","v4462",
               "v4511","v4512","v4513","v4521","v4522","v4523","v4525","v4614",
@@ -101,8 +99,7 @@ func_import_handl_data <- function(UF, ano) {
         col_names = sas_imput$domicilio$varname
       )
     ) |>
-      filter(v1006 == 1 &
-               v1004 %in% c("07","11","15","16","19","20","22","23","34")) |>
+      filter(v1004 %in% c("07","11","15","16","19","20","22","23","34")) |>
       mutate(id_dom = v0300) |>
       select(-c(v0001, v0002, v0011, v0300, v0010, v1001, v1002, v1003, v1004,
                 v1006, starts_with("m")))
@@ -116,8 +113,7 @@ func_import_handl_data <- function(UF, ano) {
         col_names = sas_imput$pessoa$varname
       )
     ) |>
-      filter(v1006 == 1 &
-               v1004 %in% c("07","11","15","16","19","20","22","23","34")) |>
+      filter(v1004 %in% c("07","11","15","16","19","20","22","23","34")) |>
       mutate(id_pes = as.numeric(paste0(v0300, v0504)),
              id_dom = v0300) |>
       select(-c(v0300, starts_with("m")))
@@ -129,7 +125,7 @@ func_import_handl_data <- function(UF, ano) {
 
     # selecionando variaveis a serem utilizadas
 
-    vars <- c("id_dom", "id_pes", "v1004", "v0002", "v0011","v0010", "v0606",
+    vars <- c("id_dom", "id_pes", "v1004","v1006", "v0002", "v0011","v0010", "v0606",
               "v6036","v0601","v6400","v6910","v6900","v0652","v0643","v0644","v0645",
               "v6461","v6471","v0648","v0649","v0650","v0654","v0656","v0651",
               "v6511","v6513","v0652","v6521","v6525","v6527","v4001","v0401",
