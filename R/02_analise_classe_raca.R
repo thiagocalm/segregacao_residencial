@@ -505,7 +505,7 @@ for(i in seq_along(ano)){
 
     # tabela de cada rm
     tabela_limites_renda_rm <- df_rm |>
-      filter(idade >= 10 & decimos_renda == 10) |>
+      filter(idade >= 10 & decimos_renda_br == 10) |>
       summarise(
         ano = ano,
         cor_raca = 0,
@@ -516,7 +516,7 @@ for(i in seq_along(ano)){
       select(ano, cor_raca, min, max) |>
       bind_rows(
         df_rm |>
-          filter(idade >= 10 & decimos_renda == 10) |>
+          filter(idade >= 10 & decimos_renda_br == 10) |>
           filter(cor_raca %in% c(1,2)) |>
           group_by(cor_raca) |>
           summarise(
@@ -1184,7 +1184,7 @@ for(i in seq_along(ano)){
 
     # tabela de cada rm
     tabela_limites_renda_rm <- df_rm |>
-      filter(idade >= 10 & decimos_renda == 10) |>
+      filter(idade >= 10 & decimos_renda_br == 10) |>
       summarise(
         ano = ano,
         cor_raca = 0,
@@ -1195,7 +1195,7 @@ for(i in seq_along(ano)){
       select(ano, cor_raca, min, max) |>
       bind_rows(
         df_rm |>
-          filter(idade >= 10 & decimos_renda == 10) |>
+          filter(idade >= 10 & decimos_renda_br == 10) |>
           filter(cor_raca %in% c(1,2)) |>
           group_by(cor_raca) |>
           summarise(
@@ -1680,13 +1680,24 @@ tabela6 <- tabela6 |>
     situacao = factor(
       situacao,
       levels = c("Geral","Urbano"),
-      labels = c("Geral","Urbano")))
+      labels = c("Geral","Urbano")),
+    decimos = factor(
+      decimos,
+      levels = c(1,2,3,4,5,6,7,8,9,10),
+      labels = c("Até P10","P11 a P20","P21 a P30","P31 a P40","P41 a P50",
+                 "P51 a P60","P61 a P70","P71 a P80","P81 a P90","P91 a P100")),
+    ) |>
+  # retirando o efeito do 'tipo', que é semelhante para as RMs
+  group_by(ano, RM, cor_raca, situacao, decimos) |>
+  summarise(
+    valor = mean(valor)
+  )
 
 
 tabela6 <- ftable(xtabs(valor ~ situacao + ano + RM  + cor_raca + decimos,
                         tabela6),
-                  row.vars = c("ano", "decimos"),
-                  col.vars = c("RM","cor_raca","situacao")) %>%
+                  row.vars = c("cor_raca", "decimos"),
+                  col.vars = c("ano","RM","situacao")) %>%
   stats:::format.ftable(quote = FALSE, dec = ",") %>%
   trimws() %>%
   as.data.frame()
@@ -1702,7 +1713,10 @@ nota[3,1] <- "Nota:"
 nota[4,1] <- "1. Foi considerada somente a população residente com no mínimo 10 anos."
 nota[5,1] <- "2. Por população negra, entende-se aquelas pessoas autodeclaradas pretas ou pardas."
 nota[6,1] <- "3. A renda foi deflacionada para 01/08/2022 com base na data de referência de cada recenseamento."
-nota[7,1] <- "4. A distribuição da renda foi calculada com base na distribuição da renda domiciliar per capita para cada UF. Sendo o valor para 'Brasil' uma representação da média entre as RMs."
+nota[7,1] <- "4. A distribuição da renda foi calculada com base na distribuição da renda domiciliar per capita para cada UF."
+nota[8,1] <- "5. O valor para 'Brasil' se refere à média da renda domiciliar per capita média das RMs."
+nota[9,1] <- "6. O valor para 'Geral' se refere à distribuição da renda calculada sem desagregação entre rural-urbano."
+nota[10,1] <- "7. O valor para 'Urbano' se refere à distribuição da renda calculada desagregação entre rural-urbano, restringindo-se somente ao Urbano, no caso."
 
 
 tabela_export <- rbind(titulo,tabela5, nota)
