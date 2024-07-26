@@ -88,10 +88,20 @@ for(i in 1: length(ano)){
         decimos_renda_br = ntile(renda_pc_def, 10)
       ) |>
       mutate(peso = p001/10^8) |>
+      # Faixas de rendimento em salario minimo
+      # OBS: utilizou-se o SM como sendo de 1212, referente a 2022
+      mutate(
+        estrato_renda_sm = case_when(
+          renda_pc_def <= 606 ~ 1,
+          renda_pc_def > 606 & renda_pc_def <= 1212 ~ 2,
+          renda_pc_def > 1212 & renda_pc_def <= 2424 ~ 3,
+          renda_pc_def > 2424 ~ 4
+        )
+      ) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0103, area_ponderacao = areap,
              idade = v4572, sexo = v0401, anos_estudo = v4300, especie_dom = v0201, situacao_dom = v1006,
              cor_raca, v4614_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda,decimos_renda_br, v4513)
+             estrato_renda,decimos_renda_br, v4513, estrato_renda_sm)
 
     # Rendimento urbano-rural
 
@@ -233,10 +243,20 @@ for(i in 1: length(ano)){
         decimos_renda_br = ntile(renda_pc_def, 10)
       ) |>
       mutate(peso = v0010/10^13) |>
+      # Faixas de rendimento em salario minimo
+      # OBS: utilizou-se o SM como sendo de 1212, referente a 2022
+      mutate(
+        estrato_renda_sm = case_when(
+          renda_pc_def <= 606 ~ 1,
+          renda_pc_def > 606 & renda_pc_def <= 1212 ~ 2,
+          renda_pc_def > 1212 & renda_pc_def <= 2424 ~ 3,
+          renda_pc_def > 2424 ~ 4
+        )
+      ) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0002, area_ponderacao = v0011,
              idade = v6036, sexo = v0601, anos_estudo = v6400, especie_dom = v4001, situacao_dom = v1006,
              cor_raca, v6527_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda,decimos_renda_br, v6513)
+             estrato_renda,decimos_renda_br, v6513, estrato_renda_sm)
 
     # Rendimento urbano-rural
 

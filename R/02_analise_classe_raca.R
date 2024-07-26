@@ -685,6 +685,136 @@ for(i in seq_along(ano)){
   }
 }
 
+## 7 - Distribuicao da populacao por estratos de renda em SM per capita
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+ano = 2000
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_renda_sm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_estratos_rm <- df_renda_sm |>
+      group_by(estrato_renda_sm) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        n = round(survey_total(na.rm = T),0),
+        prop = round(survey_mean(na.rm = T)*100,2)
+      ) |>
+      select(-ends_with("_se")) |>
+      select(estrato_renda_sm, ano, cor_raca, n, prop) |>
+      bind_rows(
+        df_renda_sm |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca, estrato_renda_sm) |>
+          summarise(
+            ano = ano,
+            n = round(survey_total(na.rm = T),0),
+            prop = round(survey_mean(na.rm = T)*100,2)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(estrato_renda_sm, ano, cor_raca, n, prop)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")),
+             estrato_renda_sm = factor(
+               estrato_renda_sm,
+               levels = c(1,2,3,4),
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 2 SM pc", "Maior que 2 SM pc")))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_07 <- tabela_estratos_rm
+    } else{
+      tabela_07 <- tabela_07 |>
+        bind_rows(tabela_estratos_rm)
+    }
+    rm(tabela_estratos_rm, df_renda_sm)
+    gc()
+    print(paste0("Finalizamos a Tabela 7 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
+## 8 - Tabela cruzada estratos sociais, considerando os estratos em salarios minimos
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+ano = 2000
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1 & PO == 1) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_estratos_rm <- df_rm |>
+      filter(idade >= 10) |>
+      group_by(estratos_sociais_egp, estrato_renda_sm) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        n = round(survey_total(na.rm = T),0)
+      ) |>
+      select(-ends_with("_se")) |>
+      select(ano, cor_raca, estratos_sociais_egp, estrato_renda_sm, n) |>
+      bind_rows(
+        df_rm |>
+          filter(idade >= 10) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca, estratos_sociais_egp, estrato_renda_sm) |>
+          summarise(
+            ano = ano,
+            n = round(survey_total(na.rm = T),0)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, estratos_sociais_egp, estrato_renda_sm, n)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")),
+             estratos_sociais_egp = factor(
+               estratos_sociais_egp,
+               levels = c(0,1,2),
+               labels = c("Baixa","Intermediárias","Superiores")),
+             estrato_renda_sm = factor(
+               estrato_renda_sm,
+               levels = c(1,2,3,4),
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 2 SM pc","Maior que 2 SM pc")))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_08 <- tabela_estratos_rm
+    } else{
+      tabela_08 <- tabela_08 |>
+        bind_rows(tabela_estratos_rm)
+    }
+    rm(tabela_estratos_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 8 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
 rm(censo_2000_RMBH, censo_2000_RMCampinas, censo_2000_RMCuritiba, censo_2000_RMFortaleza,
    censo_2000_RMPortoAlegre, censo_2000_RMRecife, censo_2000_RMRJ, censo_2000_RMSalvador,
    censo_2000_RMSP)
@@ -1364,6 +1494,140 @@ for(i in seq_along(ano)){
   }
 }
 
+## 7 - Distribuicao da populacao por estratos de renda em SM per capita
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+ano = 2010
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_renda_sm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_estratos_rm <- df_renda_sm |>
+      group_by(estrato_renda_sm) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        n = round(survey_total(na.rm = T),0),
+        prop = round(survey_mean(na.rm = T)*100,2)
+      ) |>
+      select(-ends_with("_se")) |>
+      select(estrato_renda_sm, ano, cor_raca, n, prop) |>
+      bind_rows(
+        df_renda_sm |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca, estrato_renda_sm) |>
+          summarise(
+            ano = ano,
+            n = round(survey_total(na.rm = T),0),
+            prop = round(survey_mean(na.rm = T)*100,2)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(estrato_renda_sm, ano, cor_raca, n, prop)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")),
+             estrato_renda_sm = factor(
+               estrato_renda_sm,
+               levels = c(1,2,3,4),
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 2 SM pc", "Maior que 2 SM pc")))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_07_2010 <- tabela_estratos_rm
+    } else{
+      tabela_07_2010 <- tabela_07_2010 |>
+        bind_rows(tabela_estratos_rm)
+    }
+    rm(tabela_estratos_rm, df_renda_sm)
+    gc()
+    print(paste0("Finalizamos a Tabela 7 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
+## 8 - Tabela cruzada estratos sociais, considerando os estratos em salarios minimos
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+ano = 2010
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1 & PO == 1) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_estratos_rm <- df_rm |>
+      filter(idade >= 10) |>
+      group_by(estratos_sociais_egp, estrato_renda_sm) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        n = round(survey_total(na.rm = T),0)
+      ) |>
+      select(-ends_with("_se")) |>
+      select(ano, cor_raca, estratos_sociais_egp, estrato_renda_sm, n) |>
+      bind_rows(
+        df_rm |>
+          filter(idade >= 10) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca, estratos_sociais_egp, estrato_renda_sm) |>
+          summarise(
+            ano = ano,
+            n = round(survey_total(na.rm = T),0)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(ano, cor_raca, estratos_sociais_egp, estrato_renda_sm, n)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")),
+             estratos_sociais_egp = factor(
+               estratos_sociais_egp,
+               levels = c(0,1,2),
+               labels = c("Baixa","Intermediárias","Superiores")),
+             estrato_renda_sm = factor(
+               estrato_renda_sm,
+               levels = c(1,2,3,4),
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 2 SM pc","Maior que 2 SM pc")))
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_08_2010 <- tabela_estratos_rm
+    } else{
+      tabela_08_2010 <- tabela_08_2010 |>
+        bind_rows(tabela_estratos_rm)
+    }
+    rm(tabela_estratos_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 8 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
+rm(censo_2010_RMBH, censo_2010_RMCampinas, censo_2010_RMCuritiba, censo_2010_RMFortaleza,
+   censo_2010_RMPortoAlegre, censo_2010_RMRecife, censo_2010_RMRJ, censo_2010_RMSalvador,
+   censo_2010_RMSP)
+
 # Juncao e exportacao dos dados -------------------------------------------
 
 ## Tabela 0
@@ -1704,10 +1968,10 @@ tabela6 <- ftable(xtabs(valor ~ situacao + ano + RM  + cor_raca + decimos,
 
 # Montagem da tabela
 
-titulo <- matrix(ncol = dim(tabela5)[2], nrow = 2)
+titulo <- matrix(ncol = dim(tabela6)[2], nrow = 2)
 titulo[1,1] <- "Tabela: Renda domiciliar per capita média por décimo da distribuição, cor ou raça e RMs selecionadas - Brasil, 2000-2010"
 
-nota <- matrix(ncol = dim(tabela5)[2], nrow = 11)
+nota <- matrix(ncol = dim(tabela6)[2], nrow = 11)
 nota[2,1] <- "Fonte: IBGE/Censo Demográfico brasileiro."
 nota[3,1] <- "Nota:"
 nota[4,1] <- "1. Foi considerada somente a população residente com no mínimo 10 anos."
@@ -1719,7 +1983,7 @@ nota[9,1] <- "6. O valor para 'Geral' se refere à distribuição da renda calcu
 nota[10,1] <- "7. O valor para 'Urbano' se refere à distribuição da renda calculada desagregação entre rural-urbano, restringindo-se somente ao Urbano, no caso."
 
 
-tabela_export <- rbind(titulo,tabela5, nota)
+tabela_export <- rbind(titulo,tabela6, nota)
 
 # Salvando arquivo
 
@@ -1729,6 +1993,98 @@ write.xlsx(
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 06 - renda media por decimos",
+  append = TRUE,
+  showNA = FALSE
+)
+
+## Tabela 7
+
+tabela7 <- tabela_07 |> mutate(ano = as.numeric(ano)) |>
+  bind_rows(tabela_07_2010) |>
+  pivot_longer(n:prop, names_to = "medida", values_to = "valores") |>
+  mutate(
+    medida = factor(
+      medida,
+      levels = c("prop","n"),
+      labels = c("%","N")))
+
+tabela7 <- ftable(xtabs(valores ~ ano + RM + estrato_renda_sm + cor_raca + medida,
+                        tabela7),
+                  row.vars = c("ano","estrato_renda_sm"),
+                  col.vars = c("RM","cor_raca","medida")) %>%
+  stats:::format.ftable(quote = FALSE, dec = ",") %>%
+  trimws() %>%
+  as.data.frame()
+
+# Montagem da tabela
+
+titulo <- matrix(ncol = dim(tabela7)[2], nrow = 2)
+titulo[1,1] <- "Tabela: Distribuição absoluta e relativa da população urbana residente em RMs selecionadas, segundo classes sociais renda domiciliar per capita em salarios minimos, por cor ou raça - Brasil, 2000-2010"
+
+nota <- matrix(ncol = dim(tabela7)[2], nrow = 11)
+nota[2,1] <- "Fonte: IBGE/Censo Demográfico brasileiro."
+nota[4,1] <- "Nota:"
+nota[5,1] <- "1. Foi considerada somente a população residente em área urbana."
+nota[6,1] <- "2. Por população negra, entende-se aquelas pessoas autodeclaradas pretas ou pardas."
+nota[7,1] <- "3. Para a classificação da renda, utilizou-se a renda domiciliar per capita oriunda de todas as fontes."
+nota[8,1] <- "4. A renda foi deflacionada para 01/08/2022 com base na data de referência de cada recenseamento."
+
+tabela_export <- rbind(titulo,tabela7, nota)
+
+# Salvando arquivo
+
+write.xlsx(
+  tabela_export,
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
+  row.names = FALSE,
+  col.names = FALSE,
+  sheetName = "tabela 07 - classes renda em SM",
+  append = TRUE,
+  showNA = FALSE
+)
+
+## Tabela 8
+
+tabela8 <- tabela_08 |> mutate(ano = as.numeric(ano)) |>
+  bind_rows(tabela_08_2010) |>
+  mutate(
+    estratos_sociais_egp = case_when(is.na(estratos_sociais_egp) ~ "Valores ausentes",
+                                     TRUE ~ estratos_sociais_egp))
+
+tabela8 <- ftable(xtabs(n ~ ano + RM + estratos_sociais_egp + estrato_renda_sm +
+                          cor_raca,
+                        tabela8),
+                  row.vars = c("ano","estratos_sociais_egp"),
+                  col.vars = c("RM","cor_raca","estratos_sociais_renda")) %>%
+  stats:::format.ftable(quote = FALSE, dec = ",") %>%
+  trimws() %>%
+  as.data.frame()
+
+# Montagem da tabela
+
+titulo <- matrix(ncol = dim(tabela8)[2], nrow = 2)
+titulo[1,1] <- "Tabela: Distribuição absoluta e relativa da população urbana residente em RMs selecionadas segundo classes sociais de renda domiicliar per capita em salario minimo, por classes sociais EGP e cor ou raça - Brasil, 2000-2010"
+
+nota <- matrix(ncol = dim(tabela8)[2], nrow = 11)
+nota[2,1] <- "Fonte: IBGE/Censo Demográfico brasileiro."
+nota[4,1] <- "Nota:"
+nota[5,1] <- "1. Foi considerada somente a população residente em área urbana."
+nota[6,1] <- "2. Por população negra, entende-se aquelas pessoas autodeclaradas pretas ou pardas."
+nota[7,1] <- "3. Para a classificação da renda, utilizou-se a renda domiciliar per capita oriunda de todas as fontes."
+nota[8,1] <- "4. A renda foi deflacionada para 01/08/2022 com base na data de referência de cada recenseamento."
+nota[9,1] <- "5. As classes categorizadas via EGP seguiram a classificação feita por você, Danilo, em sua tese. Chamo a atenção para a inconsistência nos dados de 2000!!!"
+
+
+tabela_export <- rbind(titulo,tabela8, nota)
+
+# Salvando arquivo
+
+write.xlsx(
+  tabela_export,
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
+  row.names = FALSE,
+  col.names = FALSE,
+  sheetName = "tabela 08 - classes renda em SM por egp",
   append = TRUE,
   showNA = FALSE
 )
