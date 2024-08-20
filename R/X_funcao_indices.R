@@ -12,6 +12,7 @@ func_calcula_dissimilaridade <-
     PO = "PO",
     peso = "peso",
     EGP = TRUE,
+    SM = TRUE,
     por_classe = TRUE){
 
     # Preparo da base de dados
@@ -31,6 +32,23 @@ func_calcula_dissimilaridade <-
           var_estrato == 0 & cor_raca == 2 ~ "Negros baixo",
           var_estrato == 1 & cor_raca == 2 ~ "Negros intermediário",
           var_estrato == 2 & cor_raca == 2 ~ "Negros alto",
+          TRUE ~ "Resto da população"
+        )) |>
+        as_survey_design(ids = id_pes, weights = peso)
+    }
+    if(SM == TRUE){
+      df <- data |>
+        select(all_of(vars)) |>
+        select(var_estrato = all_of(var_estrato), everything()) |>
+        mutate(classe_raca = case_when(
+          var_estrato == 1 & cor_raca == 1 ~ "Brancos ate meio SM",
+          var_estrato == 2 & cor_raca == 1 ~ "Brancos meio a 1SM",
+          var_estrato == 3 & cor_raca == 1 ~ "Brancos 1 a 3SM",
+          var_estrato == 4 & cor_raca == 1 ~ "Brancos 3SM mais",
+          var_estrato == 1 & cor_raca == 2 ~ "Negros meio SM",
+          var_estrato == 2 & cor_raca == 2 ~ "Negros meio a 1SM",
+          var_estrato == 3 & cor_raca == 2 ~ "Negros 1 a 3SM",
+          var_estrato == 4 & cor_raca == 2 ~ "Negros 3SM mais",
           TRUE ~ "Resto da população"
         )) |>
         as_survey_design(ids = id_pes, weights = peso)
@@ -108,89 +126,278 @@ func_calcula_dissimilaridade <-
       mutate(across(starts_with("ratio_"), ~ replace_na(.x, 0))) |>
       summarise(D = sum(ratio_dif)*.5)
 
-    output_classe <- tabela_por_classe |>
-      select(-n_se) |>
-      mutate(pop_branca_baixo = n[classe_raca == "Brancos baixo" & area_ponderacao == 0],
-             pop_branca_intermediario = n[classe_raca == "Brancos intermediário" & area_ponderacao == 0],
-             pop_branca_alto = n[classe_raca == "Brancos alto" & area_ponderacao == 0],
-             pop_negra_baixo = n[classe_raca == "Negros baixo" & area_ponderacao == 0],
-             pop_negra_intermediario = n[classe_raca == "Negros intermediário" & area_ponderacao == 0],
-             pop_negra_alto = n[classe_raca == "Negros alto" & area_ponderacao == 0],
-             pop_resto = n[classe_raca == "Resto da população" & area_ponderacao == 0]) |>
-      pivot_wider(names_from = classe_raca, values_from = n) |>
-      filter(area_ponderacao != 0) |>
-      mutate(
-        # Razoes de cada grupo
-        ratio_Brancos_Alto = `Brancos alto`/pop_branca_alto,
-        ratio_Brancos_Intermediario = `Brancos intermediário`/pop_branca_intermediario,
-        ratio_Brancos_Baixo = `Brancos baixo`/pop_branca_baixo,
-        ratio_Negros_Alto = `Negros alto`/pop_negra_alto,
-        ratio_Negros_Intermediario = `Negros intermediário`/pop_negra_intermediario,
-        ratio_Negros_Baixo = `Negros baixo`/pop_negra_baixo,
-        ratio_Resto_Pop = `Resto da população`/pop_resto,
-        ## Ratio diff
+    if(SM == TRUE){
+      output_classe <- tabela_por_classe |>
+        select(-n_se) |>
+        mutate(pop_branca_meioSM = n[classe_raca == "Brancos ate meio SM" & area_ponderacao == 0],
+               pop_branca_meioa1SM = n[classe_raca == "Brancos meio a 1SM" & area_ponderacao == 0],
+               pop_branca_1a3SM = n[classe_raca == "Brancos 1 a 3SM" & area_ponderacao == 0],
+               pop_branca_3SMmais = n[classe_raca == "Brancos 3SM mais" & area_ponderacao == 0],
 
-        # Brancos
-        dif_branco_baixo_branco_alto = abs(ratio_Brancos_Baixo - ratio_Brancos_Alto),
-        dif_branco_intermediario_branco_alto = abs(ratio_Brancos_Intermediario - ratio_Brancos_Alto),
-        dif_negro_baixo_branco_alto = abs(ratio_Negros_Baixo - ratio_Brancos_Alto),
-        dif_negro_intermediario_branco_alto = abs(ratio_Negros_Intermediario - ratio_Brancos_Alto),
-        dif_negro_alto_branco_alto = abs(ratio_Negros_Alto - ratio_Brancos_Alto),
-        dif_resto_branco_alto = abs(ratio_Resto_Pop - ratio_Brancos_Alto),
+               pop_negra_meioSM = n[classe_raca == "Negros ate meio SM" & area_ponderacao == 0],
+               pop_negra_meioa1SM = n[classe_raca == "Negros meio a 1SM" & area_ponderacao == 0],
+               pop_negra_1a3SM = n[classe_raca == "Negros 1 a 3SM" & area_ponderacao == 0],
+               pop_negra_3SMmais = n[classe_raca == "Negros 3SM mais" & area_ponderacao == 0],
 
-        dif_branco_intermediario_branco_baixo = abs(ratio_Brancos_Intermediario - ratio_Brancos_Baixo),
-        dif_negro_baixo_branco_baixo = abs(ratio_Negros_Baixo - ratio_Brancos_Baixo),
-        dif_negro_intermediario_branco_baixo = abs(ratio_Negros_Intermediario - ratio_Brancos_Baixo),
-        dif_negro_alto_branco_baixo = abs(ratio_Negros_Alto - ratio_Brancos_Baixo),
-        dif_resto_branco_baixo = abs(ratio_Resto_Pop - ratio_Brancos_Baixo),
+               pop_resto = n[classe_raca == "Resto da população" & area_ponderacao == 0]) |>
+        pivot_wider(names_from = classe_raca, values_from = n) |>
+        filter(area_ponderacao != 0) |>
+        mutate(
+          # Razoes de cada grupo
+          ratio_Brancos_meioSM = `Brancos ate meio SM`/pop_branca_meioSM,
+          ratio_Brancos_meioa1SM = `Brancos meio a 1SM`/pop_branca_meioa1SM,
+          ratio_Brancos_1a3SM = `Brancos 1 a 3SM`/pop_branca_1a3SM,
+          ratio_Brancos_3SMmais = `Brancos 3SM mais`/pop_branca_3SMmais,
 
-        dif_negro_baixo_branco_intermediario = abs(ratio_Negros_Baixo - ratio_Brancos_Intermediario),
-        dif_negro_intermediario_branco_intermediario = abs(ratio_Negros_Intermediario - ratio_Brancos_Intermediario),
-        dif_negro_alto_branco_intermediario = abs(ratio_Negros_Alto - ratio_Brancos_Intermediario),
-        dif_resto_branco_intermediario = abs(ratio_Resto_Pop - ratio_Brancos_Intermediario),
+          ratio_Negros_meioSM = `Negros ate meio SM`/pop_negra_meioSM,
+          ratio_Negros_meioa1SM = `Negros meio a 1SM`/pop_negra_meioa1SM,
+          ratio_Negros_1a3SM = `Negros 1 a 3SM`/pop_negra_1a3SM,
+          ratio_Negros_3SMmais = `Negros 3SM mais`/pop_negra_3SMmais,
 
-        # Negros
-        dif_negro_intermediario_negro_baixo = abs(ratio_Negros_Intermediario - ratio_Negros_Baixo),
-        dif_negro_alto_negro_baixo = abs(ratio_Negros_Alto - ratio_Negros_Baixo),
-        dif_resto_negro_baixo = abs(ratio_Resto_Pop - ratio_Negros_Baixo),
-        dif_negro_alto_negro_intermediario = abs(ratio_Negros_Alto - ratio_Negros_Intermediario),
-        dif_resto_negro_intermediario = abs(ratio_Resto_Pop - ratio_Negros_Intermediario),
-        dif_resto_negro_alto = abs(ratio_Resto_Pop - ratio_Brancos_Intermediario)
-      ) |>
-      mutate(across(starts_with("dif_"), ~ replace_na(.x, 0))) |>
-      summarise(
-        D_negro_alto_branco_alto = sum(dif_negro_alto_branco_alto)*.5,
-        D_negro_alto_branco_intermediario = sum(dif_negro_alto_branco_intermediario)*.5,
-        D_negro_alto_branco_baixo = sum(dif_negro_alto_branco_baixo)*.5,
-        D_negro_intermediario_branco_alto = sum(dif_negro_intermediario_branco_alto)*.5,
-        D_negro_intermediario_branco_intermediario = sum(dif_negro_intermediario_branco_intermediario)*.5,
-        D_negro_intermediario_branco_baixo = sum(dif_negro_intermediario_branco_baixo)*.5,
-        D_negro_baixo_branco_alto = sum(dif_negro_baixo_branco_alto)*.5,
-        D_negro_baixo_branco_intermediario = sum(dif_negro_baixo_branco_intermediario)*.5,
-        D_negro_baixo_branco_baixo = sum(dif_negro_baixo_branco_baixo)*.5,
-        D_negro_baixo_negro_alto = sum(dif_negro_alto_negro_baixo)*.5,
-        D_negro_baixo_negro_intermediario = sum(dif_negro_intermediario_negro_baixo)*.5,
-        D_negro_alto_negro_intermediario = sum(dif_negro_alto_negro_intermediario)*.5,
-        D_branco_baixo_branco_intermediario = sum(dif_branco_intermediario_branco_baixo)*.5,
-        D_branco_baixo_branco_alto = sum(dif_branco_baixo_branco_alto)*.5,
-        D_branco_alto_branco_intermediario = sum(dif_branco_intermediario_branco_alto)*.5,
-        D_negro_alto_resto = sum(dif_resto_negro_alto)*.5,
-        D_negro_intermediario_resto = sum(dif_resto_negro_intermediario)*.5,
-        D_negro_baixo_resto = sum(dif_resto_negro_baixo)*.5,
-        D_branco_alto_resto = sum(dif_resto_branco_alto)*.5,
-        D_branco_intermediario_resto = sum(dif_resto_branco_intermediario)*.5,
-        D_branco_baixo_resto = sum(dif_resto_branco_baixo)*.5
-      ) |>
-      pivot_longer(D_negro_alto_branco_alto:D_branco_baixo_resto, names_to = "grupo", values_to = "D") |>
-      mutate(
-        cor_classe1 = c(rep("Negros alto",3),rep("Negros intermediário",3),rep("Negros baixo",5),
-                        rep("Negros alto",1),rep("Brancos baixo",2),rep("Brancos alto",1),
-                        "Negros alto","Negros intermediário","Negro baixo","Branco alto",
-                        "Branco intermediário","Branco baixo"),
-        cor_classe2 = c(rep(c("Branco alto","Branco intermediário","Branco baixo"),3), "Negro alto",
-                        rep("Negro intermediário",2),"Branco intermediário","Branco alto",
-                        "Branco intermediário",rep("Resto da população",6))
-      )
+          ratio_Resto_Pop = `Resto da população`/pop_resto,
+
+          ## Ratio diff
+
+          # Brancos 3SMmais
+          dif_branco_atemeioSM_branco_3SMmais = abs(ratio_Brancos_meioSM - ratio_Brancos_3SMmais),
+          dif_branco_meioa1SM_branco_3SMmais = abs(ratio_Brancos_meioa1SM - ratio_Brancos_3SMmais),
+          dif_branco_1a3SM_branco_3SMmais = abs(ratio_Brancos_1a3SM - ratio_Brancos_3SMmais),
+
+          dif_negro_atemeioSM_branco_3SMmais = abs(ratio_Negros_meioSM - ratio_Brancos_3SMmais),
+          dif_negro_meioa1SM_branco_3SMmais = abs(ratio_Negros_meioa1SM - ratio_Brancos_3SMmais),
+          dif_negro_1a3SM_branco_3SMmais = abs(ratio_Negros_1a3SM - ratio_Brancos_3SMmais),
+          dif_negro_3SMmais_branco_3SMmais = abs(ratio_Negros_3SMmais - ratio_Brancos_3SMmais),
+
+          dif_resto_branco_3SMmais = abs(ratio_Resto_Pop - ratio_Brancos_3SMmais),
+
+          # Brancos 1a3SM
+          dif_branco_atemeioSM_branco_1a3SM = abs(ratio_Brancos_meioSM - ratio_Brancos_1a3SM),
+          dif_branco_meioa1SM_branco_1a3SM = abs(ratio_Brancos_meioa1SM - ratio_Brancos_1a3SM),
+
+          dif_negro_atemeioSM_branco_1a3SM = abs(ratio_Negros_meioSM - ratio_Brancos_1a3SM),
+          dif_negro_meioa1SM_branco_1a3SM = abs(ratio_Negros_meioa1SM - ratio_Brancos_1a3SM),
+          dif_negro_1a3SM_branco_1a3SM = abs(ratio_Negros_1a3SM - ratio_Brancos_1a3SM),
+          dif_negro_3SMmais_branco_1a3SM = abs(ratio_Negros_3SMmais - ratio_Brancos_1a3SM),
+
+          dif_resto_branco_1a3SM = abs(ratio_Resto_Pop - ratio_Brancos_1a3SM),
+
+          # Brancos meioa1SM
+          dif_branco_atemeioSM_branco_meioa1SM = abs(ratio_Brancos_meioSM - ratio_Brancos_meioa1SM),
+
+          dif_negro_atemeioSM_branco_meioa1SM = abs(ratio_Negros_meioSM - ratio_Brancos_meioa1SM),
+          dif_negro_meioa1SM_branco_meioa1SM = abs(ratio_Negros_meioa1SM - ratio_Brancos_meioa1SM),
+          dif_negro_1a3SM_branco_meioa1SM = abs(ratio_Negros_1a3SM - ratio_Brancos_meioa1SM),
+          dif_negro_3SMmais_branco_meioa1SM = abs(ratio_Negros_3SMmais - ratio_Brancos_meioa1SM),
+
+          dif_resto_branco_meioa1SM = abs(ratio_Resto_Pop - ratio_Brancos_meioa1SM),
+
+          # Brancos atemeioSM
+
+          dif_negro_atemeioSM_branco_atemeioSM = abs(ratio_Negros_meioSM - ratio_Brancos_meioSM),
+          dif_negro_meioa1SM_branco_atemeioSM = abs(ratio_Negros_meioa1SM - ratio_Brancos_meioSM),
+          dif_negro_1a3SM_branco_atemeioSM = abs(ratio_Negros_1a3SM - ratio_Brancos_meioSM),
+          dif_negro_3SMmais_branco_atemeioSM = abs(ratio_Negros_3SMmais - ratio_Brancos_meioSM),
+
+          dif_resto_branco_atemeioSM = abs(ratio_Resto_Pop - ratio_Brancos_meioSM),
+
+          # Negros 3SMmais
+
+          dif_negro_atemeioSM_negro_3SMmais = abs(ratio_Negros_meioSM - ratio_Negros_3SMmais),
+          dif_negro_meioa1SM_negro_3SMmais = abs(ratio_Negros_meioa1SM - ratio_Negros_3SMmais),
+          dif_negro_1a3SM_negro_3SMmais = abs(ratio_Negros_1a3SM - ratio_Negros_3SMmais),
+
+          dif_resto_negro_3SMmais = abs(ratio_Resto_Pop - ratio_Negros_3SMmais),
+
+          # Negros 1a3SM
+
+          dif_negro_atemeioSM_negro_1a3SM = abs(ratio_Negros_meioSM - ratio_Negros_1a3SM),
+          dif_negro_meioa1SM_negro_1a3SM = abs(ratio_Negros_meioa1SM - ratio_Negros_1a3SM),
+
+          dif_resto_negro_1a3SM = abs(ratio_Resto_Pop - ratio_Negros_1a3SM),
+
+          # Negros meioa1SM
+
+          dif_negro_atemeioSM_negro_meioa1SM = abs(ratio_Negros_meioSM - ratio_Negros_meioa1SM),
+
+          dif_resto_negro_meioa1SM = abs(ratio_Resto_Pop - ratio_Negros_meioa1SM),
+
+          # Negros atemeioSM
+
+          dif_resto_negro_atemeioSM = abs(ratio_Resto_Pop - ratio_Negros_meioSM)
+
+        ) |>
+        mutate(across(starts_with("dif_"), ~ replace_na(.x, 0))) |>
+        summarise(
+          # negros 3SMmais
+          D_negro_3SMmais_branco_3SMmais = sum(dif_negro_3SMmais_branco_3SMmais)*.5,
+          D_negro_3SMmais_branco_1a3SM = sum(dif_negro_3SMmais_branco_1a3SM)*.5,
+          D_negro_3SMmais_branco_meioa1SM = sum(dif_negro_3SMmais_branco_meioa1SM)*.5,
+          D_negro_3SMmais_branco_atemeioSM = sum(dif_negro_3SMmais_branco_atemeioSM)*.5,
+
+          D_negro_3SMmais_negro_1a3SM = sum(dif_negro_1a3SM_negro_3SMmais)*.5,
+          D_negro_3SMmais_negro_meioa1SM = sum(dif_negro_meioa1SM_negro_3SMmais)*.5,
+          D_negro_3SMmais_negro_atemeioSM = sum(dif_negro_atemeioSM_negro_3SMmais)*.5,
+
+          D_negro_3SMmais_resto = sum(dif_resto_negro_3SMmais)*.5,
+
+          # Negros 1a3SM
+          D_negro_1a3SM_branco_3SMmais = sum(dif_negro_1a3SM_branco_3SMmais)*.5,
+          D_negro_1a3SM_branco_1a3SM = sum(dif_negro_1a3SM_branco_1a3SM)*.5,
+          D_negro_1a3SM_branco_meioa1SM = sum(dif_negro_1a3SM_branco_meioa1SM)*.5,
+          D_negro_1a3SM_branco_atemeioSM = sum(dif_negro_1a3SM_branco_atemeioSM)*.5,
+
+          D_negro_1a3SM_negro_meioa1SM = sum(dif_negro_meioa1SM_negro_1a3SM)*.5,
+          D_negro_1a3SM_negro_atemeioSM = sum(dif_negro_atemeioSM_negro_1a3SM)*.5,
+
+          D_negro_1a3SM_resto = sum(dif_resto_negro_1a3SM)*.5,
+
+          # Negros meio a 1 SM
+          D_negro_meioa1SM_branco_3SMmais = sum(dif_branco_meioa1SM_branco_3SMmais)*.5,
+          D_negro_meioa1SM_branco_1a3SM = sum(dif_negro_meioa1SM_branco_1a3SM)*.5,
+          D_negro_meioa1SM_branco_meioa1SM = sum(dif_negro_meioa1SM_branco_meioa1SM)*.5,
+          D_negro_meioa1SM_branco_atemeioSM = sum(dif_negro_meioa1SM_branco_atemeioSM)*.5,
+
+          D_negro_meioa1SM_negro_atemeioSM = sum(dif_negro_atemeioSM_negro_meioa1SM)*.5,
+
+          D_negro_meioa1SM_resto = sum(dif_resto_negro_meioa1SM)*.5,
+
+          # Negros ate meio SM
+          D_negro_atemeioSM_branco_3SMmais = sum(dif_negro_atemeioSM_branco_3SMmais)*.5,
+          D_negro_atemeioSM_branco_1a3SM = sum(dif_negro_atemeioSM_branco_1a3SM)*.5,
+          D_negro_atemeioSM_branco_meioa1SM = sum(dif_negro_atemeioSM_branco_meioa1SM)*.5,
+          D_negro_atemeioSM_branco_atemeioSM = sum(dif_negro_atemeioSM_branco_atemeioSM)*.5,
+
+          D_negro_atemeioSM_resto = sum(dif_resto_negro_atemeioSM)*.5,
+
+          # Brancos 3SMmais
+          D_branco_3SMmais_branco_1a3SM = sum(dif_branco_1a3SM_branco_3SMmais)*.5,
+          D_branco_3SMmais_branco_meioa1SM = sum(dif_branco_meioa1SM_branco_3SMmais)*.5,
+          D_branco_3SMmais_branco_atemeioSM = sum(dif_branco_atemeioSM_branco_3SMmais)*.5,
+
+          D_branco_3SMmais_resto = sum(dif_resto_branco_3SMmais)*.5,
+
+          # Brancos 1a3 SM
+          D_branco_1a3SM_branco_meioa1SM = sum(dif_branco_meioa1SM_branco_1a3SM)*.5,
+          D_branco_1a3SM_branco_atemeioSM = sum(dif_branco_atemeioSM_branco_1a3SM)*.5,
+
+          D_branco_1a3SM_resto = sum(dif_resto_branco_1a3SM)*.5,
+
+          # Brancos meio a 1 SM
+          D_branco_meioa1SM_branco_atemeioSM = sum(dif_branco_atemeioSM_branco_meioa1SM)*.5,
+
+          D_branco_meioa1SM_resto = sum(dif_resto_branco_meioa1SM)*.5,
+
+          # Brancos ate meio SM
+
+          D_branco_atemeioSM_resto = sum(dif_resto_branco_atemeioSM)*.5
+
+        ) |>
+        pivot_longer(D_negro_3SMmais_branco_3SMmais:D_branco_atemeioSM_resto, names_to = "grupo", values_to = "D") |>
+        mutate(
+          cor_classe1 = c(rep("Negros 3SMmais",8),rep("Negros 1a3SM",7),rep("Negros meioa1SM",6),
+                          rep("Negros atemeioSM",5),rep("Brancos 3SMmais",4),rep("Brancos 1a3SM",3),
+                          rep("Brancos meioa1SM",2),rep("Brancos atemeioSM",1)),
+          cor_classe2 = c(c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
+                          c("Negros 1a3SM","Negros meioa1SM","Negros atemeioSM", "Resto da população"),
+                          c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
+                          c("Negros meioa1SM","Negros atemeioSM", "Resto da população"),
+                          c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
+                          c("Negros atemeioSM", "Resto da população"),
+                          c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
+                          c("Resto da população"),
+                          c("Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
+                          c("Resto da população"),c("Brancos meioa1SM","Brancos atemeioSM"),
+                          c("Resto da população"),c("Brancos atemeioSM"),
+                          c("Resto da população"),c("Resto da população"))
+        )
+    }else{
+      output_classe <- tabela_por_classe |>
+        select(-n_se) |>
+        mutate(pop_branca_baixo = n[classe_raca == "Brancos baixo" & area_ponderacao == 0],
+               pop_branca_intermediario = n[classe_raca == "Brancos intermediário" & area_ponderacao == 0],
+               pop_branca_alto = n[classe_raca == "Brancos alto" & area_ponderacao == 0],
+               pop_negra_baixo = n[classe_raca == "Negros baixo" & area_ponderacao == 0],
+               pop_negra_intermediario = n[classe_raca == "Negros intermediário" & area_ponderacao == 0],
+               pop_negra_alto = n[classe_raca == "Negros alto" & area_ponderacao == 0],
+               pop_resto = n[classe_raca == "Resto da população" & area_ponderacao == 0]) |>
+        pivot_wider(names_from = classe_raca, values_from = n) |>
+        filter(area_ponderacao != 0) |>
+        mutate(
+          # Razoes de cada grupo
+          ratio_Brancos_Alto = `Brancos alto`/pop_branca_alto,
+          ratio_Brancos_Intermediario = `Brancos intermediário`/pop_branca_intermediario,
+          ratio_Brancos_Baixo = `Brancos baixo`/pop_branca_baixo,
+          ratio_Negros_Alto = `Negros alto`/pop_negra_alto,
+          ratio_Negros_Intermediario = `Negros intermediário`/pop_negra_intermediario,
+          ratio_Negros_Baixo = `Negros baixo`/pop_negra_baixo,
+          ratio_Resto_Pop = `Resto da população`/pop_resto,
+          ## Ratio diff
+
+          # Brancos
+          dif_branco_baixo_branco_alto = abs(ratio_Brancos_Baixo - ratio_Brancos_Alto),
+          dif_branco_intermediario_branco_alto = abs(ratio_Brancos_Intermediario - ratio_Brancos_Alto),
+          dif_negro_baixo_branco_alto = abs(ratio_Negros_Baixo - ratio_Brancos_Alto),
+          dif_negro_intermediario_branco_alto = abs(ratio_Negros_Intermediario - ratio_Brancos_Alto),
+          dif_negro_alto_branco_alto = abs(ratio_Negros_Alto - ratio_Brancos_Alto),
+          dif_resto_branco_alto = abs(ratio_Resto_Pop - ratio_Brancos_Alto),
+
+          dif_branco_intermediario_branco_baixo = abs(ratio_Brancos_Intermediario - ratio_Brancos_Baixo),
+          dif_negro_baixo_branco_baixo = abs(ratio_Negros_Baixo - ratio_Brancos_Baixo),
+          dif_negro_intermediario_branco_baixo = abs(ratio_Negros_Intermediario - ratio_Brancos_Baixo),
+          dif_negro_alto_branco_baixo = abs(ratio_Negros_Alto - ratio_Brancos_Baixo),
+          dif_resto_branco_baixo = abs(ratio_Resto_Pop - ratio_Brancos_Baixo),
+
+          dif_negro_baixo_branco_intermediario = abs(ratio_Negros_Baixo - ratio_Brancos_Intermediario),
+          dif_negro_intermediario_branco_intermediario = abs(ratio_Negros_Intermediario - ratio_Brancos_Intermediario),
+          dif_negro_alto_branco_intermediario = abs(ratio_Negros_Alto - ratio_Brancos_Intermediario),
+          dif_resto_branco_intermediario = abs(ratio_Resto_Pop - ratio_Brancos_Intermediario),
+
+          # Negros
+          dif_negro_intermediario_negro_baixo = abs(ratio_Negros_Intermediario - ratio_Negros_Baixo),
+          dif_negro_alto_negro_baixo = abs(ratio_Negros_Alto - ratio_Negros_Baixo),
+          dif_resto_negro_baixo = abs(ratio_Resto_Pop - ratio_Negros_Baixo),
+          dif_negro_alto_negro_intermediario = abs(ratio_Negros_Alto - ratio_Negros_Intermediario),
+          dif_resto_negro_intermediario = abs(ratio_Resto_Pop - ratio_Negros_Intermediario),
+          dif_resto_negro_alto = abs(ratio_Resto_Pop - ratio_Brancos_Intermediario)
+        ) |>
+        mutate(across(starts_with("dif_"), ~ replace_na(.x, 0))) |>
+        summarise(
+          D_negro_alto_branco_alto = sum(dif_negro_alto_branco_alto)*.5,
+          D_negro_alto_branco_intermediario = sum(dif_negro_alto_branco_intermediario)*.5,
+          D_negro_alto_branco_baixo = sum(dif_negro_alto_branco_baixo)*.5,
+          D_negro_intermediario_branco_alto = sum(dif_negro_intermediario_branco_alto)*.5,
+          D_negro_intermediario_branco_intermediario = sum(dif_negro_intermediario_branco_intermediario)*.5,
+          D_negro_intermediario_branco_baixo = sum(dif_negro_intermediario_branco_baixo)*.5,
+          D_negro_baixo_branco_alto = sum(dif_negro_baixo_branco_alto)*.5,
+          D_negro_baixo_branco_intermediario = sum(dif_negro_baixo_branco_intermediario)*.5,
+          D_negro_baixo_branco_baixo = sum(dif_negro_baixo_branco_baixo)*.5,
+          D_negro_baixo_negro_alto = sum(dif_negro_alto_negro_baixo)*.5,
+          D_negro_baixo_negro_intermediario = sum(dif_negro_intermediario_negro_baixo)*.5,
+          D_negro_alto_negro_intermediario = sum(dif_negro_alto_negro_intermediario)*.5,
+          D_branco_baixo_branco_intermediario = sum(dif_branco_intermediario_branco_baixo)*.5,
+          D_branco_baixo_branco_alto = sum(dif_branco_baixo_branco_alto)*.5,
+          D_branco_alto_branco_intermediario = sum(dif_branco_intermediario_branco_alto)*.5,
+          D_negro_alto_resto = sum(dif_resto_negro_alto)*.5,
+          D_negro_intermediario_resto = sum(dif_resto_negro_intermediario)*.5,
+          D_negro_baixo_resto = sum(dif_resto_negro_baixo)*.5,
+          D_branco_alto_resto = sum(dif_resto_branco_alto)*.5,
+          D_branco_intermediario_resto = sum(dif_resto_branco_intermediario)*.5,
+          D_branco_baixo_resto = sum(dif_resto_branco_baixo)*.5
+        ) |>
+        pivot_longer(D_negro_alto_branco_alto:D_branco_baixo_resto, names_to = "grupo", values_to = "D") |>
+        mutate(
+          cor_classe1 = c(rep("Negros alto",3),rep("Negros intermediário",3),rep("Negros baixo",5),
+                          rep("Negros alto",1),rep("Brancos baixo",2),rep("Brancos alto",1),
+                          "Negros alto","Negros intermediário","Negro baixo","Branco alto",
+                          "Branco intermediário","Branco baixo"),
+          cor_classe2 = c(rep(c("Branco alto","Branco intermediário","Branco baixo"),3), "Negro alto",
+                          rep("Negro intermediário",2),"Branco intermediário","Branco alto",
+                          "Branco intermediário",rep("Resto da população",6))
+        )
+    }
+
+
+
 
     if(por_classe == TRUE){
       output <- list(geral = output_geral,
