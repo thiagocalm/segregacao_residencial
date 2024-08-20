@@ -733,7 +733,7 @@ for(i in seq_along(ano)){
              estrato_renda_sm = factor(
                estrato_renda_sm,
                levels = c(1,2,3,4),
-               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 2 SM pc", "Maior que 2 SM pc")))
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 3 SM pc", "Maior que 3 SM pc")))
 
     # juncao de RMs
     if(k == 1){
@@ -800,7 +800,7 @@ for(i in seq_along(ano)){
              estrato_renda_sm = factor(
                estrato_renda_sm,
                levels = c(1,2,3,4),
-               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 2 SM pc","Maior que 2 SM pc")))
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 3 SM pc","Maior que 3 SM pc")))
 
     # juncao de RMs
     if(k == 1){
@@ -812,6 +812,99 @@ for(i in seq_along(ano)){
     rm(tabela_estratos_rm, df_rm)
     gc()
     print(paste0("Finalizamos a Tabela 8 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
+## 9 - classes EGP por classe em SM
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1 & idade >= 10 & PO == 1) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_egp_rm <- df_rm |>
+      filter(!is.na(EGP11)) |>
+      group_by(EGP11) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        estrato_renda_sm = 0,
+        n = round(survey_total(na.rm = T),0),
+        prop = round(survey_mean(na.rm = T)*100,2)
+      ) |>
+      select(-ends_with("_se")) |>
+      bind_rows(
+        df_rm |>
+          filter(!is.na(EGP11)) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca, EGP11) |>
+          summarise(
+            ano = ano,
+            estrato_renda_sm = 0,
+            n = round(survey_total(na.rm = T),0),
+            prop = round(survey_mean(na.rm = T)*100,2)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(EGP11, ano, cor_raca, estrato_renda_sm, n, prop)
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(!is.na(EGP11)) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(estrato_renda_sm, EGP11) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            n = round(survey_total(na.rm = T),0),
+            prop = round(survey_mean(na.rm = T)*100,2)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(EGP11, ano, cor_raca, estrato_renda_sm, n, prop)
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(!is.na(EGP11)) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca, estrato_renda_sm, EGP11) |>
+          summarise(
+            ano = ano,
+            n = round(survey_total(na.rm = T),0),
+            prop = round(survey_mean(na.rm = T)*100,2)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(EGP11, ano, cor_raca, estrato_renda_sm, n, prop)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")
+             ),
+             estrato_renda_sm = factor(
+               estrato_renda_sm,
+               levels = c(1,2,3,4),
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 3 SM pc","Maior que 3 SM pc"))
+            )
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_09 <- tabela_egp_rm
+    } else{
+      tabela_09 <- tabela_09 |>
+        bind_rows(tabela_egp_rm)
+    }
+    rm(tabela_egp_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 9 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -1542,7 +1635,7 @@ for(i in seq_along(ano)){
              estrato_renda_sm = factor(
                estrato_renda_sm,
                levels = c(1,2,3,4),
-               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 2 SM pc", "Maior que 2 SM pc")))
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 3 SM pc", "Maior que 3 SM pc")))
 
     # juncao de RMs
     if(k == 1){
@@ -1609,7 +1702,7 @@ for(i in seq_along(ano)){
              estrato_renda_sm = factor(
                estrato_renda_sm,
                levels = c(1,2,3,4),
-               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 2 SM pc","Maior que 2 SM pc")))
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 3 SM pc","Maior que 3 SM pc")))
 
     # juncao de RMs
     if(k == 1){
@@ -1621,6 +1714,101 @@ for(i in seq_along(ano)){
     rm(tabela_estratos_rm, df_rm)
     gc()
     print(paste0("Finalizamos a Tabela 8 para o ano ",ano," e ",RM,"!!!"))
+  }
+}
+
+## 9 - classes EGP por classe em SM
+
+RMs <- c("RMSalvador","RMFortaleza","RMBH","RMRecife","RMCuritiba","RMRJ",
+         "RMPortoAlegre","RMCampinas","RMSP")
+
+ano = 2010
+
+for(i in seq_along(ano)){
+  ano = ano[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+
+    # definindo dados
+    df_rm <- get(glue::glue("censo_{ano}_{RM}")) |>
+      filter(situacao_dom == 1 & idade >= 10 & PO == 1) |>
+      as_survey_design(ids = id_pes, weights = peso)
+
+    # tabela de cada rm
+    tabela_egp_rm <- df_rm |>
+      filter(!is.na(EGP11)) |>
+      group_by(EGP11) |>
+      summarise(
+        ano = ano,
+        cor_raca = 0,
+        estrato_renda_sm = 0,
+        n = round(survey_total(na.rm = T),0),
+        prop = round(survey_mean(na.rm = T)*100,2)
+      ) |>
+      select(-ends_with("_se")) |>
+      bind_rows(
+        df_rm |>
+          filter(!is.na(EGP11)) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca, EGP11) |>
+          summarise(
+            ano = ano,
+            estrato_renda_sm = 0,
+            n = round(survey_total(na.rm = T),0),
+            prop = round(survey_mean(na.rm = T)*100,2)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(EGP11, ano, cor_raca, estrato_renda_sm, n, prop)
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(!is.na(EGP11)) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(estrato_renda_sm, EGP11) |>
+          summarise(
+            ano = ano,
+            cor_raca = 0,
+            n = round(survey_total(na.rm = T),0),
+            prop = round(survey_mean(na.rm = T)*100,2)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(EGP11, ano, cor_raca, estrato_renda_sm, n, prop)
+      ) |>
+      bind_rows(
+        df_rm |>
+          filter(!is.na(EGP11)) |>
+          filter(cor_raca %in% c(1,2)) |>
+          group_by(cor_raca, estrato_renda_sm, EGP11) |>
+          summarise(
+            ano = ano,
+            n = round(survey_total(na.rm = T),0),
+            prop = round(survey_mean(na.rm = T)*100,2)
+          ) |>
+          select(-ends_with("_se")) |>
+          select(EGP11, ano, cor_raca, estrato_renda_sm, n, prop)
+      ) |>
+      mutate(RM = RM,
+             cor_raca = factor(
+               cor_raca,
+               levels = c(0,1,2),
+               labels = c("Total","Brancos","Negros")
+             ),
+             estrato_renda_sm = factor(
+               estrato_renda_sm,
+               levels = c(1,2,3,4),
+               labels = c("Até 1/2 SM pc","De 1/2 a 1 SM pc","De 1 a 3 SM pc","Maior que 3 SM pc"))
+      )
+
+    # juncao de RMs
+    if(k == 1){
+      tabela_09_2010 <- tabela_egp_rm
+    } else{
+      tabela_09_2010 <- tabela_09_2010 |>
+        bind_rows(tabela_egp_rm)
+    }
+    rm(tabela_egp_rm, df_rm)
+    gc()
+    print(paste0("Finalizamos a Tabela 9 para o ano ",ano," e ",RM,"!!!"))
   }
 }
 
@@ -2085,6 +2273,63 @@ write.xlsx(
   row.names = FALSE,
   col.names = FALSE,
   sheetName = "tabela 08 - classes renda em SM por egp",
+  append = TRUE,
+  showNA = FALSE
+)
+
+## Tabela 9
+
+tabela9 <- tabela_09 |> mutate(ano = as.numeric(ano)) |>
+  bind_rows(tabela_09_2010) |>
+  pivot_longer(n:prop, names_to = "medida", values_to = "valores") |>
+  mutate(
+    medida = factor(
+      medida,
+      levels = c("n","prop"),
+      labels = c("N","%")),
+    EGP11 = factor(
+      EGP11,
+      levels = c(1:11),
+      labels = c("I. Profissionais, nivel alto","II. Profissionais, nivel baixo",
+                 "IIIa. Não manuais, de rotina, nivel alto","IIIb. Não manuais, de rotina, nivel baixo",
+                 "IVa2. Proprietários e empregadores","IVc1. Empregadores rurais","IVc2. Agricultores para consumo",
+                 "V. Técnicos e supervisores do trabalho manual","VI. Manuais qualificados",
+                 "VIIa. Manuais semi ou não qualificados","VIIb. Trabalhadores da agricultura")
+    )) |>
+  arrange(cor_raca, desc(medida))
+
+tabela9 <- ftable(xtabs(valores ~ medida + ano + RM + EGP11 + cor_raca + estrato_renda_sm,
+                        tabela9),
+                  row.vars = c("cor_raca","EGP11"),
+                  col.vars = c("ano","RM","estrato_renda_sm", "medida")) %>%
+  stats:::format.ftable(quote = FALSE, dec = ",") %>%
+  trimws() %>%
+  as.data.frame()
+
+# Montagem da tabela
+
+titulo <- matrix(ncol = dim(tabela9)[2], nrow = 2)
+titulo[1,1] <- "Tabela: População urbana residente em RMs selecionadas classificada via EGP11, segundo cor ou raça e estratos de renda em SM per capita - Brasil, 2000-2010"
+
+nota <- matrix(ncol = dim(tabela9)[2], nrow = 11)
+nota[2,1] <- "Fonte: IBGE/Censo Demográfico brasileiro."
+nota[4,1] <- "Nota:"
+nota[5,1] <- "1. Foi considerada somente a população residente em área urbana, com no mínimo 10 anos. Excluiu-se casos com classificação EGP ausente."
+nota[6,1] <- "2. Por população negra, entende-se aquelas pessoas autodeclaradas pretas ou pardas."
+nota[7,1] <- "3. Para a classificação da renda, utilizou-se a renda domiciliar per capita oriunda de todas as fontes."
+nota[8,1] <- "4. A renda foi deflacionada para 01/08/2022 com base na data de referência de cada recenseamento."
+nota[9,1] <- "5. As classes categorizadas via EGP seguiram a classificação feita por você, Danilo, em sua tese. Chamo a atenção para a inconsistência nos dados de 2000!!!"
+
+tabela_export <- rbind(titulo,tabela9, nota)
+
+# Salvando arquivo
+
+write.xlsx(
+  tabela_export,
+  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
+  row.names = FALSE,
+  col.names = FALSE,
+  sheetName = "tabela 09 - EGP",
   append = TRUE,
   showNA = FALSE
 )
