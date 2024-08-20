@@ -94,8 +94,8 @@ for(i in 1: length(ano)){
         estrato_renda_sm = case_when(
           renda_pc_def <= 606 ~ 1,
           renda_pc_def > 606 & renda_pc_def <= 1212 ~ 2,
-          renda_pc_def > 1212 & renda_pc_def <= 2424 ~ 3,
-          renda_pc_def > 2424 ~ 4
+          renda_pc_def > 1212 & renda_pc_def <= 3636 ~ 3,
+          renda_pc_def > 3636 ~ 4
         )
       ) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0103, area_ponderacao = areap,
@@ -249,8 +249,8 @@ for(i in 1: length(ano)){
         estrato_renda_sm = case_when(
           renda_pc_def <= 606 ~ 1,
           renda_pc_def > 606 & renda_pc_def <= 1212 ~ 2,
-          renda_pc_def > 1212 & renda_pc_def <= 2424 ~ 3,
-          renda_pc_def > 2424 ~ 4
+          renda_pc_def > 1212 & renda_pc_def <= 3636 ~ 3,
+          renda_pc_def > 3636 ~ 4
         )
       ) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0002, area_ponderacao = v0011,
