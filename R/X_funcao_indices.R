@@ -11,8 +11,7 @@ func_calcula_dissimilaridade <-
     idade = "idade",
     PO = "PO",
     peso = "peso",
-    EGP = TRUE,
-    SM = TRUE,
+    tipo_variavel, # pode receber "SM" para Salarios Minimos; "EGP" para classes EGP ou outros...
     por_classe = TRUE){
 
     # Preparo da base de dados
@@ -20,7 +19,7 @@ func_calcula_dissimilaridade <-
 
     vars <- c(var_estrato, cor_raca, area_ponderacao, id_pessoa, peso, idade, PO)
 
-    if(EGP == TRUE){
+    if(tipo_variavel == "EGP"){
       df <- data |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
@@ -36,7 +35,7 @@ func_calcula_dissimilaridade <-
         )) |>
         as_survey_design(ids = id_pes, weights = peso)
     }
-    if(SM == TRUE){
+    if(tipo_variavel == "SM"){
       df <- data |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
@@ -126,7 +125,7 @@ func_calcula_dissimilaridade <-
       mutate(across(starts_with("ratio_"), ~ replace_na(.x, 0))) |>
       summarise(D = sum(ratio_dif)*.5)
 
-    if(SM == TRUE){
+    if(tipo_variavel == "SM"){
       output_classe <- tabela_por_classe |>
         select(-n_se) |>
         mutate(pop_branca_meioSM = n[classe_raca == "Brancos ate meio SM" & area_ponderacao == 0],
@@ -438,15 +437,15 @@ func_calcula_quociente_locacional <-
     PO = "PO",
     id_pessoa = "id_pes",
     peso = "peso",
-    EGP = TRUE,
+    tipo_variavel, # pode receber "SM" para Salarios Minimos; "EGP" para classes EGP ou outros...
     por_classe = TRUE){
 
     # Preparo da base de dados
-    # criar base de dados a ser utilizada e diferencial para EGP ou classificacao por estrato de renda
+    # criar base de dados a ser utilizada e diferencial para EGP, renda em SM ou classificacao por estrato de renda
 
     vars <- c(var_estrato, cor_raca, area_ponderacao, id_pessoa, peso, idade, PO)
 
-    if(EGP == TRUE){
+    if(tipo_variavel == "EGP"){
       df <- data |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
@@ -460,7 +459,23 @@ func_calcula_quociente_locacional <-
           var_estrato == 2 & cor_raca == 2 ~ "Negros alto",
           TRUE ~ "Resto da população"
         )) |>
-        filter(classe_raca != "Resto da população") |>
+        as_survey_design(ids = id_pes, weights = peso)
+    }
+    if(tipo_variavel == "SM"){
+      df <- data |>
+        select(all_of(vars)) |>
+        select(var_estrato = all_of(var_estrato), everything()) |>
+        mutate(classe_raca = case_when(
+          var_estrato == 1 & cor_raca == 1 ~ "Brancos ate meio SM",
+          var_estrato == 2 & cor_raca == 1 ~ "Brancos meio a 1SM",
+          var_estrato == 3 & cor_raca == 1 ~ "Brancos 1 a 3SM",
+          var_estrato == 4 & cor_raca == 1 ~ "Brancos 3SM mais",
+          var_estrato == 1 & cor_raca == 2 ~ "Negros meio SM",
+          var_estrato == 2 & cor_raca == 2 ~ "Negros meio a 1SM",
+          var_estrato == 3 & cor_raca == 2 ~ "Negros 1 a 3SM",
+          var_estrato == 4 & cor_raca == 2 ~ "Negros 3SM mais",
+          TRUE ~ "Resto da população"
+        )) |>
         as_survey_design(ids = id_pes, weights = peso)
     }else{
       df <- data |>
@@ -476,7 +491,6 @@ func_calcula_quociente_locacional <-
           var_estrato == 2 & cor_raca == 2 ~ "Negros alto",
           TRUE ~ "Resto da população"
         )) |>
-        filter(classe_raca != "Resto da população") |>
         as_survey_design(ids = id_pessoa, weights = peso)
     }
 
