@@ -543,26 +543,62 @@ func_calcula_quociente_locacional <-
       mutate(QL_branca = `1`/prop_branca,
              QL_negra = `2`/prop_negra)
 
-    output_classe <- tabela_por_classe |>
-      mutate(prop_branca_baixo = prop[classe_raca == "Brancos baixo" & area_ponderacao == 0],
-             prop_branca_intermediario = prop[classe_raca == "Brancos intermediário" & area_ponderacao == 0],
-             prop_branca_alto = prop[classe_raca == "Brancos alto" & area_ponderacao == 0],
-             prop_negra_baixo = prop[classe_raca == "Negros baixo" & area_ponderacao == 0],
-             prop_negra_intermediario = prop[classe_raca == "Negros intermediário" & area_ponderacao == 0],
-             prop_negra_alto = prop[classe_raca == "Negros alto" & area_ponderacao == 0]) |>
-      pivot_wider(names_from = classe_raca, values_from = prop) |>
-      mutate(across(c(`Negros baixo`,`Negros intermediário`,
-                      `Negros alto`,`Brancos baixo`,`Brancos intermediário`,
-                      `Brancos alto`), ~ replace_na(.x, 0))) |>
-      filter(area_ponderacao != 0) |>
-      mutate(
-        # Razoes de cada grupo
-        QL_Brancos_Alto = `Brancos alto`/prop_branca_alto,
-        QL_Brancos_Intermediario = `Brancos intermediário`/prop_branca_intermediario,
-        QL_Brancos_Baixo = `Brancos baixo`/prop_branca_baixo,
-        QL_Negros_Alto = `Negros alto`/prop_negra_alto,
-        QL_Negros_Intermediario = `Negros intermediário`/prop_negra_intermediario,
-        QL_Negros_Baixo = `Negros baixo`/prop_negra_baixo)
+    if(tipo_variavel == "SM"){
+      output_classe <- tabela_por_classe |>
+        mutate(
+          # Prop pop branca
+          prop_branca_meioSM = prop[classe_raca == "Brancos ate meio SM" & area_ponderacao == 0],
+          prop_branca_meioa1SM = prop[classe_raca == "Brancos meio a 1SM" & area_ponderacao == 0],
+          prop_branca_1a3SM = prop[classe_raca == "Brancos 1 a 3SM" & area_ponderacao == 0],
+          prop_branca_3SMmais = prop[classe_raca == "Brancos 3SM mais" & area_ponderacao == 0],
+          # Prop pop negra
+          prop_negra_meioSM = prop[classe_raca == "Negros ate meio SM" & area_ponderacao == 0],
+          prop_negra_meioa1SM = prop[classe_raca == "Negros meio a 1SM" & area_ponderacao == 0],
+          prop_negra_1a3SM = prop[classe_raca == "Negros 1 a 3SM" & area_ponderacao == 0],
+          prop_negra_3SMmais = prop[classe_raca == "Negros 3SM mais" & area_ponderacao == 0],
+        ) |>
+        pivot_wider(names_from = classe_raca, values_from = prop) |>
+        mutate(
+          across(c(`Brancos ate meio SM`,`Brancos meio a 1SM`,`Brancos 1 a 3SM`,
+                   `Brancos 3SM mais`,`Negros ate meio SM`,`Negros meio a 1SM`,
+                   `Negros 1 a 3SM`, `Negros 3SM mais`), ~ replace_na(.x, 0))
+        ) |>
+        filter(area_ponderacao != 0) |>
+        mutate(
+          # Razoes de cada grupo
+
+          QL_Brancos_3SMmais = `Brancos 3SM mais`/prop_branca_3SMmais,
+          QL_Brancos_1a3SM = `Brancos 1 a 3SM`/prop_branca_1a3SM,
+          QL_Brancos_meioa1SM = `Brancos meio a 1SM`/prop_branca_meioa1SM,
+          QL_Brancos_meioSM = `Brancos ate meio SM`/prop_branca_meioSM,
+
+          QL_Negros_3SMmais = `Negros alto`/prop_negra_3SMmais,
+          QL_Negros_1a3SM = `Negros intermediário`/prop_negra_1a3SM,
+          QL_Negros_meioa1SM = `Negros baixo`/prop_negra_meioa1SM,
+          QL_Negros_meioSM = `Negros baixo`/prop_negra_meioSM
+        )
+    }else{
+      output_classe <- tabela_por_classe |>
+        mutate(prop_branca_baixo = prop[classe_raca == "Brancos baixo" & area_ponderacao == 0],
+               prop_branca_intermediario = prop[classe_raca == "Brancos intermediário" & area_ponderacao == 0],
+               prop_branca_alto = prop[classe_raca == "Brancos alto" & area_ponderacao == 0],
+               prop_negra_baixo = prop[classe_raca == "Negros baixo" & area_ponderacao == 0],
+               prop_negra_intermediario = prop[classe_raca == "Negros intermediário" & area_ponderacao == 0],
+               prop_negra_alto = prop[classe_raca == "Negros alto" & area_ponderacao == 0]) |>
+        pivot_wider(names_from = classe_raca, values_from = prop) |>
+        mutate(across(c(`Negros baixo`,`Negros intermediário`,
+                        `Negros alto`,`Brancos baixo`,`Brancos intermediário`,
+                        `Brancos alto`), ~ replace_na(.x, 0))) |>
+        filter(area_ponderacao != 0) |>
+        mutate(
+          # Razoes de cada grupo
+          QL_Brancos_Alto = `Brancos alto`/prop_branca_alto,
+          QL_Brancos_Intermediario = `Brancos intermediário`/prop_branca_intermediario,
+          QL_Brancos_Baixo = `Brancos baixo`/prop_branca_baixo,
+          QL_Negros_Alto = `Negros alto`/prop_negra_alto,
+          QL_Negros_Intermediario = `Negros intermediário`/prop_negra_intermediario,
+          QL_Negros_Baixo = `Negros baixo`/prop_negra_baixo)
+    }
 
     # Sintese dos resultados
     output_geral_sintese <- output_geral |>
@@ -573,21 +609,48 @@ func_calcula_quociente_locacional <-
         desv_pad_QL_negra = sd(QL_negra)
       )
 
-    output_classe_sintese <- output_classe |>
-      summarise(
-        mean_QL_Brancos_Alto = mean(QL_Brancos_Alto),
-        mean_QL_Brancos_Intermediario = mean(QL_Brancos_Intermediario),
-        mean_QL_Brancos_Baixo = mean(QL_Brancos_Baixo),
-        mean_QL_Negros_Alto = mean(QL_Negros_Alto),
-        mean_QL_Negros_Intermediario = mean(QL_Negros_Intermediario),
-        mean_QL_Negros_Baixo = mean(QL_Negros_Baixo),
-        desv_pad_QL_Brancos_Alto = sd(QL_Brancos_Alto),
-        desv_pad_QL_Brancos_Intermediario = sd(QL_Brancos_Intermediario),
-        desv_pad_QL_Brancos_Baixo = sd(QL_Brancos_Baixo),
-        desv_pad_QL_Negros_Alto = sd(QL_Negros_Alto),
-        desv_pad_QL_Negros_Intermediario = sd(QL_Negros_Intermediario),
-        desv_pad_QL_Negros_Baixo = sd(QL_Negros_Baixo)
-      )
+    if(por_classe == TRUE){
+      if(tipo_variavel == "SM"){
+        output_classe_sintese <- output_classe |>
+          summarise(
+            mean_QL_Brancos_3SMmais = mean(QL_Brancos_3SMmais),
+            mean_QL_Brancos_1a3SM = mean(QL_Brancos_1a3SM),
+            mean_QL_Brancos_meioa1SM = mean(QL_Brancos_meioa1SM),
+            mean_QL_Brancos_meioSM = mean(QL_Brancos_meioSM),
+
+            mean_QL_Negros_3SMmais = mean(QL_Negros_3SMmais),
+            mean_QL_Negros_1a3SM = mean(QL_Negros_1a3SM),
+            mean_QL_Negros_meioa1SM = mean(QL_Negros_meioa1SM),
+            mean_QL_Negros_meioSM = mean(QL_Negros_meioSM),
+
+            desv_pad_QL_Brancos_3SMmais = sd(QL_Brancos_3SMmais),
+            desv_pad_QL_Brancos_1a3SM = sd(QL_Brancos_1a3SM),
+            desv_pad_QL_Brancos_meioa1SM = sd(QL_Brancos_meioa1SM),
+            desv_pad_QL_Brancos_meioSM = sd(QL_Brancos_meioSM),
+
+            desv_pad_QL_Negros_3SMmais = sd(QL_Negros_3SMmais),
+            desv_pad_QL_Negros_1a3SM = sd(QL_Negros_1a3SM),
+            desv_pad_QL_Negros_meioa1SM = sd(QL_Negros_meioa1SM),
+            desv_pad_QL_Negros_meioSM = sd(QL_Negros_meioSM)
+          )
+      }else{
+        output_classe_sintese <- output_classe |>
+          summarise(
+            mean_QL_Brancos_Alto = mean(QL_Brancos_Alto),
+            mean_QL_Brancos_Intermediario = mean(QL_Brancos_Intermediario),
+            mean_QL_Brancos_Baixo = mean(QL_Brancos_Baixo),
+            mean_QL_Negros_Alto = mean(QL_Negros_Alto),
+            mean_QL_Negros_Intermediario = mean(QL_Negros_Intermediario),
+            mean_QL_Negros_Baixo = mean(QL_Negros_Baixo),
+            desv_pad_QL_Brancos_Alto = sd(QL_Brancos_Alto),
+            desv_pad_QL_Brancos_Intermediario = sd(QL_Brancos_Intermediario),
+            desv_pad_QL_Brancos_Baixo = sd(QL_Brancos_Baixo),
+            desv_pad_QL_Negros_Alto = sd(QL_Negros_Alto),
+            desv_pad_QL_Negros_Intermediario = sd(QL_Negros_Intermediario),
+            desv_pad_QL_Negros_Baixo = sd(QL_Negros_Baixo)
+          )
+      }
+    }
 
     if(por_classe == TRUE){
       output <- list(geral = output_geral,
