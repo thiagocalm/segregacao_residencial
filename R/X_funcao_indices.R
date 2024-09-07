@@ -4,7 +4,7 @@
 func_calcula_dissimilaridade <-
   function(
     data,
-    var_estrato = "estratos_sociais_egp",
+    var_estrato,
     cor_raca = "cor_raca",
     area_ponderacao = "area_ponderacao",
     id_pessoa = "id_pes",
@@ -44,7 +44,7 @@ func_calcula_dissimilaridade <-
           var_estrato == 2 & cor_raca == 1 ~ "Brancos meio a 1SM",
           var_estrato == 3 & cor_raca == 1 ~ "Brancos 1 a 3SM",
           var_estrato == 4 & cor_raca == 1 ~ "Brancos 3SM mais",
-          var_estrato == 1 & cor_raca == 2 ~ "Negros meio SM",
+          var_estrato == 1 & cor_raca == 2 ~ "Negros ate meio SM",
           var_estrato == 2 & cor_raca == 2 ~ "Negros meio a 1SM",
           var_estrato == 3 & cor_raca == 2 ~ "Negros 1 a 3SM",
           var_estrato == 4 & cor_raca == 2 ~ "Negros 3SM mais",
@@ -430,7 +430,7 @@ func_fazer_tabela <- function(tabela){
 func_calcula_quociente_locacional <-
   function(
     data,
-    var_estrato = "estratos_sociais_egp",
+    var_estrato,
     cor_raca = "cor_raca",
     area_ponderacao = "area_ponderacao",
     idade = "idade",
@@ -470,7 +470,7 @@ func_calcula_quociente_locacional <-
           var_estrato == 2 & cor_raca == 1 ~ "Brancos meio a 1SM",
           var_estrato == 3 & cor_raca == 1 ~ "Brancos 1 a 3SM",
           var_estrato == 4 & cor_raca == 1 ~ "Brancos 3SM mais",
-          var_estrato == 1 & cor_raca == 2 ~ "Negros meio SM",
+          var_estrato == 1 & cor_raca == 2 ~ "Negros ate meio SM",
           var_estrato == 2 & cor_raca == 2 ~ "Negros meio a 1SM",
           var_estrato == 3 & cor_raca == 2 ~ "Negros 1 a 3SM",
           var_estrato == 4 & cor_raca == 2 ~ "Negros 3SM mais",
@@ -572,10 +572,10 @@ func_calcula_quociente_locacional <-
           QL_Brancos_meioa1SM = `Brancos meio a 1SM`/prop_branca_meioa1SM,
           QL_Brancos_meioSM = `Brancos ate meio SM`/prop_branca_meioSM,
 
-          QL_Negros_3SMmais = `Negros alto`/prop_negra_3SMmais,
-          QL_Negros_1a3SM = `Negros intermediário`/prop_negra_1a3SM,
-          QL_Negros_meioa1SM = `Negros baixo`/prop_negra_meioa1SM,
-          QL_Negros_meioSM = `Negros baixo`/prop_negra_meioSM
+          QL_Negros_3SMmais = `Negros 3SM mais`/prop_negra_3SMmais,
+          QL_Negros_1a3SM = `Negros 1 a 3SM`/prop_negra_1a3SM,
+          QL_Negros_meioa1SM = `Negros meio a 1SM`/prop_negra_meioa1SM,
+          QL_Negros_meioSM = `Negros ate meio SM`/prop_negra_meioSM
         )
     }else{
       output_classe <- tabela_por_classe |>
