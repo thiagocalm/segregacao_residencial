@@ -21,9 +21,10 @@ func_calcula_dissimilaridade <-
 
     if(tipo_variavel == "EGP"){
       df <- data |>
+        filter(situacao_dom == 1) |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
-        filter(idade >= 10 & PO == 1 & !is.na(var_estrato) & situacao_dom == 1) |>
+        filter(idade >= 10 & PO == 1 & !is.na(var_estrato)) |>
         mutate(classe_raca = case_when(
           var_estrato == 0 & cor_raca == 1 ~ "Brancos baixo",
           var_estrato == 1 & cor_raca == 1 ~ "Brancos intermediário",
@@ -37,9 +38,9 @@ func_calcula_dissimilaridade <-
     }
     if(tipo_variavel == "SM"){
       df <- data |>
+        filter(situacao_dom == 1) |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
-        filter(situacao_dom == 1) |>
         mutate(classe_raca = case_when(
           var_estrato == 1 & cor_raca == 1 ~ "Brancos ate meio SM",
           var_estrato == 2 & cor_raca == 1 ~ "Brancos meio a 1SM",
@@ -54,6 +55,7 @@ func_calcula_dissimilaridade <-
         as_survey_design(ids = id_pes, weights = peso)
     }else{
       df <- data |>
+        filter(situacao_dom == 1) |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
         filter(idade >= 10) |>
@@ -449,9 +451,10 @@ func_calcula_quociente_locacional <-
 
     if(tipo_variavel == "EGP"){
       df <- data |>
+        filter(situacao_dom == 1) |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
-        filter(idade >= 10 & PO == 1 & !is.na(var_estrato) & situacao_dom == 1) |>
+        filter(idade >= 10 & PO == 1 & !is.na(var_estrato)) |>
         mutate(classe_raca = case_when(
           var_estrato == 0 & cor_raca == 1 ~ "Brancos baixo",
           var_estrato == 1 & cor_raca == 1 ~ "Brancos intermediário",
@@ -465,9 +468,9 @@ func_calcula_quociente_locacional <-
     }
     if(tipo_variavel == "SM"){
       df <- data |>
+        filter(situacao_dom == 1) |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
-        filter(situacao_dom == 1) |>
         mutate(classe_raca = case_when(
           var_estrato == 1 & cor_raca == 1 ~ "Brancos ate meio SM",
           var_estrato == 2 & cor_raca == 1 ~ "Brancos meio a 1SM",
@@ -482,6 +485,7 @@ func_calcula_quociente_locacional <-
         as_survey_design(ids = id_pes, weights = peso)
     }else{
       df <- data |>
+        filter(situacao_dom == 1) |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
         filter(idade >= 10) |>
