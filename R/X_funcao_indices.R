@@ -23,7 +23,7 @@ func_calcula_dissimilaridade <-
       df <- data |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
-        filter(idade >= 10 & PO == 1 & !is.na(var_estrato)) |>
+        filter(idade >= 10 & PO == 1 & !is.na(var_estrato) & situacao_dom == 1) |>
         mutate(classe_raca = case_when(
           var_estrato == 0 & cor_raca == 1 ~ "Brancos baixo",
           var_estrato == 1 & cor_raca == 1 ~ "Brancos intermediário",
@@ -39,6 +39,7 @@ func_calcula_dissimilaridade <-
       df <- data |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
+        filter(situacao_dom == 1) |>
         mutate(classe_raca = case_when(
           var_estrato == 1 & cor_raca == 1 ~ "Brancos ate meio SM",
           var_estrato == 2 & cor_raca == 1 ~ "Brancos meio a 1SM",
@@ -409,9 +410,10 @@ func_calcula_dissimilaridade <-
   }
 
 func_fazer_tabela <- function(tabela){
-  if(is.list(tabela)){
-    tabela <- tabela[[classe]]
-  }
+  # OBS.: essa parte foi comentada por nao ter necessidade a principio
+  # if(is.list(tabela)){
+  #   stop("Use a data.table/tibble object in 'tabela' argument!")
+  # }
 
   tabela_cruzada <- ftable(xtabs(D ~ cor_classe1 + cor_classe2,
                                  tabela),
@@ -449,7 +451,7 @@ func_calcula_quociente_locacional <-
       df <- data |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
-        filter(idade >= 10 & PO == 1 & !is.na(var_estrato)) |>
+        filter(idade >= 10 & PO == 1 & !is.na(var_estrato) & situacao_dom == 1) |>
         mutate(classe_raca = case_when(
           var_estrato == 0 & cor_raca == 1 ~ "Brancos baixo",
           var_estrato == 1 & cor_raca == 1 ~ "Brancos intermediário",
@@ -465,6 +467,7 @@ func_calcula_quociente_locacional <-
       df <- data |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
+        filter(situacao_dom == 1) |>
         mutate(classe_raca = case_when(
           var_estrato == 1 & cor_raca == 1 ~ "Brancos ate meio SM",
           var_estrato == 2 & cor_raca == 1 ~ "Brancos meio a 1SM",
