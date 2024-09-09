@@ -13,9 +13,6 @@ anos <- c(2000,2010)
 RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
          "RMRJ","RMSalvador","RMSP")
 
-i = 1
-k = 1
-
 for(i in 1: length(anos)){
   ano = anos[i]
 
@@ -39,14 +36,13 @@ for(i in 1: length(anos)){
   assign(paste0("indices_",ano,"_",RM),index_total)
 
   # Proximo loop
+  rm(index_total)
   }
 }
 
 rm(resultados_QL_index_2000,resultados_QL_index_2010, resultados_D_index_2010, resultados_D_index_2000)
 
-
 # Gerando informações para as tabelas -------------------------------------
-
 
 for(i in seq_along(anos)){
   ano = anos[i]
@@ -62,7 +58,7 @@ for(i in seq_along(anos)){
       get(glue::glue("indices_{ano}_{RM}"))$D_classes |>
         bind_rows(
           get(glue::glue("indices_{ano}_{RM}"))$D_classes |>
-            select(grupo, D, cor_classe1 = cor_classe2, cor_classe2 = cor_classe1)
+            dplyr::select(grupo, D, cor_classe1 = cor_classe2, cor_classe2 = cor_classe1)
         ) |>
         distinct() |>
         mutate(
@@ -99,7 +95,7 @@ for(i in seq_along(anos)){
         names_from = medida,
         values_from = valor
       ) |>
-      select(-tipo) |>
+      dplyr::select(-tipo) |>
       mutate(across(-raca_cor, ~ replace_na(.x,0))) |>
       summarise(
         Média = sum(media),
@@ -124,7 +120,7 @@ for(i in seq_along(anos)){
         names_from = medida,
         values_from = valor
       ) |>
-      select(-tipo) |>
+      dplyr::select(-tipo) |>
       mutate(across(-raca_cor, ~ replace_na(.x,0))) |>
       summarise(
         Média = sum(media),
@@ -132,7 +128,7 @@ for(i in seq_along(anos)){
         .by = raca_cor
       )
 
-    df <- get(glue::glue("indices_{ano}_{RM}"))$QL_classe_ap |> select(starts_with("QL_"))
+    df <- get(glue::glue("indices_{ano}_{RM}"))$QL_classe_ap |> dplyr::select(starts_with("QL_"))
 
     names(df) <- substring(names(df), 4)
 
@@ -154,7 +150,7 @@ for(i in seq_along(anos)){
 
 # Exportando resultados
 
-wd <- openxlsx::loadWorkbook('./output/tabelas/Tabela - indices de segregação por RM.xlsx')
+wb <- openxlsx::loadWorkbook('./output/tabelas/Tabela - indices de segregação por RM.xlsx')
 
 for(i in seq_along(anos)){
   ano = anos[i]
@@ -173,10 +169,37 @@ for(i in seq_along(anos)){
       openxlsx::writeData(
         wb = wb,
         sheet = sheet_number,
-        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:11,3:11],
+        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:10,3:10],
         colNames = FALSE,
         rowNames = FALSE,
         xy = c(3,8)
+      )
+      ## QL - Summaries - geral
+      openxlsx::writeData(
+        wb = wb,
+        sheet = sheet_number,
+        x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_geral[,2:3],
+        colNames = FALSE,
+        rowNames = FALSE,
+        xy = c(3,31)
+      )
+      ## QL - Summaries - por classe
+      openxlsx::writeData(
+        wb = wb,
+        sheet = sheet_number,
+        x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_classe_sintese[,2:3],
+        colNames = FALSE,
+        rowNames = FALSE,
+        xy = c(3,34)
+      )
+      ## QL - correlacoes - por classe
+      openxlsx::writeData(
+        wb = wb,
+        sheet = sheet_number,
+        x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_classe_correlacao,
+        colNames = FALSE,
+        rowNames = FALSE,
+        xy = c(7,32)
       )
     } else{
       ## D - Geral
@@ -184,32 +207,51 @@ for(i in seq_along(anos)){
         wb = wb,
         sheet = sheet_number,
         x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_geral[[1]],
-        xy = c(3,16)
+        xy = c(3,17)
       )
       ## D - Classe
       openxlsx::writeData(
         wb = wb,
         sheet = sheet_number,
-        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:11,3:11],
+        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:10,3:10],
         colNames = FALSE,
         rowNames = FALSE,
-        xy = c(3,18)
+        xy = c(3,19)
       )
-
+      ## QL - Summaries - geral
+      openxlsx::writeData(
+        wb = wb,
+        sheet = sheet_number,
+        x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_geral[,2:3],
+        colNames = FALSE,
+        rowNames = FALSE,
+        xy = c(3,44)
+      )
+      ## QL - Summaries - por classe
+      openxlsx::writeData(
+        wb = wb,
+        sheet = sheet_number,
+        x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_classe_sintese[,2:3],
+        colNames = FALSE,
+        rowNames = FALSE,
+        xy = c(3,47)
+      )
+      ## QL - correlacoes - por classe
+      openxlsx::writeData(
+        wb = wb,
+        sheet = sheet_number,
+        x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_classe_correlacao,
+        colNames = FALSE,
+        rowNames = FALSE,
+        xy = c(7,45)
+      )
     }
   }
 }
 
-
 # exportar tabela
 openxlsx::saveWorkbook(
   wb,
-  './output/tabelas/Tabela - indices de segregação por RM.xlsx',
-  overwrite = TRUE
-)
-
-openxlsx::saveWorkbook(
-  wb,
-  './test.xlsx',
+  paste0('./output/tabelas/','[Ultima atualizacao em ',today(),'] Tabela - indices de segregação por RM.xlsx'),
   overwrite = TRUE
 )
