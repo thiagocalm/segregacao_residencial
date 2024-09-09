@@ -7,7 +7,7 @@ library(pacman)
 pacman::p_load(tidyverse, srvyr, readr, xlsx)
 
 RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
-        "RMRJ","RMSalvador","RMSP")
+         "RMRJ","RMSalvador","RMSP")
 
 # 2000 ---------------------------------------------------------
 # Importacao de funcoes externas
