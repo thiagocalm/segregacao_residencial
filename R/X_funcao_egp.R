@@ -1,18 +1,9 @@
-
 # funcao --------------------------------------------------------------------
 
 func_tratamento_classes_egp <- function(
     dados = censo,
-    dados_cnae = tabela_cnae,
-    dados_cbo = tabela_cbo,
-    dados_ajuste_cnae = tabela_cnae_ajuste,
-    dados_ajuste_cbo = tabela_cbo_ajuste,
+    year = ano,
     var_cnae_censo = "v4462",
-    var_cnae_compatibilizacao = "CNAE_Dom",
-    compatibilizacao_cnae = TRUE,
-    var_cbo_compatibilizacao = "CBO_Domiciliar",
-    compatibilizacao_cbo = TRUE,
-    construir_var_pea = TRUE,
     var_trabalhando = "v0439",
     var_afastado = "v0440",
     var_aprendiz = "v0441",
@@ -22,180 +13,38 @@ func_tratamento_classes_egp <- function(
     var_posicao_ocupacao = "v0447",
     var_codigo_ocupacao = "v4452"){
 
+  # Carregamento de pacotes
+  require(readxl)
+  require(tidyverse)
+
   # variaveis que serao utilizadas
   vars <- c(var_trabalhando,var_afastado,var_aprendiz,var_trabalho_consumo,var_buscou_emprego,
             var_posicao_ocupacao, var_codigo_ocupacao)
+
+  # importacao da base para conversao da CBO em ISCO
+  tabela_cbo <- readxl::read_excel(
+    "./docs/de_para_ocupacoes.xlsx",
+    sheet = paste0("Conversão - ",year)
+  ) |>
+    select(cod_censo = 1, cod_isco = 4)
 
   ## criacao da base menor de trabalho
 
   print(paste0("Começando processo de compatibilização..."))
 
-  # Compatibilizacao da CNAE
-  if(compatibilizacao_cnae == TRUE){
-    if(var_cnae_compatibilizacao == "CNAE_Dom"){
-
-      # Ajuste de nomes de variaveis e de algumas variaveis importantes no processamento
-      censo_processing <- dados |>
-        select(id_dom, id_pes,
-               var_cnae_censo = all_of(var_cnae_censo),
-               var_trabalhando = all_of(var_trabalhando),
-               var_afastado = all_of(var_afastado),
-               var_aprendiz = all_of(var_aprendiz),
-               var_trabalho_cultivo = all_of(var_trabalho_cultivo),
-               var_trabalho_consumo = all_of(var_trabalho_consumo),
-               var_buscou_emprego = all_of(var_buscou_emprego),
-               var_posicao_ocupacao = all_of(var_posicao_ocupacao),
-               var_codigo_ocupacao = all_of(var_codigo_ocupacao)) |>
-        mutate(
-          var_cnae_censo = case_when(
-            var_cnae_censo == 14004 ~ 14003, # Extracao de outros minerais nao especificados
-            var_cnae_censo == 18999 ~ 18002, # Confecção sob medida de artigos do vestuário e acessórios
-            var_cnae_censo == 23400 ~ 23020, # Fabricação de produtos do refino do petróleo
-            var_cnae_censo == 45999 ~ 45001, # Atividades de construção em geral
-            var_cnae_censo == 53999 ~ 53101, # Comércio varejista realizado em postos móveis, etc.
-            var_cnae_censo == 55999 ~ 55010, # Alojamento
-            var_cnae_censo == 60999 ~ 60040, # Transporte terrestre de passageiros
-            var_cnae_censo == 75999 ~ 75012, # Administração pública estadual
-            var_cnae_censo == 80999 ~ 80090, # Outras atividades de ensino
-            var_cnae_censo == 85999 ~ 85013, # Outras atividades de saude
-            TRUE ~ var_cnae_censo
-          )
-        )
-
-      # Juncao dos dados
-      censo_processing <- censo_processing |>
-        left_join(
-          dados_cnae[,c(var_cnae_compatibilizacao, "CNAE_Dom2")] |> distinct(),
-          by = c(var_cnae_censo = var_cnae_compatibilizacao),
-          keep = TRUE,
-          relationship = "many-to-many",
-          multiple = "first")
-    } else{
-      # Ajuste de nomes de variaveis
-
-      censo_processing <- dados |>
-        select(id_dom, id_pes,
-               var_cnae_censo = all_of(var_cnae_censo),
-               var_trabalhando = all_of(var_trabalhando),
-               var_afastado = all_of(var_afastado),
-               var_aprendiz = all_of(var_aprendiz),
-               var_trabalho_consumo = all_of(var_trabalho_consumo),
-               var_buscou_emprego = all_of(var_buscou_emprego),
-               var_posicao_ocupacao = all_of(var_posicao_ocupacao),
-               var_codigo_ocupacao = all_of(var_codigo_ocupacao))
-
-      # Ajuste de CNAEs faltantes via tabela relacional
-      censo_processing <- censo_processing |>
-        left_join(
-          dados_ajuste_cnae,
-          by = c(var_cnae_censo = "cod_original"),
-          keep = TRUE,
-          relationship = "many-to-many",
-          multiple = "first") |>
-        mutate(
-          var_cnae_censo = case_when(is.na(cod_ajuste) ~ var_cnae_censo, TRUE ~ cod_ajuste)
-        ) |>
-        select(-starts_with("cod_"))
-
-      # Juncao dos dados
-      censo_processing <- censo_processing |>
-        left_join(
-          dados_cnae[,var_cnae_compatibilizacao] |> distinct(),
-          by = c(var_cnae_censo = var_cnae_compatibilizacao),
-          keep = TRUE,
-          relationship = "many-to-many",
-          multiple = "first")
-    }
-  } else{
-    censo_processing <- censo |>
-      select(id_dom, id_pes, CNAE_Dom = var_cnae_censo, all_of(vars))
-  }
-
-  # Compatibilizacao da CBO
-  if(compatibilizacao_cbo == TRUE){
-    if(var_cbo_compatibilizacao == "CBO_Domiciliar"){
-      # Ajuste na variavel que sera utilizada na compatibilizacao
-      censo_processing <- censo_processing |>
-        mutate(
-          var_codigo_ocupacao = case_when(
-            var_codigo_ocupacao == 1219 ~ 1210, # Diretores de empresas gerais
-            var_codigo_ocupacao == 5221 ~ 5199, # Outros trabalhadores dos serviços
-            var_codigo_ocupacao == 3162 ~ 3161, # Tecnico em geologia, geotecnologia, etc.
-            var_codigo_ocupacao == 2121 ~ 2123, # Especialista em informatica
-            var_codigo_ocupacao == 9922 ~ 9921, # Trabalhadores elementares de servico de manutencao
-            TRUE ~ var_codigo_ocupacao
-          )
-        )
-
-      # Juncao dos dados
-      censo_processing <- censo_processing |>
-        left_join(
-          dados_cbo[,c(var_cbo_compatibilizacao, "CBO2002_4d")] |> distinct(),
-          by = c(var_codigo_ocupacao = var_cbo_compatibilizacao),
-          keep = TRUE,
-          relationship = "many-to-many",
-          multiple = "first") |>
-        mutate(
-          CBO2002_4d = case_when(is.na(var_codigo_ocupacao) ~ NA_integer_, TRUE ~ CBO2002_4d)
-        )
-    } else{
-      # Ajuste na variavel que sera utilizada na compatibilizacao
-      censo_processing <- censo_processing |>
-        left_join(
-          dados_ajuste_cbo |> select(starts_with("cod_")),
-          by = c(var_codigo_ocupacao = "cod_original"),
-          keep = TRUE,
-          relationship = "many-to-many",
-          multiple = "first") |>
-        mutate(
-          var_codigo_ocupacao = case_when(is.na(cod_ajuste) ~ var_codigo_ocupacao, TRUE ~ cod_ajuste)
-        ) |>
-        select(-starts_with("cod_"))
-
-      # Juncao dos dados
-      censo_processing <- censo_processing |>
-        left_join(
-          dados_cbo[,c(var_cbo_compatibilizacao)] |> distinct(),
-          by = c(var_codigo_ocupacao = var_cbo_compatibilizacao),
-          keep = TRUE,
-          relationship = "many-to-many",
-          multiple = "first") |>
-        mutate(
-          CBO2002_4d = case_when(is.na(var_codigo_ocupacao) ~ NA_integer_, TRUE ~ CBO2002_4d)
-        )
-    }
-  }
-
-  # gerando base de controle sobre processo de compatibilizacao
-  if(var_cnae_compatibilizacao == "CNAE_Dom"){
-    tabela <- censo_processing |>
-      mutate(
-        sucessos_cnae = case_when(var_cnae_censo == CNAE_Dom ~ 1, TRUE ~ 0),
-        sucessos_cbo = case_when(var_codigo_ocupacao == CBO_Domiciliar ~ 1, TRUE ~ 0)
-      ) |>
-      summarise(
-        sucessos_cnae = sum(sucessos_cnae),
-        sucessos_cbo = sum(sucessos_cbo),
-        valores_validos_cbo = n_distinct(id_pes[!is.na(var_codigo_ocupacao)]),
-        valores_validos_cnae = n_distinct(id_pes[!is.na(var_cnae_censo)]),
-        perc_sucessos_cnae = round(100*(sucessos_cnae/valores_validos_cnae),2),
-        perc_sucessos_cbo = round(100*(sucessos_cbo/valores_validos_cbo),2)
-      )
-  } else{
-    tabela <- censo_processing |>
-      mutate(
-        sucessos_cnae = case_when(var_cnae_censo == CNAE_Dom2 ~ 1, TRUE ~ 0),
-        sucessos_cbo = case_when(var_codigo_ocupacao == CBO2002_4d ~ 1, TRUE ~ 0)
-      ) |>
-      summarise(
-        sucessos_cnae = sum(sucessos_cnae),
-        sucessos_cbo = sum(sucessos_cbo),
-        valores_validos_cbo = n_distinct(id_pes[!is.na(var_codigo_ocupacao)]),
-        valores_validos_cnae = n_distinct(id_pes[!is.na(var_cnae_censo)]),
-        perc_sucessos_cnae = round(100*(sucessos_cnae/valores_validos_cnae),2),
-        perc_sucessos_cbo = round(100*(sucessos_cbo/valores_validos_cbo),2)
-      )
-  }
+  censo_processing <- censo |>
+    select(
+      id_dom, id_pes,
+      var_cnae_censo = all_of(var_cnae_censo),
+      var_trabalhando = all_of(var_trabalhando),
+      var_afastado = all_of(var_afastado),
+      var_aprendiz = all_of(var_aprendiz),
+      var_trabalho_cultivo = all_of(var_trabalho_cultivo),
+      var_trabalho_consumo = all_of(var_trabalho_consumo),
+      var_buscou_emprego = all_of(var_buscou_emprego),
+      var_posicao_ocupacao = all_of(var_posicao_ocupacao),
+      var_codigo_ocupacao = all_of(var_codigo_ocupacao)
+    )
 
   print(paste0("Começando processo de criacao de variaveis..."))
 
@@ -257,488 +106,126 @@ func_tratamento_classes_egp <- function(
       )
   }
 
-  # Processamento das variaveis ISIC, ISCO, EGP
+  if(ano == 2000){
+
+    # Transformacao CNAE > ISIC
     censo_processing <- censo_processing |>
       mutate(
         ISIC = case_when(
-          CNAE_Dom2 == 0 ~ 999, #NA
-          CNAE_Dom2 >= 1101 & CNAE_Dom2 <= 3002 ~ 10,
-          CNAE_Dom2 >= 5000 & CNAE_Dom2 <= 9000 ~ 20,
-          CNAE_Dom2 >= 10010 & CNAE_Dom2 <= 33002 ~ 30,
-          CNAE_Dom2 >= 35010 & CNAE_Dom2 <= 39000 ~ 40,
-          CNAE_Dom2 >= 41000 & CNAE_Dom2 <= 43000 ~ 50,
-          CNAE_Dom2 == 45020 ~ 114,
-          CNAE_Dom2 >= 45010 & CNAE_Dom2 <= 48100 ~ 60,
-          CNAE_Dom2 >= 49010 & CNAE_Dom2 <= 53002 ~ 80,
-          CNAE_Dom2 >= 55000 & CNAE_Dom2 <= 56999 ~ 70,
-          CNAE_Dom2 >= 58000 & CNAE_Dom2 <= 60002 ~ 114,
-          CNAE_Dom2 == 61000 ~ 80,
-          CNAE_Dom2 >= 62000 & CNAE_Dom2 <= 63000 ~ 111,
-          CNAE_Dom2 >= 64000 & CNAE_Dom2 <= 66002 ~ 90,
-          CNAE_Dom2 >= 68000 & CNAE_Dom2 <= 74000 ~ 111,
-          CNAE_Dom2 == 75000 ~ 113,
-          CNAE_Dom2 == 77010 | CNAE_Dom2 == 79000 ~ 114,
-          CNAE_Dom2 >= 77020 & CNAE_Dom2 <= 82009 ~ 111,
-          CNAE_Dom2 >= 84011 & CNAE_Dom2 <= 84020 ~ 100,
-          CNAE_Dom2 >= 85011 & CNAE_Dom2 <= 85999 ~ 112,
-          CNAE_Dom2 >= 86001 & CNAE_Dom2 <= 88000 ~ 113,
-          CNAE_Dom2 == 99000 | CNAE_Dom2 >= 90000 & CNAE_Dom2 <= 96090 ~ 114,
-          CNAE_Dom2 == 97000 ~ 120,
-          CNAE_Dom2 == 99999 ~ 999 #NA
+          var_cnae_censo %in% c(0,99999) ~ 999, #NA
+          var_cnae_censo %in% 1101:5002 ~ 10,
+          var_cnae_censo %in% 10000:14004 ~ 20,
+          var_cnae_censo %in% 15010:37000 ~ 30,
+          var_cnae_censo %in% 40010:41000 ~ 40,
+          var_cnae_censo %in% 45001:45999 ~ 50,
+          var_cnae_censo %in% c(50030:53102,53999) ~ 60,
+          var_cnae_censo %in% 55010:55999 ~ 70,
+          var_cnae_censo %in% c(60010:63022,64010:64020) ~ 80,
+          var_cnae_censo %in% 65000:67020 ~ 90,
+          var_cnae_censo %in% c(75011:75999) ~ 100,
+          var_cnae_censo %in% c(70001:70002,71020,72010:74050,74090) ~ 111,
+          var_cnae_censo %in% c(80011:80999) ~ 112,
+          var_cnae_censo %in% c(74060,85011:85999) ~ 113,
+          var_cnae_censo %in% c(50020,53111:53113,63030,71010,71030,90000:93092,99000) ~ 114,
+          var_cnae_censo %in% c(95000) ~ 120
         )
       )
 
-  # Transformação da CBO em ISCO
+    print("Finalizou a criação do ISIC...")
+
+    # Criacao da variavel ISCO
+    censo_processing <- censo_processing |>
+      left_join(
+        tabela_cbo,
+        by = c(var_codigo_ocupacao = "cod_censo"),
+        keep = FALSE
+      )
 
     censo_processing <- censo_processing |>
       mutate(
         ISCO = case_when(
-          CBO2002_4d %in% c(110:999,5411) ~ 110,
-          CBO2002_4d ==1111~1110,
-          CBO2002_4d ==1113~1110,
-          CBO2002_4d ==1112~1120,
-          CBO2002_4d ==1114~1143,
-          CBO2002_4d ==1120~1210,
-          CBO2002_4d ==1311~1221,
-          CBO2002_4d ==1312~1221,
-          CBO2002_4d ==1321~1222,
-          CBO2002_4d ==1322~1222,
-          CBO2002_4d ==1323~1223,
-          CBO2002_4d ==1420~1224,
-          CBO2002_4d ==1411~1225,
-          CBO2002_4d ==1412~1225,
-          CBO2002_4d ==1324~1226,
-          CBO2002_4d ==1330~1226,
-          CBO2002_4d ==1219~1229,
-          CBO2002_4d ==1346~1227,
-          CBO2002_4d ==1213~1229,
-          CBO2002_4d ==1341~1229,
-          CBO2002_4d ==1342~1229,
-          CBO2002_4d ==1343~1229,
-          CBO2002_4d ==1344~1229,
-          CBO2002_4d ==1345~1229,
-          CBO2002_4d ==1349~1229,
-          CBO2002_4d ==1431~1229,
-          CBO2002_4d ==1439~1229,
-          CBO2002_4d ==1211~1231,
-          CBO2002_4d ==1212~1232,
-          CBO2002_4d ==1221~1233,
-          CBO2002_4d ==1222~1234,
-          CBO2002_4d ==1223~1237,
-          CBO2002_4d ==2111~2111,
-          CBO2002_4d ==2112~2112,
-          CBO2002_4d ==2113~2113,
-          CBO2002_4d ==2114~2114,
-          CBO2002_4d ==2120~2121,
-          CBO2002_4d ==2511~2131,
-          CBO2002_4d ==2512~2131,
-          CBO2002_4d ==2513~2131,
-          CBO2002_4d ==2514~2131,
-          CBO2002_4d ==2519~2131,
-          CBO2002_4d ==2521~2131,
-          CBO2002_4d ==2522~2131,
-          CBO2002_4d ==2523~2131,
-          CBO2002_4d ==2529~2131,
-          CBO2002_4d ==2161~2141,
-          CBO2002_4d ==2162~2141,
-          CBO2002_4d ==2164~2141,
-          CBO2002_4d ==2142~2142,
-          CBO2002_4d ==2151~2143,
-          CBO2002_4d ==2152~2144,
-          CBO2002_4d ==2153~2144,
-          CBO2002_4d ==2144~2145,
-          CBO2002_4d ==2145~2146,
-          CBO2002_4d ==2146~2147,
-          CBO2002_4d ==2165~2148,
-          CBO2002_4d ==2141~2149,
-          CBO2002_4d ==2143~2149,
-          CBO2002_4d ==2149~2149,
-          CBO2002_4d ==2131~2211,
-          CBO2002_4d ==2133~2211,
-          CBO2002_4d ==2132~2213,
-          CBO2002_4d ==2211~2221,
-          CBO2002_4d ==2212~2221,
-          CBO2002_4d ==2261~2222,
-          CBO2002_4d ==2250~2223,
-          CBO2002_4d ==2262~2224,
-          CBO2002_4d ==2263~2229,
-          CBO2002_4d ==2266~2229,
-          CBO2002_4d ==2269~2229,
-          CBO2002_4d ==2221~2230,
-          CBO2002_4d ==2222~2230,
-          CBO2002_4d ==2310~2310,
-          CBO2002_4d ==2330~2320,
-          CBO2002_4d ==2341~2331,
-          CBO2002_4d ==2342~2332,
-          CBO2002_4d ==2351~2351,
-          CBO2002_4d ==2320~2359,
-          CBO2002_4d ==2352~2359,
-          CBO2002_4d ==2353~2359,
-          CBO2002_4d ==2354~2359,
-          CBO2002_4d ==2355~2359,
-          CBO2002_4d ==2356~2359,
-          CBO2002_4d ==2359~2359,
-          CBO2002_4d ==3423~2359,
-          CBO2002_4d ==5165~2359,
-          CBO2002_4d ==2411~2411,
-          CBO2002_4d ==2412~2411,
-          CBO2002_4d ==2423~2412,
-          CBO2002_4d ==2424~2412,
-          CBO2002_4d ==2413~2419,
-          CBO2002_4d ==2421~2419,
-          CBO2002_4d ==2422~2419,
-          CBO2002_4d ==2431~2419,
-          CBO2002_4d ==2432~2419,
-          CBO2002_4d ==2611~2421,
-          CBO2002_4d ==2619~2421,
-          CBO2002_4d ==2612~2422,
-          CBO2002_4d ==2621~2431,
-          CBO2002_4d ==2622~2432,
-          CBO2002_4d ==2631~2441,
-          CBO2002_4d ==2632~2442,
-          CBO2002_4d ==2633~2443,
-          CBO2002_4d ==2643~2444,
-          CBO2002_4d ==2634~2445,
-          CBO2002_4d ==2635~2446,
-          CBO2002_4d ==2641~2451,
-          CBO2002_4d ==2642~2451,
-          CBO2002_4d ==2651~2452,
-          CBO2002_4d ==2652~2453,
-          CBO2002_4d ==2653~2454,
-          CBO2002_4d ==2654~2455,
-          CBO2002_4d ==2655~2455,
-          CBO2002_4d ==2659~2455,
-          CBO2002_4d ==2636~2460,
-          CBO2002_4d ==3111~3111,
-          CBO2002_4d ==3139~3111,
-          CBO2002_4d ==3112~3112,
-          CBO2002_4d ==3113~3113,
-          CBO2002_4d ==3114~3114,
-          CBO2002_4d ==3522~3114,
-          CBO2002_4d ==3115~3115,
-          CBO2002_4d ==3116~3116,
-          CBO2002_4d ==3117~3117,
-          CBO2002_4d ==3118~3118,
-          CBO2002_4d ==3119~3119,
-          CBO2002_4d ==3511~3121,
-          CBO2002_4d ==3512~3121,
-          CBO2002_4d ==3513~3121,
-          CBO2002_4d ==3514~3121,
-          CBO2002_4d ==3431~3131,
-          CBO2002_4d ==3521~3131,
-          CBO2002_4d ==3211~3133,
-          CBO2002_4d ==3151~3141,
-          CBO2002_4d ==3152~3142,
-          CBO2002_4d ==3153~3143,
-          CBO2002_4d ==3154~3144,
-          CBO2002_4d ==3155~3145,
-          CBO2002_4d ==3257~3152,
-          CBO2002_4d ==7543~3152,
-          CBO2002_4d ==3141~3211,
-          CBO2002_4d ==3212~3211,
-          CBO2002_4d ==3142~3212,
-          CBO2002_4d ==3143~3212,
-          CBO2002_4d ==2240~3221,
-          CBO2002_4d ==3256~3221,
-          CBO2002_4d ==3252~3222,
-          CBO2002_4d ==2265~3223,
-          CBO2002_4d ==2267~3224,
-          CBO2002_4d ==3254~3224,
-          CBO2002_4d ==3214~3225,
-          CBO2002_4d ==3251~3225,
-          CBO2002_4d ==2264~3226,
-          CBO2002_4d ==3255~3226,
-          CBO2002_4d ==3240~3227,
-          CBO2002_4d ==3213~3228,
-          CBO2002_4d ==3259~3229,
-          CBO2002_4d ==3221~3231,
-          CBO2002_4d ==3222~3232,
-          CBO2002_4d ==2230~3241,
-          CBO2002_4d ==3230~3241,
-          CBO2002_4d ==3413~3242,
-          CBO2002_4d ==3311~3411,
-          CBO2002_4d ==3312~3411,
-          CBO2002_4d ==3321~3412,
-          CBO2002_4d ==3334~3413,
-          CBO2002_4d ==4221~3414,
-          CBO2002_4d ==2433~3415,
-          CBO2002_4d ==2434~3415,
-          CBO2002_4d ==3322~3415,
-          CBO2002_4d ==3339~3415,
-          CBO2002_4d ==3323~3416,
-          CBO2002_4d ==3315~3417,
-          CBO2002_4d ==3324~3421,
-          CBO2002_4d ==3331~3422,
-          CBO2002_4d ==3351~3422,
-          CBO2002_4d ==3333~3423,
-          CBO2002_4d ==3341~3431,
-          CBO2002_4d ==3342~3431,
-          CBO2002_4d ==3343~3431,
-          CBO2002_4d ==3344~3431,
-          CBO2002_4d ==3411~3432,
-          CBO2002_4d ==3313~3433,
-          CBO2002_4d ==3314~3434,
-          CBO2002_4d ==3332~3439,
-          CBO2002_4d ==3433~3439,
-          CBO2002_4d ==3435~3439,
-          CBO2002_4d ==3352~3442,
-          CBO2002_4d ==3353~3443,
-          CBO2002_4d ==3354~3444,
-          CBO2002_4d ==3359~3444,
-          CBO2002_4d ==3355~3450,
-          CBO2002_4d ==3412~3460,
-          CBO2002_4d ==2163~3471,
-          CBO2002_4d ==2166~3471,
-          CBO2002_4d ==3432~3471,
-          CBO2002_4d ==2656~3472,
-          CBO2002_4d ==3421~3475,
-          CBO2002_4d ==3422~3475,
-          CBO2002_4d ==4131~4111,
-          CBO2002_4d ==4132~4113,
-          CBO2002_4d ==4120~4115,
-          CBO2002_4d ==4211~4121,
-          CBO2002_4d ==4311~4121,
-          CBO2002_4d ==4313~4121,
-          CBO2002_4d ==4227~4122,
-          CBO2002_4d ==4312~4122,
-          CBO2002_4d ==4321~4131,
-          CBO2002_4d ==4322~4132,
-          CBO2002_4d ==4323~4133,
-          CBO2002_4d ==4411~4141,
-          CBO2002_4d ==4415~4141,
-          CBO2002_4d ==4412~4142,
-          CBO2002_4d ==4413~4143,
-          CBO2002_4d ==4414~4144,
-          CBO2002_4d ==4110~4190,
-          CBO2002_4d ==4416~4190,
-          CBO2002_4d ==4419~4190,
-          CBO2002_4d ==5230~4211,
-          CBO2002_4d ==4212~4212,
-          CBO2002_4d ==4213~4214,
-          CBO2002_4d ==4214~4215,
-          CBO2002_4d ==4224~4222,
-          CBO2002_4d ==4225~4222,
-          CBO2002_4d ==4226~4222,
-          CBO2002_4d ==4229~4222,
-          CBO2002_4d ==4222~4223,
-          CBO2002_4d ==4223~4223,
-          CBO2002_4d ==5111~5111,
-          CBO2002_4d ==5112~5112,
-          CBO2002_4d ==8331~5112,
-          CBO2002_4d ==5113~5113,
-          CBO2002_4d ==5151~5121,
-          CBO2002_4d ==5152~5121,
-          CBO2002_4d ==3434~5122,
-          CBO2002_4d ==5120~5122,
-          CBO2002_4d ==9411~5122,
-          CBO2002_4d ==9412~5122,
-          CBO2002_4d ==5131~5123,
-          CBO2002_4d ==5132~5123,
-          CBO2002_4d ==5311~5131,
-          CBO2002_4d ==5312~5131,
-          CBO2002_4d ==3258~5132,
-          CBO2002_4d ==5321~5132,
-          CBO2002_4d ==5329~5132,
-          CBO2002_4d ==5322~5133,
-          CBO2002_4d ==3253~5139,
-          CBO2002_4d ==5164~5139,
-          CBO2002_4d ==5141~5141,
-          CBO2002_4d ==5142~5141,
-          CBO2002_4d ==5162~5142,
-          CBO2002_4d ==5163~5143,
-          CBO2002_4d ==5169~5149,
-          CBO2002_4d ==5161~5151,
-          CBO2002_4d ==5412~5162,
-          CBO2002_4d ==5413~5163,
-          CBO2002_4d ==5414~9152,
-          CBO2002_4d ==5419~5169,
-          CBO2002_4d ==5241~5210,
-          CBO2002_4d ==5221~5220,
-          CBO2002_4d ==5222~5220,
-          CBO2002_4d ==5223~5220,
-          CBO2002_4d ==5242~5220,
-          CBO2002_4d ==5245~5220,
-          CBO2002_4d ==5246~5220,
-          CBO2002_4d ==5249~5220,
-          CBO2002_4d ==5211~5230,
-          CBO2002_4d ==6111~6111,
-          CBO2002_4d ==6114~6111,
-          CBO2002_4d ==6112~6113,
-          CBO2002_4d ==9214~9211,
-          CBO2002_4d ==6121~6121,
-          CBO2002_4d ==6122~6122,
-          CBO2002_4d ==6123~6123,
-          CBO2002_4d ==6129~6129,
-          CBO2002_4d ==6130~6141,
-          CBO2002_4d ==6210~6141,
-          CBO2002_4d ==9215~9212,
-          CBO2002_4d ==6221~6151,
-          CBO2002_4d ==6225~6152,
-          CBO2002_4d ==6224~6154,
-          CBO2002_4d ==9216~9212,
-          CBO2002_4d ==3121~7111,
-          CBO2002_4d ==8111~7111,
-          CBO2002_4d ==7542~7112,
-          CBO2002_4d ==7113~7113,
-          CBO2002_4d ==7111~7122,
-          CBO2002_4d ==7112~7122,
-          CBO2002_4d ==9312~7122,
-          CBO2002_4d ==9313~7122,
-          CBO2002_4d ==7114~7123,
-          CBO2002_4d ==7115~7124,
-          CBO2002_4d ==3123~7129,
-          CBO2002_4d ==7119~7129,
-          CBO2002_4d ==7121~7131,
-          CBO2002_4d ==7122~7132,
-          CBO2002_4d ==7123~7133,
-          CBO2002_4d ==7124~7134,
-          CBO2002_4d ==7125~7135,
-          CBO2002_4d ==7126~7136,
-          CBO2002_4d ==7411~7137,
-          CBO2002_4d ==7131~7141,
-          CBO2002_4d ==7132~7142,
-          CBO2002_4d ==7133~7143,
-          CBO2002_4d ==7544~7143,
-          CBO2002_4d ==7211~7211,
-          CBO2002_4d ==7212~7212,
-          CBO2002_4d ==7213~7213,
-          CBO2002_4d ==7214~7214,
-          CBO2002_4d ==7215~7215,
-          CBO2002_4d ==7541~7216,
-          CBO2002_4d ==7221~7221,
-          CBO2002_4d ==7222~7222,
-          CBO2002_4d ==7223~7223,
-          CBO2002_4d ==7224~7224,
-          CBO2002_4d ==7231~7231,
-          CBO2002_4d ==7234~7231,
-          CBO2002_4d ==7232~7232,
-          CBO2002_4d ==7127~7233,
-          CBO2002_4d ==7233~7233,
-          CBO2002_4d ==7412~7241,
-          CBO2002_4d ==7421~7242,
-          CBO2002_4d ==7422~7244,
-          CBO2002_4d ==7413~7245,
-          CBO2002_4d ==7311~7311,
-          CBO2002_4d ==7312~7312,
-          CBO2002_4d ==7313~7313,
-          CBO2002_4d ==7314~7321,
-          CBO2002_4d ==7315~7322,
-          CBO2002_4d ==7316~7324,
-          CBO2002_4d ==7317~7331,
-          CBO2002_4d ==7319~7331,
-          CBO2002_4d ==7549~7331,
-          CBO2002_4d ==7318~7332,
-          CBO2002_4d ==7321~7341,
-          CBO2002_4d ==8132~7344,
-          CBO2002_4d ==7323~7345,
-          CBO2002_4d ==7511~7411,
-          CBO2002_4d ==7512~7412,
-          CBO2002_4d ==7513~7413,
-          CBO2002_4d ==7514~7414,
-          CBO2002_4d ==7515~7415,
-          CBO2002_4d ==7516~7416,
-          CBO2002_4d ==7521~7421,
-          CBO2002_4d ==7522~7422,
-          CBO2002_4d ==7523~7423,
-          CBO2002_4d ==8152~8262,
-          CBO2002_4d ==7531~7433,
-          CBO2002_4d ==7532~7435,
-          CBO2002_4d ==7533~7436,
-          CBO2002_4d ==7534~7437,
-          CBO2002_4d ==7535~7441,
-          CBO2002_4d ==7536~7442,
-          CBO2002_4d ==8112~8112,
-          CBO2002_4d ==8113~8113,
-          CBO2002_4d ==3135~8121,
-          CBO2002_4d ==8121~8121,
-          CBO2002_4d ==8181~8131,
-          CBO2002_4d ==8172~8141,
-          CBO2002_4d ==8171~8142,
-          CBO2002_4d ==8131~8151,
-          CBO2002_4d ==3133~8152,
-          CBO2002_4d ==3134~8155,
-          CBO2002_4d ==3131~8161,
-          CBO2002_4d ==8182~8162,
-          CBO2002_4d ==3132~8163,
-          CBO2002_4d ==3122~8171,
-          CBO2002_4d ==8114~8212,
-          CBO2002_4d ==8122~8223,
-          CBO2002_4d ==8141~8231,
-          CBO2002_4d ==8142~8232,
-          CBO2002_4d ==7322~8251,
-          CBO2002_4d ==8143~8253,
-          CBO2002_4d ==8151~8261,
-          CBO2002_4d ==8153~8263,
-          CBO2002_4d ==8154~8264,
-          CBO2002_4d ==8157~8264,
-          CBO2002_4d ==8155~8265,
-          CBO2002_4d ==8156~8266,
-          CBO2002_4d ==8159~8269,
-          CBO2002_4d ==8160~8271,
-          CBO2002_4d ==8211~8281,
-          CBO2002_4d ==8212~8282,
-          CBO2002_4d ==8189~8290,
-          CBO2002_4d ==8219~8290,
-          CBO2002_4d ==8311~8311,
-          CBO2002_4d ==8312~8312,
-          CBO2002_4d ==8321~8321,
-          CBO2002_4d ==8322~8322,
-          CBO2002_4d ==8332~8324,
-          CBO2002_4d ==8341~8331,
-          CBO2002_4d ==8342~8332,
-          CBO2002_4d ==8343~8333,
-          CBO2002_4d ==8344~8334,
-          CBO2002_4d ==8350~8340,
-          CBO2002_4d ==5212~9111,
-          CBO2002_4d ==9520~9112,
-          CBO2002_4d ==5243~9113,
-          CBO2002_4d ==5244~9113,
-          CBO2002_4d ==9510~9120,
-          CBO2002_4d ==9111~9131,
-          CBO2002_4d ==9112~9132,
-          CBO2002_4d ==9129~9132,
-          CBO2002_4d ==9121~9133,
-          CBO2002_4d ==9122~9142,
-          CBO2002_4d ==9123~9142,
-          CBO2002_4d ==9621~9151,
-          CBO2002_4d ==5153~9141,
-          CBO2002_4d ==9623~9153,
-          CBO2002_4d ==9611~9161,
-          CBO2002_4d ==9612~9161,
-          CBO2002_4d ==9613~9162,
-          CBO2002_4d ==9622~9162,
-          CBO2002_4d ==9624~9162,
-          CBO2002_4d ==9211~9211,
-          CBO2002_4d ==9212~9211,
-          CBO2002_4d ==9213~9211,
-          CBO2002_4d ==9311~9311,
-          CBO2002_4d ==9329~9321,
-          CBO2002_4d ==8183~9322,
-          CBO2002_4d ==9321~9322,
-          CBO2002_4d ==9331~9331,
-          CBO2002_4d ==9332~9332,
-          CBO2002_4d ==9333~9333,
-          CBO2002_4d ==9334~9333,
-          CBO2002_4d ==9629~999,
-          CBO2002_4d ==9999~999,
-          CBO2002_4d ==9998~999,
-          CBO2002_4d ==9988~999,
-          CBO2002_4d == 0 | CBO2002_4d == 5168 ~ 999
+          PosicaoOcupacao == 2 & var_codigo_ocupacao %in% c(6110,6129,6139) ~ 1311,
+          ISIC == 10 & var_codigo_ocupacao %in% c(9914,5142) ~ 9113,
+          ISIC == 80 & var_codigo_ocupacao %in% c(4231) ~ 4133,
+          var_codigo_ocupacao %in% c(5211) ~ 5220,
+          var_codigo_ocupacao %in% c(5211) &
+            ((PosicaoOcupacao == 3 & ISIC == 60) | PosicaoOcupacao == 2) ~ 1314,
+          var_codigo_ocupacao %in% c(5134) ~ 5123,
+          var_codigo_ocupacao %in% c(5134) &
+            ((PosicaoOcupacao == 3 & ISIC == 70) | PosicaoOcupacao == 2) ~ 1315,
+          PosicaoOcupacao == 1 & cod_isco %in% c(6121, 6122) ~ 9211,
+          PosicaoOcupacao == 1 & cod_isco %in% c( 6141, 6142) ~ 9212,
+          PosicaoOcupacao == 1 & cod_isco %in% c(6151:6154) ~ 9213,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao == 0 & ISIC == 10 ~ 6111,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao != 0 & ISIC == 10 ~ 5220,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 2:3 & ISIC == 90 ~ 1317,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 1 & ISIC == 90 ~ 1227,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 2:3 & ISIC == 80 ~ 1316,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 1 & ISIC == 80 ~ 1226,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 2:3 & ISIC == 70 ~ 1315,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 1 & ISIC == 70 ~ 1225,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 2:3 & ISIC == 60 ~ 1314,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 1 & ISIC == 60 ~ 1224,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 2:3 & ISIC == 50 ~ 1313,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 1 & ISIC == 50 ~ 1223,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 2:3 & ISIC %in% 20:40 ~ 1312,
+          cod_isco %in% c(1210, 1229) & PosicaoOcupacao %in% 1 & ISIC %in% 20:40 ~ 1222,
+          cod_isco %in% c(1210, 1229) & ISIC %in% 100 ~ 1120,
+          TRUE ~ cod_isco
         )
-      ) |>
-      mutate(ISCO = case_when(
-        ISCO == 6122 & PosicaoOcupacao == 2 ~ 1311,
-        ISCO %in% c(1143,1210,1221:1227,1229,1231:1234,1237) & ISIC == 100 &
-          PosicaoOcupacao == 3 ~ 1120,
-        ISCO %in% c(9211, 6113) & ISIC %in% c(114, 120) ~ 9141,
-        PosicaoOcupacao == 1 & ISCO %in% c(6111, 6113, 6123, 6129) ~ 9211,
-        PosicaoOcupacao == 1 & ISCO %in% c(6121, 6122) ~ 9211,
-        PosicaoOcupacao == 1 & ISCO %in% c( 6141, 6142) ~ 9212,
-        PosicaoOcupacao == 1 & ISCO %in% c(6151:6154) ~ 9213,
-        PosicaoOcupacao == 1 & ISCO %in% c(6111, 6113, 6123, 6129) ~ 1311,
-        TRUE ~ ISCO))
+      )
+    print("Finalizou a criação do ISCO...")
+  }
 
-  # Transformacao da ISCO em EGP11
+  if(ano == 2010){
+    # Transformacao CNAE > ISIC
+    censo_processing <- censo_processing |>
+      mutate(
+        ISIC = case_when(
+          var_cnae_censo %in% c(0,99999) ~ 999, #NA
+          var_cnae_censo %in% 1101:3002 ~ 10,
+          var_cnae_censo %in% 5000:9000 ~ 20,
+          var_cnae_censo %in% c(10010:33002,38000:39000) ~ 30,
+          var_cnae_censo %in% 35010:37000 ~ 40,
+          var_cnae_censo %in% 41000:43999 ~ 50,
+          var_cnae_censo %in% c(45010,45030:48999) ~ 60,
+          var_cnae_censo %in% 55000:56999 ~ 70,
+          var_cnae_censo %in% c(49010:53002,61000) ~ 80,
+          var_cnae_censo %in% 64000:66002 ~ 90,
+          var_cnae_censo %in% c(84011:84999) ~ 100,
+          var_cnae_censo %in% c(62000:63000,68000:74000,77020:78000,80000:82009) ~ 111,
+          var_cnae_censo %in% c(85011:85999) ~ 112,
+          var_cnae_censo %in% c(75000,86001:88000) ~ 113,
+          var_cnae_censo %in% c(45020,58000:60002,77010,79000,90000:96090,99000) ~ 114,
+          var_cnae_censo %in% c(97000) ~ 120
+        )
+      )
+
+    # Criacao da variavel ISCO
+    censo_processing <- censo_processing |>
+      left_join(
+        tabela_cbo,
+        by = c(var_codigo_ocupacao = "cod_censo"),
+        keep = FALSE
+      )
+
+    censo_processing <- censo_processing |>
+      mutate(
+        ISCO = case_when(
+          PosicaoOcupacao == 2 & var_codigo_ocupacao %in% c(6122,6121) ~ 1311,
+          PosicaoOcupacao != 3 & ISIC == 100 &
+            cod_isco %in% c(1143,1210,1221:1227,1229,1231:1234,1237) ~ 1120,
+          ISIC %in% c(114,120) & cod_isco %in% c(9211,6113) ~ 9141,
+          PosicaoOcupacao == 1 & cod_isco %in% c(6111, 6113,6121:6123,6129) ~ 9211,
+          PosicaoOcupacao == 1 & cod_isco %in% c(6141, 6142) ~ 9212,
+          PosicaoOcupacao == 1 & cod_isco %in% c(6151:6154) ~ 9213,
+          PosicaoOcupacao == 2 & cod_isco %in% c(6111,6113,6123,6129) ~ 1311,
+          TRUE ~ cod_isco
+        )
+      )
+
+  }
+  # Criacao da EGP
   censo_processing <- censo_processing |>
     mutate(
       EGP11 = case_when(
@@ -1277,10 +764,10 @@ func_tratamento_classes_egp <- function(
         ISCO == 6133 ~ 11,
         ISCO == 6200 ~ 11),
       EGP11 = case_when(
-        PosicaoOcupacao == 2 & ISIC != 10 & ISIC != 100 ~ 5,
-        PosicaoOcupacao == 2 & ISIC == 10 &
-          EGP11 %in% c(1:4,8:11) ~ 6,
-        EGP11 == 11 & PosicaoOcupacao %in% c(0,3) ~ 7,
+        PosicaoOcupacao == 2 & ISIC != 10 & ISIC != 100 ~ 5, #empregadores nao rurais
+        PosicaoOcupacao == 2 & ISIC == 10 & EGP11 %in% c(1:4,8:10) ~ 6, # empregadores rurais
+        PosicaoOcupacao == 2 & EGP11 %in% c(11) ~ 6, # empregadores rurais
+        EGP11 == 11 & PosicaoOcupacao %in% c(0,3) ~ 7, # empregadores rurais
         TRUE ~ EGP11)
     ) |>
     select(-c(var_trabalhando, var_afastado, var_aprendiz, var_trabalho_consumo,
@@ -1292,10 +779,7 @@ func_tratamento_classes_egp <- function(
               keep = FALSE)
 
   # Lista que será retornada do processo
-  results <- list(
-    censo = censo,
-    tabela = tabela
-  )
+  results <- censo
 
   return(results)
 }

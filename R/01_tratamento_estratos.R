@@ -10,16 +10,6 @@ pacman::p_load(tidyverse, srvyr, readr)
 
 source("./R/X_funcao_egp.R")
 
-# Importacao dos dados ----------------------------------------------------
-
-# Relacao de classificacao CNAE
-tabela_cnae <- readxl::read_excel("./docs/tabela_conversao_cbo_cnae.xlsx", 7)
-tabela_cnae_ajuste <- readxl::read_excel("./docs/tabela_ajustes_cbo_cnae_2010.xlsx", 1)
-
-# Relacao de classificacao CBO
-tabela_cbo <- readxl::read_excel("./docs/tabela_conversao_cbo_cnae.xlsx", 3)
-tabela_cbo_ajuste <- readxl::read_excel("./docs/tabela_ajustes_cbo_cnae_2010.xlsx", 2)
-
 # 2000 --------------------------------------------------------------------
 
 # Transformacao EGP
@@ -35,30 +25,7 @@ for(i in 1: length(ano)){
     load(file.path("./dados",paste0("censo_",ano,"_",uf,".RData")))
 
     # aplicacao da funcao para conversao
-    db <- func_tratamento_classes_egp(dados = censo)
-
-    # base com os devidos tratamentos
-    censo <- db[[1]]
-
-    # criando arquivo de controle do processo de compatibilizacao CNAE/CBO
-    if(k == 1){
-      tabela <- db[[2]] |>
-        mutate(
-          uf = uf,
-          ano = ano,
-          .before = everything()
-        )
-    } else{
-      tabela <- tabela |>
-        bind_rows(
-          db[[2]] |>
-            mutate(
-              uf = uf,
-              ano = ano,
-              .before = everything()
-            )
-        )
-    }
+    censo <- func_tratamento_classes_egp(dados = censo)
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
@@ -174,46 +141,18 @@ for(i in 1: length(ano)){
     load(file.path("./dados",paste0("censo_",ano,"_",uf,".RData")))
 
     # aplicacao da funcao para conversao
-    db <- func_tratamento_classes_egp(
+    censo <- func_tratamento_classes_egp(
       dados = censo,
-      dados_cnae = tabela_cnae,
       var_cnae_censo = "v6471",
-      var_cnae_compatibilizacao = "CNAE_Dom2",
-      compatibilizacao_cnae = TRUE,
-      var_cbo_compatibilizacao = "CBO2002_4d",
-      compatibilizacao_cbo = TRUE,
-      construir_var_pea = TRUE,
       var_trabalhando = "v6910",
-      var_afastado = "v0652",
+      var_afastado = "v0642",
       var_aprendiz = "v0643",
+      var_trabalho_cultivo = "v0641",
       var_trabalho_consumo = "v0644",
       var_buscou_emprego = "v0654",
       var_posicao_ocupacao = "v0648",
       var_codigo_ocupacao = "v6461"
     )
-
-    # base com os devidos tratamentos
-    censo <- db[[1]]
-
-    # criando arquivo de controle do processo de compatibilizacao CNAE/CBO
-    if(k == 1){
-      tabela <- db[[2]] |>
-        mutate(
-          uf = uf,
-          ano = ano,
-          .before = everything()
-        )
-    } else{
-      tabela <- tabela |>
-        bind_rows(
-          db[[2]] |>
-            mutate(
-              uf = uf,
-              ano = ano,
-              .before = everything()
-            )
-        )
-    }
 
     # exportacao
     assign(paste0("censo_",ano,"_",uf),censo)
@@ -311,19 +250,5 @@ for(i in 1: length(ano)){
     print(paste0("Finalizamos a UF: ",uf,"!!!"))
   }
   rm(censo)
-}
-
-# exportacao da tabela de controle de compatibilizacao
-if(file.exists(file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv"))){
-  tabela <- read_csv2(
-    file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv")
-  ) |>
-    bind_rows(
-      tabela |>
-        mutate(ano = as.numeric(ano))
-    )
-  write_csv2(tabela, file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv"))
-} else{
-  write_csv2(tabela, file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv"))
 }
 
