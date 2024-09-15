@@ -17,26 +17,26 @@ for(i in 1: length(anos)){
   ano = anos[i]
 
   for(k in 1: length(RMs)){
-  RM = RMs[k]
+    RM = RMs[k]
 
-  # Importacao dos dados
-  load(file.path("./output",paste0("resultados_QL_indice_",ano,".RData")))
-  load(file.path("./output",paste0("resultados_D_indice_",ano,".RData")))
+    # Importacao dos dados
+    load(file.path("./output/EGP",paste0("resultados_QL_indice_",ano,".RData")))
+    load(file.path("./output/EGP",paste0("resultados_D_indice_",ano,".RData")))
 
-  # Criacao de uma lista para cada RM e ano
-  index_total <- list(
-    D_geral = get(glue::glue("resultados_D_index_{ano}"))[[k]][[1]],
-    D_classes = get(glue::glue("resultados_D_index_{ano}"))[[k]][[2]],
-    QL_geral = get(glue::glue("resultados_QL_index_{ano}"))[[k]][[3]],
-    QL_classe = get(glue::glue("resultados_QL_index_{ano}"))[[k]][[4]],
-    QL_classe_ap = get(glue::glue("resultados_QL_index_{ano}"))[[k]][[2]]
-  )
+    # Criacao de uma lista para cada RM e ano
+    index_total <- list(
+      D_geral = get(glue::glue("resultados_D_index_{ano}"))[[k]][[1]],
+      D_classes = get(glue::glue("resultados_D_index_{ano}"))[[k]][[2]],
+      QL_geral = get(glue::glue("resultados_QL_index_{ano}"))[[k]][[3]],
+      QL_classe = get(glue::glue("resultados_QL_index_{ano}"))[[k]][[4]],
+      QL_classe_ap = get(glue::glue("resultados_QL_index_{ano}"))[[k]][[2]]
+    )
 
-  # Exportacao
-  assign(paste0("indices_",ano,"_",RM),index_total)
+    # Exportacao
+    assign(paste0("indices_",ano,"_",RM),index_total)
 
-  # Proximo loop
-  rm(index_total)
+    # Proximo loop
+    rm(index_total)
   }
 }
 
@@ -64,17 +64,17 @@ for(i in seq_along(anos)){
         mutate(
           cor_classe1 = factor(
             cor_classe1,
-            levels = c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM",
-                       "Negros 3SMmais","Negros 1a3SM","Negros meioa1SM","Negros atemeioSM", "Resto da população"),
-            labels = c("Brancos - 3SMmais","Brancos - 1a3SM","Brancos - meioa1SM","Brancos - ate meioSM",
-                       "Negros - 3SMmais","Negros - 1a3SM","Negros - meioa1SM","Negros - ate meioSM", "Resto da população")
+            levels = c("Negro alto","Negro intermediário","Negro baixo","Branco alto",
+                       "Branco intermediário","Branco baixo","Resto da população"),
+            labels = c("Negros - Alto","Negros - Intermediário","Negros - Baixo","Brancos - Alto",
+                       "Brancos - Intermediário","Brancos - Baixo","Resto da população")
           ),
           cor_classe2 = factor(
             cor_classe2,
-            levels = c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM",
-                       "Negros 3SMmais","Negros 1a3SM","Negros meioa1SM","Negros atemeioSM", "Resto da população"),
-            labels = c("Brancos - 3SMmais","Brancos - 1a3SM","Brancos - meioa1SM","Brancos - ate meioSM",
-                       "Negros - 3SMmais","Negros - 1a3SM","Negros - meioa1SM","Negros - ate meioSM", "Resto da população")
+            levels = c("Negro alto","Negro intermediário","Negro baixo","Branco alto",
+                       "Branco intermediário","Branco baixo","Resto da população"),
+            labels = c("Negros - Alto","Negros - Intermediário","Negros - Baixo","Brancos - Alto",
+                       "Brancos - Intermediário","Brancos - Baixo","Resto da população")
           )
         )
     )
@@ -107,14 +107,14 @@ for(i in seq_along(anos)){
 
     QL_resultado_classe_sintese <- get(glue::glue("indices_{ano}_{RM}"))$QL_classe |>
       pivot_longer(
-        mean_QL_Brancos_3SMmais:desv_pad_QL_Negros_meioSM,
+        mean_QL_Brancos_Alto:desv_pad_QL_Negros_Baixo,
         names_to = "tipo",
         values_to = "valor"
       ) |>
       mutate(
-        medida = c(rep(c("media"),8),rep(c("desv_pad"),8)),
-        raca_cor = rep(c("Brancos 3 SM ou mais","Brancos 1a3 SM","Brancos meio a 1 SM","Brancos ate 1 SM",
-                         "Negros 3 SM ou mais","Negros 1a3 SM","Negros meio a 1 SM","Negros ate 1 SM"),2)
+        medida = c(rep(c("media"),6),rep(c("desv_pad"),6)),
+        raca_cor = rep(c("Brancos Alto","Brancos Intermediário","Brancos Baixo",
+                         "Negros Alto","Negros Intermediário","Negros Baixo"),2)
       ) |>
       pivot_wider(
         names_from = medida,
@@ -150,7 +150,7 @@ for(i in seq_along(anos)){
 
 # Exportando resultados
 
-wb <- openxlsx::loadWorkbook('./output/tabelas/Tabela - indices de segregação por RM.xlsx')
+wb <- openxlsx::loadWorkbook('./output/EGP/tabelas/Tabela - indices de segregação por RM.xlsx')
 
 for(i in seq_along(anos)){
   ano = anos[i]
@@ -169,7 +169,7 @@ for(i in seq_along(anos)){
       openxlsx::writeData(
         wb = wb,
         sheet = sheet_number,
-        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:10,3:10],
+        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:8,3:8],
         colNames = FALSE,
         rowNames = FALSE,
         xy = c(3,8)
@@ -181,7 +181,7 @@ for(i in seq_along(anos)){
         x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_geral[,2:3],
         colNames = FALSE,
         rowNames = FALSE,
-        xy = c(3,31)
+        xy = c(3,27)
       )
       ## QL - Summaries - por classe
       openxlsx::writeData(
@@ -190,7 +190,7 @@ for(i in seq_along(anos)){
         x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_classe_sintese[,2:3],
         colNames = FALSE,
         rowNames = FALSE,
-        xy = c(3,34)
+        xy = c(3,30)
       )
       ## QL - correlacoes - por classe
       openxlsx::writeData(
@@ -199,7 +199,7 @@ for(i in seq_along(anos)){
         x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_classe_correlacao,
         colNames = FALSE,
         rowNames = FALSE,
-        xy = c(7,32)
+        xy = c(7,28)
       )
     } else{
       ## D - Geral
@@ -207,16 +207,16 @@ for(i in seq_along(anos)){
         wb = wb,
         sheet = sheet_number,
         x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_geral[[1]],
-        xy = c(3,17)
+        xy = c(3,15)
       )
       ## D - Classe
       openxlsx::writeData(
         wb = wb,
         sheet = sheet_number,
-        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:10,3:10],
+        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:8,3:8],
         colNames = FALSE,
         rowNames = FALSE,
-        xy = c(3,19)
+        xy = c(3,17)
       )
       ## QL - Summaries - geral
       openxlsx::writeData(
@@ -225,7 +225,7 @@ for(i in seq_along(anos)){
         x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_geral[,2:3],
         colNames = FALSE,
         rowNames = FALSE,
-        xy = c(3,44)
+        xy = c(3,38)
       )
       ## QL - Summaries - por classe
       openxlsx::writeData(
@@ -234,7 +234,7 @@ for(i in seq_along(anos)){
         x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_classe_sintese[,2:3],
         colNames = FALSE,
         rowNames = FALSE,
-        xy = c(3,47)
+        xy = c(3,41)
       )
       ## QL - correlacoes - por classe
       openxlsx::writeData(
@@ -243,7 +243,7 @@ for(i in seq_along(anos)){
         x = get(glue::glue("output_{ano}_{RM}"))$QL_resultado_classe_correlacao,
         colNames = FALSE,
         rowNames = FALSE,
-        xy = c(7,45)
+        xy = c(7,39)
       )
     }
   }
@@ -252,6 +252,6 @@ for(i in seq_along(anos)){
 # exportar tabela
 openxlsx::saveWorkbook(
   wb,
-  paste0('./output/tabelas/','[Ultima atualizacao em ',today(),'] Tabela - indices de segregação por RM.xlsx'),
+  paste0('./output/EGP/tabelas/','[Ultima atualizacao em ',today(),'] Tabela - indices de segregação por RM.xlsx'),
   overwrite = TRUE
 )

@@ -388,9 +388,9 @@ func_calcula_dissimilaridade <-
         ) |>
         pivot_longer(D_negro_alto_branco_alto:D_branco_baixo_resto, names_to = "grupo", values_to = "D") |>
         mutate(
-          cor_classe1 = c(rep("Negros alto",3),rep("Negros intermediário",3),rep("Negros baixo",5),
-                          rep("Negros alto",1),rep("Brancos baixo",2),rep("Brancos alto",1),
-                          "Negros alto","Negros intermediário","Negro baixo","Branco alto",
+          cor_classe1 = c(rep("Negro alto",3),rep("Negro intermediário",3),rep("Negro baixo",5),
+                          rep("Negro alto",1),rep("Branco baixo",2),rep("Branco alto",1),
+                          "Negro alto","Negro intermediário","Negro baixo","Branco alto",
                           "Branco intermediário","Branco baixo"),
           cor_classe2 = c(rep(c("Branco alto","Branco intermediário","Branco baixo"),3), "Negro alto",
                           rep("Negro intermediário",2),"Branco intermediário","Branco alto",

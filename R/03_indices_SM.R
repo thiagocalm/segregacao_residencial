@@ -203,7 +203,7 @@ resultados_QL_index_2010 <- list(
   QL_2010_RMPortoAlegre, QL_2010_RMRecife, QL_2010_RMRJ, QL_2010_RMSalvador,QL_2010_RMSP
 )
 
-save(resultados_D_index_2000, file = "./output/resultados_D_indice_2000.RData")
-save(resultados_D_index_2010, file = "./output/resultados_D_indice_2010.RData")
-save(resultados_QL_index_2000, file = "./output/resultados_QL_indice_2000.RData")
-save(resultados_QL_index_2010, file = "./output/resultados_QL_indice_2010.RData")
+save(resultados_D_index_2000, file = "./output/SM/resultados_D_indice_2000.RData")
+save(resultados_D_index_2010, file = "./output/SM/resultados_D_indice_2010.RData")
+save(resultados_QL_index_2000, file = "./output/SM/resultados_QL_indice_2000.RData")
+save(resultados_QL_index_2010, file = "./output/SM/resultados_QL_indice_2010.RData")
