@@ -26,7 +26,8 @@ func_tratamento_classes_egp <- function(
     "./docs/de_para_ocupacoes.xlsx",
     sheet = paste0("Conversão - ",year)
   ) |>
-    select(cod_censo = 1, cod_isco = 4)
+    select(cod_censo = 1, cod_isco = 4) |>
+    mutate(across(everything(),~as.numeric(.x)))
 
   ## criacao da base menor de trabalho
 
@@ -35,22 +36,22 @@ func_tratamento_classes_egp <- function(
   censo_processing <- censo |>
     select(
       id_dom, id_pes,
-      var_cnae_censo = all_of(var_cnae_censo),
-      var_trabalhando = all_of(var_trabalhando),
-      var_afastado = all_of(var_afastado),
-      var_aprendiz = all_of(var_aprendiz),
-      var_trabalho_cultivo = all_of(var_trabalho_cultivo),
-      var_trabalho_consumo = all_of(var_trabalho_consumo),
-      var_buscou_emprego = all_of(var_buscou_emprego),
-      var_posicao_ocupacao = all_of(var_posicao_ocupacao),
-      var_codigo_ocupacao = all_of(var_codigo_ocupacao)
+      var_cnae_censo = any_of(var_cnae_censo),
+      var_trabalhando = any_of(var_trabalhando),
+      var_afastado = any_of(var_afastado),
+      var_aprendiz = any_of(var_aprendiz),
+      var_trabalho_cultivo = any_of(var_trabalho_cultivo),
+      var_trabalho_consumo = any_of(var_trabalho_consumo),
+      var_buscou_emprego = any_of(var_buscou_emprego),
+      var_posicao_ocupacao = any_of(var_posicao_ocupacao),
+      var_codigo_ocupacao = any_of(var_codigo_ocupacao)
     )
 
   print(paste0("Começando processo de criacao de variaveis..."))
 
 
   # criando variavesi de PEA, PO e PosicaoOcupacao
-  if(var_cnae_compatibilizacao == "CNAE_Dom"){
+  if(year ==2000){
     censo_processing <- censo_processing |>
       mutate(
         PEA = case_when(
@@ -83,18 +84,18 @@ func_tratamento_classes_egp <- function(
       mutate(
         PEA = case_when(
           var_trabalhando == 1 ~ 1,
-          var_trabalhando != 1 & var_afastado == 1 ~ 1,
+          # var_trabalhando != 1 & var_afastado == 1 ~ 1,
           var_trabalhando != 1 & var_aprendiz == 1 ~ 1,
           var_trabalhando != 1 & var_trabalho_consumo == 1 ~ 1,
           var_trabalhando != 1 & var_buscou_emprego == 1 ~ 1,
           TRUE ~ 0),
         PO = case_when(
           var_trabalhando == 1 ~ 1,
-          var_trabalhando != 1 & var_afastado == 1 ~ 1,
+          # var_trabalhando != 1 & var_afastado == 1 ~ 1,
           var_trabalhando != 1 & var_aprendiz == 1 ~ 1,
           var_trabalhando != 1 & var_trabalho_consumo == 1 ~ 1,
           var_trabalhando != 1 & var_buscou_emprego == 1 &
-            var_afastado != 1 &
+            # var_afastado != 1 &
             var_aprendiz != 1 &
             var_trabalho_consumo != 1 ~ 0,
           TRUE ~ 0),
@@ -106,7 +107,7 @@ func_tratamento_classes_egp <- function(
       )
   }
 
-  if(ano == 2000){
+  if(year == 2000){
 
     # Transformacao CNAE > ISIC
     censo_processing <- censo_processing |>
@@ -177,7 +178,7 @@ func_tratamento_classes_egp <- function(
     print("Finalizou a criação do ISCO...")
   }
 
-  if(ano == 2010){
+  if(year == 2010){
     # Transformacao CNAE > ISIC
     censo_processing <- censo_processing |>
       mutate(
@@ -201,6 +202,8 @@ func_tratamento_classes_egp <- function(
         )
       )
 
+    print("Finalizou a criação do ISIC...")
+
     # Criacao da variavel ISCO
     censo_processing <- censo_processing |>
       left_join(
@@ -223,8 +226,11 @@ func_tratamento_classes_egp <- function(
           TRUE ~ cod_isco
         )
       )
+    print("Finalizou a criação do ISCO...")
 
   }
+  invisible(gc())
+
   # Criacao da EGP
   censo_processing <- censo_processing |>
     mutate(
@@ -476,7 +482,16 @@ func_tratamento_classes_egp <- function(
         ISCO == 4222 ~ 4,
         ISCO == 4223 ~ 4,
         ISCO == 5132 ~ 4,
-        ISCO == 5142 ~ 4,
+        ISCO == 5142 ~ 4
+      )
+    )
+
+  invisible(gc())
+
+  # Criacao da EGP
+  censo_processing <- censo_processing |>
+    mutate(
+      EGP11 = case_when(
         ISCO == 3452 ~ 7,
         ISCO == 7510 ~ 7,
         ISCO == 5140 ~ 8,
@@ -770,7 +785,7 @@ func_tratamento_classes_egp <- function(
         EGP11 == 11 & PosicaoOcupacao %in% c(0,3) ~ 7, # empregadores rurais
         TRUE ~ EGP11)
     ) |>
-    select(-c(var_trabalhando, var_afastado, var_aprendiz, var_trabalho_consumo,
+    select(-c(var_trabalhando, any_of(var_afastado), var_aprendiz, var_trabalho_consumo,
               var_buscou_emprego, var_posicao_ocupacao,var_codigo_ocupacao,any_of(var_cnae_censo)))
 
   censo <- dados |>
