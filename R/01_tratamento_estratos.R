@@ -15,8 +15,8 @@ source("./R/X_funcao_egp.R")
 # Transformacao EGP
 
 ano = "2000"
-UF = c("CE", "PE","BA","MG","RJ","PR","RS","SP")
-k = 1
+UF = c("SP","CE", "PE","BA","MG","RJ","PR","RS")
+
 for(i in 1: length(ano)){
   ano = ano[i]
   for(k in 1: length(UF)){
@@ -27,24 +27,9 @@ for(i in 1: length(ano)){
     # aplicacao da funcao para conversao
     censo <- func_tratamento_classes_egp(dados = censo)
 
-    # exportacao
-    assign(paste0("censo_",ano,"_",uf),censo)
-
-    # Proximo loop
-    print(paste0("Finalizamos a UF: ",uf,"!!!"))
-    rm(censo)
-    gc()
-  }
-}
-
-# Tratamento quintil de renda pc
-
-for(i in 1: length(ano)){
-  ano = ano[i]
-  for(k in 1: length(UF)){
-    uf = UF[k]
+    ## Tratamento quintil de renda pc
     # Rendimento geral
-    censo <- get(glue::glue("censo_{ano}_{uf}")) |>
+    censo <- censo |>
       mutate(renda_pc_def = case_when(is.na(v4614_defl) ~ 0, TRUE ~ v4614_defl)) |>
       group_by(id_dom) |>
       mutate(renda_pc_def = sum(renda_pc_def)) |>
@@ -97,8 +82,8 @@ for(i in 1: length(ano)){
       ) |>
       ungroup()
 
-    # exportacao
-    assign(paste0("censo_",ano,"_",uf),censo)
+    ## Exportacao
+    save(censo, file = file.path("./dados",paste0("censo_tratado_",ano,"_",uf,".RData")))
 
     # Proximo loop
     print(paste0("Finalizamos a UF: ",uf,"!!!"))
@@ -107,32 +92,14 @@ for(i in 1: length(ano)){
   }
 }
 
-## Exportacao
-
-# exportacao da base
-
-for(i in 1: length(ano)){
-  ano = ano[i]
-  for(k in 1: length(UF)){
-    uf = UF[k]
-    censo <- get(glue::glue("censo_{ano}_{uf}"))
-    save(censo, file = file.path("./dados",paste0("censo_tratado_",ano,"_",uf,".RData")))
-    print(paste0("Finalizamos a UF: ",uf,"!!!"))
-  }
-  rm(censo)
-}
-
-# exportacao da tabela de controle de compatibilizacao
-
-write_csv2(tabela, file.path("./output","tabelas","Tabela - controle da compatibilizacao CNAE_CBO.csv"))
-
 # 2010 --------------------------------------------------------------------
+invisible(gc())
 
 # Transformacao EGP
 
 ano = "2010"
-UF = c("CE", "PE","BA","MG","RJ","PR","RS","SP2_RM","SP1")
-k = 1
+UF = c("SP2_RM","SP1","CE", "PE","BA","MG","RJ","PR","RS")
+
 for(i in 1: length(ano)){
   ano = ano[i]
   for(k in 1: length(UF)){
@@ -147,31 +114,15 @@ for(i in 1: length(ano)){
       var_trabalhando = "v6910",
       var_afastado = "v0642",
       var_aprendiz = "v0643",
-      var_trabalho_cultivo = "v0641",
+      var_trabalho_cultivo = "v0652",
       var_trabalho_consumo = "v0644",
       var_buscou_emprego = "v0654",
       var_posicao_ocupacao = "v0648",
       var_codigo_ocupacao = "v6461"
     )
 
-    # exportacao
-    assign(paste0("censo_",ano,"_",uf),censo)
-
-    # Proximo loop
-    print(paste0("Finalizamos a UF: ",uf,"!!!"))
-    rm(censo)
-    gc()
-  }
-}
-
-# Tratamento quintil de renda pc
-
-for(i in 1: length(ano)){
-  ano = ano[i]
-  for(k in 1: length(UF)){
-    uf = UF[k]
-    # Importacao dos dados
-    censo <- get(glue::glue("censo_{ano}_{uf}")) |>
+    ## Tratamento quintil de renda pc
+    censo <- censo |>
       mutate(renda_pc_def = case_when(is.na(v6527_defl) ~ 0, TRUE ~ v6527_defl)) |>
       group_by(id_dom) |>
       mutate(renda_pc_def = sum(renda_pc_def)) |>
@@ -224,31 +175,17 @@ for(i in 1: length(ano)){
       ) |>
       ungroup()
 
-    # exportacao
-    assign(paste0("censo_",ano,"_",uf),censo)
+    ## Exportacao
+    if(uf == "SP2_RM"){
+      save(censo, file = file.path("./dados",paste0("censo_tratado_",ano,"_SP.RData")))
+    }else{
+      save(censo, file = file.path("./dados",paste0("censo_tratado_",ano,"_",uf,".RData")))
+    }
 
     # Proximo loop
     print(paste0("Finalizamos a UF: ",uf,"!!!"))
     rm(censo)
     gc()
   }
-}
-
-## Exportacao
-
-# exportacao da base
-for(i in 1: length(ano)){
-  ano = ano[i]
-  for(k in 1: length(UF)){
-    uf = UF[k]
-    censo <- get(glue::glue("censo_{ano}_{uf}"))
-    if(uf == "SP2_RM"){
-      save(censo, file = file.path("./dados",paste0("censo_tratado_",ano,"_SP.RData")))
-    }else{
-      save(censo, file = file.path("./dados",paste0("censo_tratado_",ano,"_",uf,".RData")))
-    }
-    print(paste0("Finalizamos a UF: ",uf,"!!!"))
-  }
-  rm(censo)
 }
 
