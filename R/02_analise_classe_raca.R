@@ -2055,7 +2055,7 @@ write.xlsx(
   file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
   row.names = FALSE,
   col.names = FALSE,
-  sheetName = "tabela 04 - classes egp por renda",
+  sheetName = "tabela 04 - egp por renda",
   append = TRUE,
   showNA = FALSE
 )
@@ -2180,7 +2180,7 @@ write.xlsx(
   file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
   row.names = FALSE,
   col.names = FALSE,
-  sheetName = "tabela 06 - renda media por decimos",
+  sheetName = "tabela 06 - renda por decimos",
   append = TRUE,
   showNA = FALSE
 )
@@ -2272,7 +2272,7 @@ write.xlsx(
   file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
   row.names = FALSE,
   col.names = FALSE,
-  sheetName = "tabela 08 - classes renda em SM por egp",
+  sheetName = "tabela 08 - classes SM por egp",
   append = TRUE,
   showNA = FALSE
 )

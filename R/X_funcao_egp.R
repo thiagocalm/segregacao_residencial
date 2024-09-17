@@ -777,7 +777,8 @@ func_tratamento_classes_egp <- function(
         ISCO == 6131 ~ 11,
         ISCO == 6132 ~ 11,
         ISCO == 6133 ~ 11,
-        ISCO == 6200 ~ 11),
+        ISCO == 6200 ~ 11,
+        TRUE ~ EGP11),
       EGP11 = case_when(
         PosicaoOcupacao == 2 & ISIC != 10 & ISIC != 100 ~ 5, #empregadores nao rurais
         PosicaoOcupacao == 2 & ISIC == 10 & EGP11 %in% c(1:4,8:10) ~ 6, # empregadores rurais
