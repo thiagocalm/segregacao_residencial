@@ -417,13 +417,14 @@ func_fazer_tabela <- function(tabela){
   #   stop("Use a data.table/tibble object in 'tabela' argument!")
   # }
 
-  tabela_cruzada <- ftable(xtabs(D ~ cor_classe1 + cor_classe2,
-                                 tabela),
-                           col.vars = c("cor_classe1"),
-                           row.vars = c("cor_classe2")) |>
-    stats:::format.ftable(quote = FALSE, dec = ",") |>
-    trimws() |>
-    as.data.frame()
+    tabela_cruzada <- ftable(xtabs(D ~ cor_classe1 + cor_classe2,
+                                   tabela),
+                             col.vars = c("cor_classe1"),
+                             row.vars = c("cor_classe2")) |>
+      stats:::format.ftable(quote = FALSE, dec = ",",digits = 4) |>
+      trimws() |>
+      as.data.frame()
+
 
   return(tabela_cruzada)
 }

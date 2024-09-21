@@ -1818,6 +1818,9 @@ rm(censo_2010_RMBH, censo_2010_RMCampinas, censo_2010_RMCuritiba, censo_2010_RMF
 
 # Juncao e exportacao dos dados -------------------------------------------
 
+wb <- openxlsx::loadWorkbook('./output/tabelas/Tabela - classe e raca - formatada.xlsx')
+s <- createStyle(numFmt = "0.000") #configurando estilo a ser usado
+
 ## Tabela 0
 
 tabela0 <- tabela_00 |>
@@ -1850,14 +1853,19 @@ tabela_export <- rbind(titulo,tabela0, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 00 - Descritivo geral",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 2,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 2,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 ## Tabela 1
@@ -1904,14 +1912,19 @@ tabela_export <- rbind(titulo,tabela1, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 01 - EGP",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 3,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 3,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 ## Tabela 2
@@ -1954,14 +1967,19 @@ tabela_export <- rbind(titulo,tabela2, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 02 - classes via renda",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 4,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 4,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 ## Tabela 3
@@ -1972,8 +1990,8 @@ tabela3 <- tabela_03 |> mutate(ano = as.numeric(ano)) |>
   mutate(
     medida = factor(
       medida,
-      levels = c("prop","n"),
-      labels = c("%","N")))
+      levels = c("n","prop"),
+      labels = c("N","%")))
 
 tabela3 <- ftable(xtabs(valores ~ ano + RM + estratos_sociais + cor_raca + tipo + medida,
                         tabela3),
@@ -2003,14 +2021,19 @@ tabela_export <- rbind(titulo,tabela3, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 03 - classes egp e renda",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 5,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 5,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 ## Tabela 4
@@ -2050,14 +2073,19 @@ tabela_export <- rbind(titulo,tabela4, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 04 - egp por renda",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 6,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 6,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 ## Tabela 5
@@ -2098,14 +2126,19 @@ tabela_export <- rbind(titulo,tabela5, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 05 - renda min e max",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 7,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 7,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 
@@ -2175,14 +2208,19 @@ tabela_export <- rbind(titulo,tabela6, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 06 - renda por decimos",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 8,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 8,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 ## Tabela 7
@@ -2193,8 +2231,8 @@ tabela7 <- tabela_07 |> mutate(ano = as.numeric(ano)) |>
   mutate(
     medida = factor(
       medida,
-      levels = c("prop","n"),
-      labels = c("%","N")))
+      levels = c("n","prop"),
+      labels = c("N","%")))
 
 tabela7 <- ftable(xtabs(valores ~ ano + RM + estrato_renda_sm + cor_raca + medida,
                         tabela7),
@@ -2221,14 +2259,19 @@ tabela_export <- rbind(titulo,tabela7, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 07 - classes renda em SM",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 9,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 9,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 ## Tabela 8
@@ -2267,14 +2310,19 @@ tabela_export <- rbind(titulo,tabela8, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 08 - classes SM por egp",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 10,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 10,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
 )
 
 ## Tabela 9
@@ -2324,12 +2372,25 @@ tabela_export <- rbind(titulo,tabela9, nota)
 
 # Salvando arquivo
 
-write.xlsx(
-  tabela_export,
-  file = file.path("./output","tabelas","Tabela - classe e raca.xlsx"),
-  row.names = FALSE,
-  col.names = FALSE,
-  sheetName = "tabela 09 - EGP",
-  append = TRUE,
-  showNA = FALSE
+openxlsx::writeData(
+  wb = wb,
+  sheet = 11,
+  x = tabela_export
+)
+
+addStyle(
+  wb = wb,
+  sheet = 11,
+  style = s,
+  rows = 1:100,
+  cols = 1:100,
+  gridExpand = TRUE
+)
+
+# Exportar arquivo
+
+openxlsx::saveWorkbook(
+  wb,
+  paste0('./output/tabelas/','[Ultima atualizacao em ',today(),'] Tabela - descritivas gerais.xlsx'),
+  overwrite = TRUE
 )
