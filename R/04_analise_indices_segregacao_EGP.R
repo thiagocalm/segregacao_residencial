@@ -150,6 +150,8 @@ for(i in seq_along(anos)){
 
 # Exportando resultados
 
+s <- createStyle(numFmt = "0.000") #configurando estilo a ser usado
+
 wb <- openxlsx::loadWorkbook('./output/EGP/tabelas/Tabela - indices de segregação por RM.xlsx')
 
 for(i in seq_along(anos)){
@@ -169,7 +171,7 @@ for(i in seq_along(anos)){
       openxlsx::writeData(
         wb = wb,
         sheet = sheet_number,
-        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:8,3:8],
+        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:8,3:8] |> as_tibble(),
         colNames = FALSE,
         rowNames = FALSE,
         xy = c(3,8)
@@ -213,7 +215,7 @@ for(i in seq_along(anos)){
       openxlsx::writeData(
         wb = wb,
         sheet = sheet_number,
-        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:8,3:8],
+        x = get(glue::glue("output_{ano}_{RM}"))$D_resultado_classes[3:8,3:8] |> as_tibble(),
         colNames = FALSE,
         rowNames = FALSE,
         xy = c(3,17)
@@ -246,6 +248,15 @@ for(i in seq_along(anos)){
         xy = c(7,39)
       )
     }
+    # Configurando estilo
+    addStyle(
+      wb = wb,
+      sheet = sheet_number,
+      style = s,
+      rows = 1:100,
+      cols = 1:100,
+      gridExpand = TRUE
+    )
   }
 }
 
