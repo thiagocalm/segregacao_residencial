@@ -19,22 +19,26 @@ rm(list = ls())
 
 library(pacman)
 pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, ggspatial, spdep)
+source("./R/X_funcao_metodos_espacial.R") # importando funcoes para usar funcao de fazer tabelas
+
+# Definicao de qual classe social utilizar --------------------------------
+
+classe <- "SM"
 
 ## Importacao dos dados
 
 anos <- c(2000,2010)
 RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
          "RMRJ","RMSalvador","RMSP")
-k = 2
 
 for(i in 1: length(anos)){
   ano = anos[i]
 
-  # for(k in 1: length(RMs)){
+  for(k in 1: length(RMs)){
     RM = RMs[k]
 
     # Importacao dos dados
-    load(file.path("./output",paste0("resultados_QL_indice_",ano,".RData")))
+    load(file.path("./output",classe,paste0("resultados_QL_indice_",ano,".RData")))
 
     # exportacao
     if(ano == 2000){
@@ -68,7 +72,7 @@ for(i in 1: length(anos)){
     }
 
     # Proximo loop
-  # }
+  }
 }
 
 rm(resultados_QL_index_2000,resultados_QL_index_2010, QL_index_total)
@@ -111,11 +115,7 @@ ap_2000 <- ap_2000 |>
   group_by(area_ponderacao) |>
   summarise()
 
-ap_2000 |>
-  ggplot() +
-  geom_sf(fill = "green")
-
-# Juncao dos dados espaciais ao QL - Aqui começamos a falar da RM Campinas somente!
+# Juncao dos dados espaciais ao QL
 
 RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
          "RMRJ","RMSalvador","RMSP")
@@ -147,25 +147,9 @@ for(k in 1: length(RMs)){
   assign(paste0("ap_",RM,"_",2000),ap_RM_2000)
 }
 
-# ap_RMCampinas_2000 <- QL_2000_RMCampinas |>
-#   left_join(
-#     ap_2000,
-#     by = c("area_ponderacao"),
-#     keep = FALSE
-#   ) |>
-#   distinct() |>
-#   mutate(code_munic = as.numeric(str_sub(area_ponderacao, 1, 7))) |>
-#   st_as_sf()
-
-rm(ap_2000, sc_shp, sc_to_ap, poligonos_vazios)
-
-rm_shp_2000 <- geobr::read_metro_area(year = 2001) |>
-  filter(code_metro == "022")
+rm(ap_2000, ap_RM_2000, sc_shp, sc_to_ap, poligonos_vazios)
 
 # Tratamento dos dados espaciais - 2010 --------------------------------------
-
-rm_shp_2010 <- geobr::read_metro_area(year = 2010) |>
-  filter(name_metro == "RM Campinas")
 
 # importacao dos arquivos auxiliares
 
@@ -200,7 +184,7 @@ ap_2010 <- ap_2010 |>
   group_by(area_ponderacao) |>
   summarise()
 
-# Juntando os dados de QL com os dados espaciais - AQUI COMEÇAMOS O DE CAMPINAS!
+# Juntando os dados de QL com os dados espaciais
 
 RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
          "RMRJ","RMSalvador","RMSP")
@@ -238,449 +222,132 @@ for(k in 1: length(RMs)){
   assign(paste0("ap_",RM,"_",2010),ap_RM_2010)
 }
 
-rm(ap_2010)
-
+rm(ap_2010, ap_RM_2010, sc_shp, sc_to_ap, poligonos_vazios)
 
 # Visualizacao de ambas os anos conjuntamente -----------------------------
 
-(rm_shp_2000 |>
-    ggplot() +
-    geom_sf(data = ap_RMCampinas_2000, fill = "#2b8cbe") +
-    geom_sf(fill = "transparent", colour = "black", size = .7) +
-    theme_minimal() +
-    labs(title = "2000") +
-    theme(
-      plot.title = element_text(size = 12, hjust = .5, vjust = .5),
-      axis.text = element_blank(),
-      axis.ticks = element_blank(),
-      panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
-      panel.background = element_blank()) +
-    annotation_scale(
-      location = "bl",
-      pad_x = unit(0.0, "in"),
-      width_hint = 0.5
-    ) +
-    annotation_north_arrow(
-      location = "bl", which_north = "true",
-      pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
-      style = north_arrow_fancy_orienteering
-    )
-) +
-  (rm_shp_2010 |>
-     ggplot() +
-     geom_sf(data = ap_RMCampinas_2010, fill = "#2ca25f") +
-     geom_sf(fill = "transparent", colour = "black", size = .7) +
-     theme_minimal() +
-     labs(title = "2010") +
-     theme(
-       plot.title = element_text(size = 12, hjust = .5, vjust = .5),
-       axis.text = element_blank(),
-       axis.ticks = element_blank(),
-       panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
-       panel.background = element_blank()) +
-     annotation_scale(
-       location = "bl",
-       pad_x = unit(0.0, "in"),
-       width_hint = 0.5
-     ) +
-     annotation_north_arrow(
-       location = "bl", which_north = "true",
-       pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
-       style = north_arrow_fancy_orienteering
-     )
-  )
+# Importacao de SHP das RMs
+shp_2000_rms <- geobr::read_metro_area(year = 2001)
+shp_2010_rms <- geobr::read_metro_area(year = 2010)
 
-ggsave(
-  filename = "comparativo das APs nas RMs em 2000 e 2010.jpeg",
-  device = "jpeg",
-  path = file.path("output","mapas"),
-  width = 13,
-  height = 13,
-  units = "in"
+## Construcao dos mapas
+
+# Criacao de arquivo de referencia das RMs
+
+rm_codes = tibble(
+  name = c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
+           "RMRJ","RMSalvador","RMSP"),
+  codes = c("RM Belo Horizonte","RM Campinas","RM Curitiba","RM Fortaleza","RM Porto Alegre","RM Recife",
+            "RM Rio de Janeiro","RM Salvador","RM São Paulo")
 )
 
-
-# Visualizacao dos dados da RM com nomes dos muncis -----------------------
-
-RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
-         "RMRJ","RMSalvador","RMSP")
-
-for(k in 1: length(RMs)){
-
+for(k in seq_along(RMs)){
+  # RM em analise
   RM <- RMs[k]
 
-  ap_RM <- get(glue::glue("ap_{RM}_2010"))
+  # Selecao de dados
+  rm_code <- rm_codes |> filter(name %in% RM) |> pluck(2)
+  shp_2000_rm <- shp_2000_rms |> filter(name_metro %in% rm_code)
+  shp_2010_rm <- shp_2010_rms |> filter(name_metro %in% rm_code)
 
-  rm_shp_2010 |>
-    ggplot() +
-    geom_sf(data = ap_RM, fill = "#f7f7f7", color = "#d9d9d9") +
-    geom_sf(fill = "transparent", colour = "black", size = .9) +
-    geom_sf_text(
-      aes(label = name_muni),
-      size = 3,
-      color = "black",
-      fontface = "bold",
-      check_overlap = TRUE,
-      fun.geometry = sf::st_centroid
-    ) +
-    theme_minimal() +
-    theme(
-      plot.title = element_text(size = 12, hjust = .5, vjust = .5),
-      axis.text = element_blank(),
-      axis.title = element_blank(),
-      axis.ticks = element_blank(),
-      panel.grid = element_line(color = "#ffffff",linewidth = .01),
-      panel.background = element_blank()) +
-    annotation_scale(
-      location = "bl",
-      pad_x = unit(0.0, "in"),
-      width_hint = 0.5
-    ) +
-    annotation_north_arrow(
-      location = "bl", which_north = "true",
-      pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
-      style = north_arrow_fancy_orienteering
+  # Mapa
+  fig <- (shp_2000_rm |>
+            ggplot() +
+            geom_sf(data = get(glue::glue("ap_{RM}_2000")), fill = "#2b8cbe") +
+            geom_sf(fill = "transparent", colour = "black", size = .7) +
+            theme_minimal() +
+            labs(title = paste0(RM, " - 2010")) +
+            theme(
+              plot.title = element_text(face = "bold",size = 12, hjust = .5, vjust = .5),
+              axis.text = element_blank(),
+              axis.ticks = element_blank(),
+              panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
+              panel.background = element_blank()) +
+            annotation_scale(
+              location = "bl",
+              pad_x = unit(0.0, "in"),
+              width_hint = 0.5
+            ) +
+            annotation_north_arrow(
+              location = "tl", which_north = "true",
+              pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+              style = north_arrow_fancy_orienteering
+            )
+  ) +
+    (shp_2010_rm |>
+       ggplot() +
+       geom_sf(data = get(glue::glue("ap_{RM}_2010")), fill = "#2ca25f") +
+       geom_sf(fill = "transparent", colour = "black", size = .7) +
+       theme_minimal() +
+       labs(title = paste0(RM, " - 2010")) +
+       theme(
+         plot.title = element_text(face = "bold",size = 12, hjust = .5, vjust = .5),
+         axis.text = element_blank(),
+         axis.ticks = element_blank(),
+         panel.grid = element_line(color = "#f0f0f0",linewidth = .01),
+         panel.background = element_blank()) +
+       annotation_scale(
+         location = "bl",
+         pad_x = unit(0.0, "in"),
+         width_hint = 0.5
+       ) +
+       annotation_north_arrow(
+         location = "tl", which_north = "true",
+         pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+         style = north_arrow_fancy_orienteering
+       )
     )
 
+  # Salvando imagem
   ggsave(
-    filename = glue::glue("{RM} e seus municipios.jpeg"),
+    plot = fig,
+    filename = paste0(RM," - comparativo das APs nas RMs em 2000 e 2010.jpeg"),
     device = "jpeg",
-    path = file.path("output","mapas"),
+    path = file.path("output",classe,"mapas"),
     width = 13,
     height = 13,
     units = "in"
   )
 
-  print(paste0("Fim para a RM de: ",RM,"..."))
+  # Proximo loop
+  print(paste0("Finalizamos mapa para : ", RM,"..."))
+  rm(fig,shp_2000_rm,shp_2010_rm,rm_code)
+
 }
 
-# LISA - 2000 --------------------------------------------------------------
+# Visualizacao dos dados da RM com nomes dos muncis -----------------------
 
-# criacao de peso com base no método queen (mais permissivo)
+for(k in 1: length(RMs)){
 
-queen_w <- queen_weights(ap_RMCampinas_2000, include_lower_order = TRUE)
+  # RM em analise
+  RM <- RMs[k]
 
-# Branco - Baixo
+  # Selecao de dados
+  rm_code <- rm_codes |> filter(name %in% RM) |> pluck(2)
+  shp_2000_rm <- shp_2000_rms |> filter(name_metro %in% rm_code)
+  shp_2010_rm <- shp_2010_rms |> filter(name_metro %in% rm_code)
 
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Brancos_Baixo"])
+  ap_RM <- get(glue::glue("ap_{RM}_2010"))
 
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
-  mutate(
-    LISA_BB_value = lisa_values(gda_lisa = lisa),
-    LISA_BB_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BB_centralizado = case_when(
-      LISA_BB_pvalue >  0.1 ~ 0,
-      (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 4,
-      (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 1,
-      (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 3,
-      (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_BB_map = factor(
-      LISA_BB_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Branco - Intermediario
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Brancos_Intermediario"])
-
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
-  mutate(
-    LISA_BI_value = lisa_values(gda_lisa = lisa),
-    LISA_BI_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BI_centralizado = case_when(
-      LISA_BI_pvalue >  0.1  ~ 0,
-      (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 4,
-      (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 1,
-      (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 3,
-      (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_BI_map = factor(
-      LISA_BI_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Branco - Superior
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Brancos_Alto"])
-
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
-  mutate(
-    LISA_BS_value = lisa_values(gda_lisa = lisa),
-    LISA_BS_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BS_centralizado = case_when(
-      LISA_BS_pvalue >  0.1  ~ 0,
-      (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 4,
-      (LISA_BS_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 1,
-      (LISA_BS_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 3,
-      (LISA_BS_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_BS_map = factor(
-      LISA_BS_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Negro - Baixo
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Negros_Baixo"])
-
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
-  mutate(
-    LISA_NB_value = lisa_values(gda_lisa = lisa),
-    LISA_NB_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NB_centralizado = case_when(
-      LISA_NB_pvalue >  0.1  ~ 0,
-      (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 4,
-      (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 1,
-      (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 3,
-      (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_NB_map = factor(
-      LISA_NB_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Negro - Intermediario
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Negros_Intermediario"])
-
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
-  mutate(
-    LISA_NI_value = lisa_values(gda_lisa = lisa),
-    LISA_NI_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NI_centralizado = case_when(
-      LISA_NI_pvalue >  0.1  ~ 0,
-      (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 4,
-      (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 1,
-      (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 3,
-      (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_NI_map = factor(
-      LISA_NI_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Negros - Superior
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Negros_Alto"])
-
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
-  mutate(
-    LISA_NS_value = lisa_values(gda_lisa = lisa),
-    LISA_NS_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NS_centralizado = case_when(
-      LISA_NS_pvalue >  0.1  ~ 0,
-      (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 4,
-      (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 1,
-      (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 3,
-      (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_NS_map = factor(
-      LISA_NS_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# LISA - 2010 --------------------------------------------------------------
-
-# criacao de peso com base no método queen (mais permissivo)
-
-queen_w <- queen_weights(ap_RMCampinas_2010, include_lower_order = TRUE)
-
-# Branco - Baixo
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2010["QL_Brancos_Baixo"])
-
-ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
-  mutate(
-    LISA_BB_value = lisa_values(gda_lisa = lisa),
-    LISA_BB_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BB_centralizado = case_when(
-      LISA_BB_pvalue >  0.1  ~ 0,
-      (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 4,
-      (LISA_BB_value - mean(LISA_BB_value)) > 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 1,
-      (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) > 0 ~ 3,
-      (LISA_BB_value - mean(LISA_BB_value)) < 0 & (QL_Brancos_Baixo - mean(QL_Brancos_Baixo)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_BB_map = factor(
-      LISA_BB_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Branco - Intermediario
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Brancos_Intermediario"])
-
-ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
-  mutate(
-    LISA_BI_value = lisa_values(gda_lisa = lisa),
-    LISA_BI_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BI_centralizado = case_when(
-      LISA_BI_pvalue >  0.1  ~ 0,
-      (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 4,
-      (LISA_BI_value - mean(LISA_BI_value)) > 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 1,
-      (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) > 0 ~ 3,
-      (LISA_BI_value - mean(LISA_BI_value)) < 0 & (QL_Brancos_Intermediario - mean(QL_Brancos_Intermediario)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_BI_map = factor(
-      LISA_BI_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Branco - Superior
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Brancos_Alto"])
-
-ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
-  mutate(
-    LISA_BS_value = lisa_values(gda_lisa = lisa),
-    LISA_BS_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_BS_centralizado = case_when(
-      LISA_BS_pvalue >  0.1  ~ 0,
-      (LISA_BS_value - mean(LISA_BS_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 4,
-      (LISA_BS_value - mean(LISA_BS_value)) > 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 1,
-      (LISA_BS_value - mean(LISA_BS_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) > 0 ~ 3,
-      (LISA_BS_value - mean(LISA_BS_value)) < 0 & (QL_Brancos_Alto - mean(QL_Brancos_Alto)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_BS_map = factor(
-      LISA_BS_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Negro - Baixo
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Negros_Baixo"])
-
-ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
-  mutate(
-    LISA_NB_value = lisa_values(gda_lisa = lisa),
-    LISA_NB_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NB_centralizado = case_when(
-      LISA_NB_pvalue >  0.1  ~ 0,
-      (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 4,
-      (LISA_NB_value - mean(LISA_NB_value)) > 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 1,
-      (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) > 0 ~ 3,
-      (LISA_NB_value - mean(LISA_NB_value)) < 0 & (QL_Negros_Baixo - mean(QL_Negros_Baixo)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_NB_map = factor(
-      LISA_NB_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Negro - Intermediario
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Negros_Intermediario"])
-
-ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
-  mutate(
-    LISA_NI_value = lisa_values(gda_lisa = lisa),
-    LISA_NI_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NI_centralizado = case_when(
-      LISA_NI_pvalue >  0.1  ~ 0,
-      (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 4,
-      (LISA_NI_value - mean(LISA_NI_value)) > 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 1,
-      (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) > 0 ~ 3,
-      (LISA_NI_value - mean(LISA_NI_value)) < 0 & (QL_Negros_Intermediario - mean(QL_Negros_Intermediario)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_NI_map = factor(
-      LISA_NI_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Negros - Superior
-
-lisa <- local_moran(queen_w, ap_RMCampinas_2000["QL_Negros_Alto"])
-
-ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
-  mutate(
-    LISA_NS_value = lisa_values(gda_lisa = lisa),
-    LISA_NS_pvalue = lisa_pvalues(gda_lisa = lisa),
-    LISA_NS_centralizado = case_when(
-      LISA_NS_pvalue >  0.1  ~ 0,
-      (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 4,
-      (LISA_NS_value - mean(LISA_NS_value)) > 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 1,
-      (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) > 0 ~ 3,
-      (LISA_NS_value - mean(LISA_NS_value)) < 0 & (QL_Negros_Alto - mean(QL_Negros_Alto)) < 0 ~ 2,
-      TRUE ~ NA_real_
-    ),
-    LISA_NS_map = factor(
-      LISA_NS_centralizado,
-      levels = c(2,1,3,4,0),
-      labels = c("Baixo-Baixo","Alto-Baixo","Baixo-Alto","Alto-Alto","Não significativo")
-    )
-  )
-
-# Mapas ------------------------------------------------------------
-
-anos <- c(2000,2010)
-relacoes <- c("BB","BI","BS","NB","NI","NS")
-relacoes_extensa <- c("Branco-Baixo","Branco-Intermediário","Branco-Superior",
-                     "Negro-Baixo","Negro-Intermediário","Negro-Superior")
-
-for(i in seq_along(anos)){
-  ano = anos[i]
-  for(j in seq_along(relacoes)){
-    relacao = relacoes[j]
-    relacao_extensa = relacoes_extensa[j]
-
-    # Mapa
-    get(glue::glue("ap_RMCampinas_{ano}")) |>
-      select(LISA_var = glue::glue("LISA_{relacao}_map")) |>
-      filter(!is.na(LISA_var)) |>
+  fig <- (
+    shp_2000_rm |>
       ggplot() +
-      geom_sf(aes(fill = LISA_var),
-              lwd = 0) +
-      geom_sf(data = get(glue::glue("rm_shp_{ano}")),
-              fill = "transparent",
-              colour = "black", size = 0.5) +
-      scale_fill_manual(
-        values = c(
-          "Baixo-Baixo" = "#045a8d", "Alto-Baixo" = "#a6bddb","Baixo-Alto" = "#fc9272",
-          "Alto-Alto" = "#a50f15","Não significativo" =  "#f0f0f0"
-        )) +
-      guides(fill = guide_legend(title = glue::glue("LISA Map RM Campinas: {relacao_extensa}"))) +
-      labs(
-        caption = glue::glue("Fonte: IBGE, Censo Demográfico {ano}")
+      geom_sf(data = get(glue::glue("ap_{RM}_2000")), fill = "#f7f7f7", color = "#d9d9d9") +
+      geom_sf(fill = "transparent", colour = "black", size = .9) +
+      geom_sf_text(
+        aes(label = name_muni),
+        size = 3,
+        color = "black",
+        fontface = "bold",
+        check_overlap = TRUE,
+        fun.geometry = sf::st_centroid
       ) +
-      # tira sistema cartesiano
+      theme_minimal() +
+      labs(title = paste0(RM, " - 2000")) +
       theme(
-        plot.caption = element_blank(),
-        legend.title = element_text(face = "bold", size = 12, hjust = 0, vjust = .5),
-        legend.text = element_text(size = 12, hjust = 0, vjust = .9),
-        legend.position = "right",
+        plot.title = element_text(face = "bold", size = 12, hjust = .5, vjust = .5),
         axis.text = element_blank(),
+        axis.title = element_blank(),
         axis.ticks = element_blank(),
         panel.grid = element_line(color = "#ffffff",linewidth = .01),
         panel.background = element_blank()) +
@@ -690,19 +357,161 @@ for(i in seq_along(anos)){
         width_hint = 0.5
       ) +
       annotation_north_arrow(
-        location = "bl", which_north = "true",
+        location = "tl", which_north = "true",
         pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
         style = north_arrow_fancy_orienteering
       )
-    # Exportacao
-    ggsave(
-      filename = glue::glue("{ano}_LISA_{relacao}.jpeg"),
-      device = "jpeg",
-      path = file.path("output","mapas"),
-      width = 13,
-      height = 13,
-      units = "in"
-    )
+  ) + (
+    shp_2010_rm |>
+      ggplot() +
+      geom_sf(data = get(glue::glue("ap_{RM}_2010")), fill = "#f7f7f7", color = "#d9d9d9") +
+      geom_sf(fill = "transparent", colour = "black", size = .9) +
+      geom_sf_text(
+        aes(label = name_muni),
+        size = 3,
+        color = "black",
+        fontface = "bold",
+        check_overlap = TRUE,
+        fun.geometry = sf::st_centroid
+      ) +
+      theme_minimal() +
+      labs(title = paste0(RM, " - 2010")) +
+      theme(
+        plot.title = element_text(face = "bold", size = 12, hjust = .5, vjust = .5),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_line(color = "#ffffff",linewidth = .01),
+        panel.background = element_blank()) +
+      annotation_scale(
+        location = "bl",
+        pad_x = unit(0.0, "in"),
+        width_hint = 0.5
+      ) +
+      annotation_north_arrow(
+        location = "tl", which_north = "true",
+        pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+        style = north_arrow_fancy_orienteering
+      )
+  )
+
+  ggsave(
+    filename = glue::glue("{RM} - Relacao de municipios.jpeg"),
+    device = "jpeg",
+    path = file.path("output",classe,"mapas"),
+    width = 13,
+    height = 13,
+    units = "in"
+  )
+
+  # Proximo loop
+  print(paste0("Finalizamos mapa para : ", RM,"..."))
+  rm(fig,shp_2000_rm,shp_2010_rm,rm_code)
+}
+
+# LISA - 2000 e 2010 ---------------------------------------------------------
+
+for(i in seq_along(anos)){
+  ano = anos[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+    # definindo base
+    df <- get(glue::glue("ap_{RM}_{ano}"))
+    # criacao de peso com base em metodo queen (mais permissivo)
+    queen_w <- queen_weights(df, include_lower_order = TRUE)
+
+    # Aplicacao de Lisa
+    df <- func_lisa_classes(data = df)
+
+    # retorno
+    assign(paste0("ap_",RM,"_",ano),df)
+
+    # proximo loop
+    rm(df, queen_w)
+    print(paste0("Finalizamos criacao LISA para: ", RM," em ", ano,"..."))
+  }
+}
+
+# Mapas ------------------------------------------------------------
+
+if(classe == "EGP"){
+  relacoes <- c("BB","BI","BS","NB","NI","NS")
+  relacoes_extensa <- c(
+    "Branco-Baixo","Branco-Intermediário","Branco-Superior",
+    "Negro-Baixo","Negro-Intermediário","Negro-Superior"
+  )
+} else{
+  relacoes <- c("BmeioSM","Bmeioa1SM","B1a3SM","B3SMmais","NmeioSM","Nmeioa1SM","N1a3SM","N3SMmais")
+  relacoes_extensa <- c(
+    "Branco - Até 1/2 SM","Branco - 1/2 a 1 SM", "Branco - 1 a 3 SM","Branco - 3 SM ou mais",
+    "Negro - Até 1/2 SM","Negro - 1/2 a 1 SM", "Negro - 1 a 3 SM","Negro - 3 SM ou mais",
+  )
+}
+
+for(i in seq_along(anos)){
+  ano = anos[i]
+  for(j in seq_along(relacoes)){
+    relacao = relacoes[j]
+    relacao_extensa = relacoes_extensa[j]
+    for(k in seq_along(RMs)){
+      # selecionando paramentros em relacao a RM
+      RM = RMs[k]
+      rm_code <- rm_codes |> filter(name %in% RM) |> pluck(2)
+      if(ano == 2000){
+        shp_2000_rm <- shp_2000_rms |> filter(name_metro %in% rm_code)
+      } else{
+        shp_2010_rm <- shp_2010_rms |> filter(name_metro %in% rm_code)
+      }
+
+      # Mapa
+      get(glue::glue("ap_{RM}_{ano}")) |>
+        select(LISA_var = glue::glue("LISA_{relacao}_map")) |>
+        filter(!is.na(LISA_var)) |>
+        ggplot() +
+        geom_sf(aes(fill = LISA_var),
+                lwd = 0) +
+        geom_sf(data = get(glue::glue("shp_{ano}_rm")),
+                fill = "transparent",
+                colour = "black", size = 0.5) +
+        scale_fill_manual(
+          values = c(
+            "Baixo-Baixo" = "#045a8d", "Alto-Baixo" = "#a6bddb","Baixo-Alto" = "#fc9272",
+            "Alto-Alto" = "#a50f15","Não significativo" =  "#f0f0f0"
+          )) +
+        guides(fill = guide_legend(title = glue::glue("LISA Map RM Campinas: {relacao_extensa}"))) +
+        labs(
+          caption = glue::glue("Fonte: IBGE, Censo Demográfico {ano}.")
+        ) +
+        # tira sistema cartesiano
+        theme(
+          plot.caption = element_blank(),
+          legend.title = element_text(face = "bold", size = 12, hjust = 0, vjust = .5),
+          legend.text = element_text(size = 12, hjust = 0, vjust = .9),
+          legend.position = "right",
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          panel.grid = element_line(color = "#ffffff",linewidth = .01),
+          panel.background = element_blank()) +
+        annotation_scale(
+          location = "bl",
+          pad_x = unit(0.0, "in"),
+          width_hint = 0.5
+        ) +
+        annotation_north_arrow(
+          location = "tl", which_north = "true",
+          pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+          style = north_arrow_fancy_orienteering
+        )
+      # Exportacao
+      ggsave(
+        filename = glue::glue("{RM} - LISA_{ano}_{relacao}.jpeg"),
+        device = "jpeg",
+        path = file.path("output",classe,"mapas"),
+        width = 13,
+        height = 13,
+        units = "in"
+      )
+    }
     print(paste0("Finalizamos a categoria ",relacao,"..."))
   }
   print(paste0("Finalizamos o ano de ",ano,"..."))
@@ -710,114 +519,43 @@ for(i in seq_along(anos)){
 
 # Indice de Moran ---------------------------------------------------------
 
-# Nomes das variaveis
-oldnames = colnames(ap_RMCampinas_2000 |> select(starts_with(c("QL_Br","QL_Ne"))))[1:6] |>
-  as_tibble() |>
-  mutate(
-    value = str_remove(value, "QL_"),
-    value = paste0(value,"_value")
-  ) |> pull()
+for(i in seq_along(anos)){
+  ano = anos[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+    # definindo base
+    df <- get(glue::glue("ap_{RM}_{ano}"))
 
-newnames = colnames(
-  ap_RMCampinas_2000 |>
-  select(starts_with(c("QL_Br","QL_Ne")))
-) |>
-  as_tibble() |>
-  filter(value != "geom") |>
-  mutate(
-    value = str_remove(value, "QL_"),
-    value = str_replace(value, "_"," ")
-  ) |> pull()
+    # Aplicacao de Lisa
+    df <- func_moran_classes(data = df)
 
-# Configurando para ajuste de poligonos sem vizinhanca
+    # exportacao
+    if(i == 1 & k == 1){
+      df_export <- df |>
+        mutate(
+          ano = ano,
+          RM = RM
+        )
+    } else{
+      df_export <- df_export |>
+        bind_rows(
+          df |>
+            mutate(
+              ano = ano,
+              RM = RM
+            )
+        )
+    }
+    if(i == length(anos) & k == length(RM)){
+      assign(paste0("moran_index"),df_export)
+    }
 
-set.ZeroPolicyOption(TRUE)
-get.ZeroPolicyOption()
 
-# Gerando matriz para moran
-
-queen_w_2000 <- nb2listw(poly2nb(ap_RMCampinas_2000), style = "W", zero.policy = TRUE)
-queen_w_2010 <- nb2listw(poly2nb(ap_RMCampinas_2010), style = "W", zero.policy = TRUE)
-
-# gerando base com moran
-
-moran_test <- tibble(
-  ano = c(2000,2010),
-  Brancos_Baixo_value = c(
-    moran.test(ap_RMCampinas_2000$QL_Brancos_Baixo, queen_w_2000)[[3]][[1]],
-    moran.test(ap_RMCampinas_2010$QL_Brancos_Baixo, queen_w_2010)[[3]][[1]]
-  ),
-  Brancos_Baixo_pvalue = c(
-    round(moran.test(ap_RMCampinas_2000$QL_Brancos_Baixo, queen_w_2000)[[2]],4),
-    round(moran.test(ap_RMCampinas_2010$QL_Brancos_Baixo, queen_w_2010)[[2]],4)
-  ),
-  Brancos_Intermediario_value = c(
-    moran.test(ap_RMCampinas_2000$QL_Brancos_Intermediario, queen_w_2000)[[3]][[1]],
-    moran.test(ap_RMCampinas_2010$QL_Brancos_Intermediario, queen_w_2010)[[3]][[1]]
-  ),
-  Brancos_Intermediario_pvalue = c(
-    round(moran.test(ap_RMCampinas_2000$QL_Brancos_Intermediario, queen_w_2000)[[2]],4),
-    round(moran.test(ap_RMCampinas_2010$QL_Brancos_Intermediario, queen_w_2010)[[2]],4)
-  ),
-  Brancos_Superior_value = c(
-    moran.test(ap_RMCampinas_2000$QL_Brancos_Alto, queen_w_2000)[[3]][[1]],
-    moran.test(ap_RMCampinas_2010$QL_Brancos_Alto, queen_w_2010)[[3]][[1]]
-  ),
-  Brancos_Superior_pvalue = c(
-    round(moran.test(ap_RMCampinas_2000$QL_Brancos_Alto, queen_w_2000)[[2]],4),
-    round(moran.test(ap_RMCampinas_2010$QL_Brancos_Alto, queen_w_2010)[[2]],4)
-  ),
-  Negros_Baixo_value = c(
-    moran.test(ap_RMCampinas_2000$QL_Negros_Baixo, queen_w_2000)[[3]][[1]],
-    moran.test(ap_RMCampinas_2010$QL_Negros_Baixo, queen_w_2010)[[3]][[1]]
-  ),
-  Negros_Baixo_pvalue = c(
-    round(moran.test(ap_RMCampinas_2000$QL_Negros_Baixo, queen_w_2000)[[2]],4),
-    round(moran.test(ap_RMCampinas_2010$QL_Negros_Baixo, queen_w_2010)[[2]],4)
-  ),
-  Negros_Intermediario_value = c(
-    moran.test(ap_RMCampinas_2000$QL_Negros_Intermediario, queen_w_2000)[[3]][[1]],
-    moran.test(ap_RMCampinas_2010$QL_Negros_Intermediario, queen_w_2010)[[3]][[1]]
-  ),
-  Negros_Intermediario_pvalue = c(
-    round(moran.test(ap_RMCampinas_2000$QL_Negros_Intermediario, queen_w_2000)[[2]],4),
-    round(moran.test(ap_RMCampinas_2010$QL_Negros_Intermediario, queen_w_2010)[[2]],4)
-  ),
-  Negros_Superior_value = c(
-    moran.test(ap_RMCampinas_2000$QL_Negros_Alto, queen_w_2000)[[3]][[1]],
-    moran.test(ap_RMCampinas_2010$QL_Negros_Alto, queen_w_2010)[[3]][[1]]
-  ),
-  Negros_Superior_pvalue = c(
-    round(moran.test(ap_RMCampinas_2000$QL_Negros_Alto, queen_w_2000)[[2]],4),
-    round(moran.test(ap_RMCampinas_2010$QL_Negros_Alto, queen_w_2010)[[2]],4)
-  )
-) |>
-  select(-ends_with("_pvalue"))
-
-# manipulacao da tabela
-
-oldnames = colnames(moran_test)
-
-newnames = colnames(moran_test) |>
-  as_tibble() |>
-  mutate(
-    value = str_remove(value, "_value")
-  ) |> pull()
-
-moran_test <- moran_test |>
-  rename_at(vars(oldnames), ~ newnames) |>
-  pivot_longer(
-    Brancos_Baixo:Negros_Superior,
-    values_to = "Moran",
-    names_to = "Raça-classe"
-  ) |>
-  pivot_wider(
-    names_from = "ano",
-    values_from = "Moran"
-  )
-
-moran_test
-clipr::write_last_clip()
+    # proximo loop
+    rm(df, queen_w,df_export)
+    print(paste0("Finalizamos criacao Moran para: ", RM," em ", ano,"..."))
+  }
+}
 
 # Mapas da proporção de negros e brancos por ano --------------------------
 
