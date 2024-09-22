@@ -18,18 +18,30 @@ rm(list = ls())
 # Pacotes -----------------------------------------------------------------
 
 library(pacman)
-pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, ggspatial, spdep)
+pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, ggspatial, spdep, jpeg)
 source("./R/X_funcao_metodos_espacial.R") # importando funcoes para usar funcao de fazer tabelas
 
-# Definicao de qual classe social utilizar --------------------------------
+# Definicao de parametros --------------------------------
 
+# Definicao de qual classe usar
 classe <- "SM"
 
-## Importacao dos dados
+# Criacao de arquivo de referencia das RMs
 
+rm_codes = tibble(
+  name = c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
+           "RMRJ","RMSalvador","RMSP"),
+  codes = c("RM Belo Horizonte","RM Campinas","RM Curitiba","RM Fortaleza","RM Porto Alegre","RM Recife",
+            "RM Rio de Janeiro","RM Salvador","RM São Paulo")
+)
+
+# Parametros de ano e RM
 anos <- c(2000,2010)
 RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
          "RMRJ","RMSalvador","RMSP")
+
+
+# Importacao dos dados ----------------------------------------------------
 
 for(i in 1: length(anos)){
   ano = anos[i]
@@ -232,15 +244,6 @@ shp_2010_rms <- geobr::read_metro_area(year = 2010)
 
 ## Construcao dos mapas
 
-# Criacao de arquivo de referencia das RMs
-
-rm_codes = tibble(
-  name = c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
-           "RMRJ","RMSalvador","RMSP"),
-  codes = c("RM Belo Horizonte","RM Campinas","RM Curitiba","RM Fortaleza","RM Porto Alegre","RM Recife",
-            "RM Rio de Janeiro","RM Salvador","RM São Paulo")
-)
-
 for(k in seq_along(RMs)){
   # RM em analise
   RM <- RMs[k]
@@ -409,6 +412,297 @@ for(k in 1: length(RMs)){
   rm(fig,shp_2000_rm,shp_2010_rm,rm_code)
 }
 
+# Mapas da proporção de negros e brancos por ano --------------------------
+
+# Importacao dos dados do censo para criar variaveis
+
+for(k in 1: length(RMs)){
+
+  # Definindo parametros
+  RM = RMs[k]
+  # Selecao de dados
+  rm_code <- rm_codes |> filter(name %in% RM) |> pluck(2)
+  shp_2000_rm <- shp_2000_rms |> filter(name_metro %in% rm_code)
+  shp_2010_rm <- shp_2010_rms |> filter(name_metro %in% rm_code)
+
+  ## Importacao dos dados
+
+  # 2000
+  load(file.path("./dados",paste0("censo_tratado_2000_",RM,".RData")))
+
+  # Ajuste dos dados na base do censo
+  if(classe == "EGP"){
+    censo <- censo |>
+      mutate(
+        estratos_sociais_egp = case_when(
+          EGP11 %in% c(5, 1) ~ 2,
+          EGP11 %in% c(2, 8, 3) ~ 1,
+          EGP11 %in% c(4, 9, 10) ~ 0)
+      ) |>
+      filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp))
+  } else{
+    censo <- censo |>
+      filter(!is.na(estrato_renda_sm))
+  }
+
+  # juncao de dados e calculo
+  ap_graf_2000 <- get(glue::glue("ap_{RM}_2000")) |>
+    left_join(
+      censo |>
+        select(area_ponderacao, cor_raca, peso) |>
+        summarise(
+          n = sum(peso),
+          .by = c(cor_raca, area_ponderacao)
+        ) |>
+        filter(cor_raca != 0) |>
+        group_by(cor_raca) |>
+        mutate(
+          prop_ap = round((n/sum(n))*100,2)
+        ) |>
+        ungroup() |>
+        mutate(cor_raca = factor(cor_raca, levels = c(1,2), labels = c("Branco","Negro"))) |>
+        select(-n) |>
+        pivot_wider(
+          names_from = cor_raca,
+          values_from = prop_ap
+        ),
+      by = c("area_ponderacao"),
+      keep = FALSE
+    )
+
+  rm(censo)
+
+  # 2010
+  load(file.path("./dados",paste0("censo_tratado_2010_",RM,".RData")))
+
+  # Ajuste dos dados na base do censo
+  if(classe == "EGP"){
+    censo <- censo |>
+      mutate(
+        estratos_sociais_egp = case_when(
+          EGP11 %in% c(5, 1) ~ 2,
+          EGP11 %in% c(2, 8, 3) ~ 1,
+          EGP11 %in% c(4, 9, 10) ~ 0)
+      ) |>
+      filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp))
+  } else{
+    censo <- censo |>
+      filter(!is.na(estrato_renda_sm))
+  }
+
+  # juncao dos dados
+  ap_graf_2010 <- get(glue::glue("ap_{RM}_2010")) |>
+    left_join(
+      censo |>
+        select(area_ponderacao, cor_raca, peso) |>
+        summarise(
+          n = sum(peso),
+          .by = c(cor_raca, area_ponderacao)
+        ) |>
+        filter(cor_raca != 0) |>
+        group_by(cor_raca) |>
+        mutate(
+          prop_ap = round((n/sum(n))*100,2)
+        ) |>
+        ungroup() |>
+        mutate(cor_raca = factor(cor_raca, levels = c(1,2), labels = c("Branco","Negro"))) |>
+        select(-n) |>
+        pivot_wider(
+          names_from = cor_raca,
+          values_from = prop_ap
+        ),
+      by = c("area_ponderacao"),
+      keep = FALSE
+    )
+
+  rm(censo)
+
+  # Mapa 1 - Proporcao de brancos e negros por ap
+
+  fig2 <- ap_graf_2000 |>
+    select(area_ponderacao, prop_branca, prop_negra, geom) |>
+    pivot_longer(
+      prop_branca:prop_negra,
+      names_to = "cor_raca",
+      values_to = "prop"
+    ) |>
+    mutate(ano = 2000) |>
+    bind_rows(
+      ap_graf_2010 |>
+        select(area_ponderacao, prop_branca, prop_negra, geom) |>
+        pivot_longer(
+          prop_branca:prop_negra,
+          names_to = "cor_raca",
+          values_to = "prop"
+        ) |>
+        mutate(ano = 2010)
+    ) |>
+    mutate(
+      cor_raca = str_remove(cor_raca,"prop_"),
+      ano_fct = as.factor(ano),
+      prop = round((prop*100),2),
+      cor_raca = case_when(cor_raca == "negra" ~ "Negro", TRUE ~ "Branco")
+    ) |>
+    ggplot() +
+    geom_sf(
+      aes(fill = prop),
+      color = "transparent",
+      lwd = 0
+    ) +
+    geom_sf(
+      data = shp_2010_rm,
+      fill = "transparent",
+      colour = "black",
+      size = .7
+    ) +
+    lemon::facet_rep_grid(cor_raca ~ ano_fct) +
+    scale_fill_distiller(palette = "Spectral")
+
+  if(classe == "EGP"){
+    fig2 <- fig2 +
+      guides(fill = guide_colorbar(title = "Parcela (%) da população ocupada acima de 10 anos\nde cada AP por cor ou raça")) +
+      labs(
+        caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
+      )
+  } else{
+    fig2 <- fig2 +
+      guides(fill = guide_colorbar(title = "Parcela (%) da população urbana de cada AP\npor cor ou raça")) +
+      labs(
+        caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
+      )
+  }
+
+  fig2 <- fig2 +
+    # tira sistema cartesiano
+    theme(
+      plot.caption = element_blank(),
+      legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = 1),
+      legend.text = element_text(size = 8, hjust = 0, vjust = .5),
+      legend.position = "bottom",
+      axis.text = element_blank(),
+      axis.title = element_text(size = 12),
+      axis.ticks = element_blank(),
+      panel.grid = element_line(color = "#ffffff",linewidth = .01),
+      panel.background = element_blank(),
+      strip.background = element_blank(),
+      strip.text = element_text(face = "bold", size = 12, hjust = .5, vjust = .5)
+    ) +
+    annotation_scale(
+      location = "bl",
+      pad_x = unit(0.0, "in"),
+      width_hint = 0.3
+    ) +
+    annotation_north_arrow(
+      location = "bl", which_north = "true",
+      pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+      style = north_arrow_fancy_orienteering
+    )
+
+  ggsave(
+    filename = paste0(RM, " - proporcao de cor ou raca das APs nas RMs em 2000 e 2010.jpeg"),
+    device = "jpeg",
+    path = file.path("output",classe, "mapas"),
+    width = 13,
+    height = 13,
+    units = "in"
+  )
+
+  # Mapa 2 - Distribuicao relativa de brancos e negros na RM
+
+  fig2 <- ap_graf_2000 |>
+    select(area_ponderacao, Branco, Negro, geom) |>
+    pivot_longer(
+      Branco:Negro,
+      names_to = "cor_raca",
+      values_to = "prop"
+    ) |>
+    mutate(ano = 2000) |>
+    bind_rows(
+      ap_graf_2010 |>
+        select(area_ponderacao, Branco, Negro, geom) |>
+        pivot_longer(
+          Branco:Negro,
+          names_to = "cor_raca",
+          values_to = "prop"
+        ) |>
+        mutate(ano = 2010)
+    ) |>
+    mutate(
+      cor_raca = as.factor(cor_raca),
+      ano_fct = as.factor(ano)
+    ) |>
+    ggplot() +
+    geom_sf(
+      aes(fill = prop),
+      color = "transparent",
+      lwd = 0
+    ) +
+    geom_sf(
+      data = shp_2010_rm,
+      fill = "transparent",
+      colour = "black",
+      size = .7
+    ) +
+    lemon::facet_rep_grid(cor_raca ~ ano_fct) +
+    scale_fill_distiller(palette = "Spectral")
+
+  if(classe == "EGP"){
+    fig2 <- fig2 +
+      guides(fill = guide_colorbar(title = "Distribuição relativa (%) da população ocupada acima de 10 anos\nde cada cor ou raça por AP")) +
+      labs(
+        caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
+      )
+  } else{
+    fig2 <- fig2 +
+      guides(fill = guide_colorbar(title = "Distribuição relativa (%) da população urbana de cada\ncor ou raça por AP")) +
+      labs(
+        caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
+      )
+  }
+
+  fig2 <- fig2 +
+    # tira sistema cartesiano
+    theme(
+      plot.caption = element_text(size = 8),
+      legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = 1),
+      legend.text = element_text(size = 8, hjust = 0, vjust = .5),
+      legend.position = "bottom",
+      axis.text = element_blank(),
+      # axis.title = element_text(size = 8, face = "bold", hjust = .5, vjust = .5),
+      axis.ticks = element_blank(),
+      panel.grid = element_line(color = "#ffffff",linewidth = .01),
+      panel.background = element_blank(),
+      strip.background = element_blank(),
+      strip.text = element_text(face = "bold", size = 9, hjust = .5, vjust = .5)
+    ) +
+    annotation_scale(
+      location = "bl",
+      pad_x = unit(0.0, "in"),
+      width_hint = 0.3
+    ) +
+    annotation_north_arrow(
+      location = "bl", which_north = "true",
+      pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
+      style = north_arrow_fancy_orienteering
+    )
+
+  ggsave(
+    filename = paste0(RM, " - distribuicao relativa da pop das APs por cor ou raca.jpeg"),
+    device = "jpeg",
+    path = file.path("output",classe, "mapas"),
+    width = 13,
+    height = 13,
+    units = "in"
+  )
+
+  # exportacao
+
+  # Proximo loop
+  print(paste0("Finalizamos mapas para RM: ",RM,"!!!"))
+  rm(ap_graf_2000,ap_graf_2010,fig2)
+  invisible(gc())
+}
+
 # LISA - 2000 e 2010 ---------------------------------------------------------
 
 for(i in seq_along(anos)){
@@ -417,8 +711,6 @@ for(i in seq_along(anos)){
     RM = RMs[k]
     # definindo base
     df <- get(glue::glue("ap_{RM}_{ano}"))
-    # criacao de peso com base em metodo queen (mais permissivo)
-    queen_w <- queen_weights(df, include_lower_order = TRUE)
 
     # Aplicacao de Lisa
     df <- func_lisa_classes(data = df)
@@ -427,7 +719,7 @@ for(i in seq_along(anos)){
     assign(paste0("ap_",RM,"_",ano),df)
 
     # proximo loop
-    rm(df, queen_w)
+    rm(df)
     print(paste0("Finalizamos criacao LISA para: ", RM," em ", ano,"..."))
   }
 }
@@ -444,7 +736,7 @@ if(classe == "EGP"){
   relacoes <- c("BmeioSM","Bmeioa1SM","B1a3SM","B3SMmais","NmeioSM","Nmeioa1SM","N1a3SM","N3SMmais")
   relacoes_extensa <- c(
     "Branco - Até 1/2 SM","Branco - 1/2 a 1 SM", "Branco - 1 a 3 SM","Branco - 3 SM ou mais",
-    "Negro - Até 1/2 SM","Negro - 1/2 a 1 SM", "Negro - 1 a 3 SM","Negro - 3 SM ou mais",
+    "Negro - Até 1/2 SM","Negro - 1/2 a 1 SM", "Negro - 1 a 3 SM","Negro - 3 SM ou mais"
   )
 }
 
@@ -478,7 +770,7 @@ for(i in seq_along(anos)){
             "Baixo-Baixo" = "#045a8d", "Alto-Baixo" = "#a6bddb","Baixo-Alto" = "#fc9272",
             "Alto-Alto" = "#a50f15","Não significativo" =  "#f0f0f0"
           )) +
-        guides(fill = guide_legend(title = glue::glue("LISA Map RM Campinas: {relacao_extensa}"))) +
+        guides(fill = guide_legend(title = glue::glue("LISA Map {RM}: {relacao_extensa}"))) +
         labs(
           caption = glue::glue("Fonte: IBGE, Censo Demográfico {ano}.")
         ) +
@@ -557,232 +849,4 @@ for(i in seq_along(anos)){
   }
 }
 
-# Mapas da proporção de negros e brancos por ano --------------------------
 
-# Importacao dos dados do censo para criar variaveis
-
-anos <- c(2000,2010)
-
-RMs <- c("RMCampinas")
-
-for(i in 1: length(anos)){
-  ano = anos[i]
-  for(k in 1: length(RMs)){
-    RM = RMs[k]
-    # Importacao dos dados
-    load(file.path("./dados",paste0("censo_tratado_",ano,"_",RM,".RData")))
-
-    # exportacao
-    assign(paste0("censo_",ano,"_",RM),censo)
-
-    # Proximo loop
-    print(paste0("Finalizamos a RM: ",RM,"!!!"))
-    rm(censo)
-    gc()
-  }
-}
-
-ap_RMCampinas_2000 <- ap_RMCampinas_2000 |>
-  left_join(
-    censo_2000_RMCampinas |>
-      filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp)) |>
-      select(area_ponderacao, cor_raca, peso) |>
-      summarise(
-        n = sum(peso),
-        .by = c(cor_raca, area_ponderacao)
-      ) |>
-      filter(cor_raca != 0) |>
-      group_by(cor_raca) |>
-      mutate(
-        prop_ap = round((n/sum(n))*100,2)
-      ) |>
-      ungroup() |>
-      mutate(cor_raca = factor(cor_raca, levels = c(1,2), labels = c("Branco","Negro"))) |>
-      select(-n) |>
-      pivot_wider(
-        names_from = cor_raca,
-        values_from = prop_ap
-      ),
-    by = c("area_ponderacao"),
-    keep = FALSE
-  )
-
-ap_RMCampinas_2010 <- ap_RMCampinas_2010 |>
-  left_join(
-    censo_2010_RMCampinas |>
-      filter(idade >= 10 & PO == 1 & !is.na(estratos_sociais_egp)) |>
-      select(area_ponderacao, cor_raca, peso) |>
-      summarise(
-        n = sum(peso),
-        .by = c(cor_raca, area_ponderacao)
-      ) |>
-      filter(cor_raca != 0) |>
-      group_by(cor_raca) |>
-      mutate(
-        prop_ap = round((n/sum(n))*100,2)
-      ) |>
-      ungroup() |>
-      mutate(cor_raca = factor(cor_raca, levels = c(1,2), labels = c("Branco","Negro"))) |>
-      select(-n) |>
-      pivot_wider(
-        names_from = cor_raca,
-        values_from = prop_ap
-      ),
-    by = c("area_ponderacao"),
-    keep = FALSE
-  )
-
-
-# Mapa 1 - Proporcao de brancos e negros por ap
-
-ap_RMCampinas_2000 |>
-  select(area_ponderacao, prop_branca, prop_negra, geom) |>
-  pivot_longer(
-    prop_branca:prop_negra,
-    names_to = "cor_raca",
-    values_to = "prop"
-  ) |>
-  mutate(ano = 2000) |>
-  bind_rows(
-    ap_RMCampinas_2010 |>
-      select(area_ponderacao, prop_branca, prop_negra, geom) |>
-      pivot_longer(
-        prop_branca:prop_negra,
-        names_to = "cor_raca",
-        values_to = "prop"
-      ) |>
-      mutate(ano = 2010)
-  ) |>
-  mutate(
-    cor_raca = str_remove(cor_raca,"prop_"),
-    ano_fct = as.factor(ano),
-    prop = round((prop*100),2),
-    cor_raca = case_when(cor_raca == "negra" ~ "Negro", TRUE ~ "Branco")
-  ) |>
-  ggplot() +
-  geom_sf(
-    aes(fill = prop),
-    color = "transparent",
-    lwd = 0
-  ) +
-  geom_sf(
-    data = rm_shp_2010,
-    fill = "transparent",
-    colour = "black",
-    size = .7
-  ) +
-  lemon::facet_rep_grid(cor_raca ~ ano_fct) +
-  scale_fill_distiller(palette = "Spectral") +
-  guides(fill = guide_colorbar(title = "Parcela (%) da população ocupada acima de 10 anos\nde cada AP por cor ou raça")) +
-  labs(
-    caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
-  ) +
-  # tira sistema cartesiano
-  theme(
-    plot.caption = element_blank(),
-    legend.title = element_text(face = "bold", size = 12, hjust = 0, vjust = 1),
-    legend.text = element_text(size = 12, hjust = 0, vjust = .5),
-    legend.position = "bottom",
-    axis.text = element_blank(),
-    axis.title = element_text(size = 12),
-    axis.ticks = element_blank(),
-    panel.grid = element_line(color = "#ffffff",linewidth = .01),
-    panel.background = element_blank(),
-    strip.background = element_blank(),
-    strip.text = element_text(face = "bold", size = 12, hjust = .5, vjust = .5)
-  ) +
-  annotation_scale(
-    location = "bl",
-    pad_x = unit(0.0, "in"),
-    width_hint = 0.3
-  ) +
-  annotation_north_arrow(
-    location = "bl", which_north = "true",
-    pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
-    style = north_arrow_fancy_orienteering
-  )
-
-ggsave(
-  filename = "proporcao de cor ou raca das APs nas RMs em 2000 e 2010.jpeg",
-  device = "jpeg",
-  path = file.path("output","mapas"),
-  width = 13,
-  height = 13,
-  units = "in"
-)
-
-# Mapa 2 - Distribuicao relativa de brancos e negros na RM
-
-ap_RMCampinas_2000 |>
-  select(area_ponderacao, Branco, Negro, geom) |>
-  pivot_longer(
-    Branco:Negro,
-    names_to = "cor_raca",
-    values_to = "prop"
-  ) |>
-  mutate(ano = 2000) |>
-  bind_rows(
-    ap_RMCampinas_2010 |>
-      select(area_ponderacao, Branco, Negro, geom) |>
-      pivot_longer(
-        Branco:Negro,
-        names_to = "cor_raca",
-        values_to = "prop"
-      ) |>
-      mutate(ano = 2010)
-  ) |>
-  mutate(
-    cor_raca = as.factor(cor_raca),
-    ano_fct = as.factor(ano)
-  ) |>
-  ggplot() +
-  geom_sf(
-    aes(fill = prop),
-    color = "transparent",
-    lwd = 0
-  ) +
-  geom_sf(
-    data = rm_shp_2010,
-    fill = "transparent",
-    colour = "black",
-    size = .7
-  ) +
-  lemon::facet_rep_grid(cor_raca ~ ano_fct) +
-  scale_fill_distiller(palette = "Spectral") +
-  guides(fill = guide_colorbar(title = "Distribuição relativa (%) da população ocupada acima de 10 anos\nde cada cor ou raça por AP")) +
-  labs(
-    caption = "Fonte: IBGE, Censo Demográfico, 2000 e 2010."
-  ) +
-  # tira sistema cartesiano
-  theme(
-    plot.caption = element_text(size = 8),
-    legend.title = element_text(face = "bold", size = 9, hjust = 0, vjust = 1),
-    legend.text = element_text(size = 8, hjust = 0, vjust = .5),
-    legend.position = "bottom",
-    axis.text = element_blank(),
-    # axis.title = element_text(size = 8, face = "bold", hjust = .5, vjust = .5),
-    axis.ticks = element_blank(),
-    panel.grid = element_line(color = "#ffffff",linewidth = .01),
-    panel.background = element_blank(),
-    strip.background = element_blank(),
-    strip.text = element_text(face = "bold", size = 9, hjust = .5, vjust = .5)
-  ) +
-  annotation_scale(
-    location = "bl",
-    pad_x = unit(0.0, "in"),
-    width_hint = 0.3
-  ) +
-  annotation_north_arrow(
-    location = "bl", which_north = "true",
-    pad_x = unit(0.0, "in"), pad_y = unit(0.3, "in"),
-    style = north_arrow_fancy_orienteering
-  )
-
-ggsave(
-  filename = "distribuicao relativa da pop das APs por cor ou raca.jpeg",
-  device = "jpeg",
-  path = file.path("output","mapas"),
-  width = 13,
-  height = 13,
-  units = "in"
-)

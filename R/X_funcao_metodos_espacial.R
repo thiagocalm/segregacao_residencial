@@ -1,7 +1,19 @@
 
 # funcao lisa ------------------------------------------------------------------
 
-func_lisa_classes <- function(data, data_w = queen_w, social_class = classe){
+func_lisa_classes <- function(data, w = "queen", social_class = classe){
+
+  # configurando para gerar o lisa
+  get.ZeroPolicyOption()
+
+  data <- data |>
+    filter(!st_is_empty(data)) # exclusao de valores ausentes
+
+  # criacao de peso com base em metodo queen (mais permissivo)
+  if(w == "queen"){
+    data_w <- queen_weights(data, include_lower_order = TRUE)
+  }
+
   if(classe == "SM"){
 
     # Branco - meioSM
