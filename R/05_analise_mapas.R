@@ -18,7 +18,7 @@ rm(list = ls())
 # Pacotes -----------------------------------------------------------------
 
 library(pacman)
-pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, ggspatial, spdep, jpeg)
+pacman::p_load(tidyverse, srvyr, readr, xlsx, geobr, sf, rgeoda, patchwork, ggspatial, spdep, jpeg, magick)
 source("./R/X_funcao_metodos_espacial.R") # importando funcoes para usar funcao de fazer tabelas
 
 # Definicao de parametros --------------------------------
@@ -772,10 +772,12 @@ for(i in seq_along(anos)){
           )) +
         guides(fill = guide_legend(title = glue::glue("LISA Map {RM}: {relacao_extensa}"))) +
         labs(
+          title = glue::glue("{ano}"),
           caption = glue::glue("Fonte: IBGE, Censo Demográfico {ano}.")
         ) +
         # tira sistema cartesiano
         theme(
+          plot.title = element_text(face = "bold", size = 12, hjust = .5, vjust = .5),
           plot.caption = element_blank(),
           legend.title = element_text(face = "bold", size = 12, hjust = 0, vjust = .5),
           legend.text = element_text(size = 12, hjust = 0, vjust = .9),
@@ -838,15 +840,168 @@ for(i in seq_along(anos)){
             )
         )
     }
-    if(i == length(anos) & k == length(RM)){
+    if(i == length(anos) & k == length(RMs)){
       assign(paste0("moran_index"),df_export)
     }
 
 
     # proximo loop
-    rm(df, queen_w,df_export)
+    rm(df, queen_w)
     print(paste0("Finalizamos criacao Moran para: ", RM," em ", ano,"..."))
   }
 }
 
+# Exportando materiais ----------------------------------------------------
 
+wb <- openxlsx::loadWorkbook(paste0('./output/',classe,'/tabelas/Tabela - Autocorrelacao espacial por RM.xlsx'))
+
+for(k in seq_along(RMs)){
+  RM = RMs[k]
+  rm = RMs[k]
+  sheet_number = 1+k
+  # importacao de imagens
+  fig1 <- file.path("output",classe,"mapas",glue::glue("{RM} - comparativo das APs nas RMs em 2000 e 2010.jpeg"))
+  fig2 <- file.path("output",classe,"mapas",glue::glue("{RM} - distribuicao relativa da pop das APs por cor ou raca.jpeg"))
+  fig3 <- file.path("output",classe,"mapas",glue::glue("{RM} - proporcao de cor ou raca das APs nas RMs em 2000 e 2010.jpeg"))
+  if(classe == "EGP"){
+    fig4 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_BB.jpeg"))
+    fig5 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_BI.jpeg"))
+    fig6 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_BS.jpeg"))
+    fig7 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_NB.jpeg"))
+    fig8 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_NI.jpeg"))
+    fig9 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_NS.jpeg"))
+    fig10 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_BB.jpeg"))
+    fig11 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_BI.jpeg"))
+    fig12 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_BS.jpeg"))
+    fig13 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_NB.jpeg"))
+    fig14 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_NI.jpeg"))
+    fig15 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_NS.jpeg"))
+  }else{
+    fig4 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_BmeioSM.jpeg"))
+    fig5 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_Bmeioa1SM.jpeg"))
+    fig6 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_B1a3SM.jpeg"))
+    fig7 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_B3SMmais.jpeg"))
+    fig8 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_NmeioSM.jpeg"))
+    fig9 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_Nmeioa1SM.jpeg"))
+    fig10 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_N1a3SM.jpeg"))
+    fig11 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2000_N3SMmais.jpeg"))
+    fig12 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_BmeioSM.jpeg"))
+    fig13 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_Bmeioa1SM.jpeg"))
+    fig14 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_B1a3SM.jpeg"))
+    fig15 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_B3SMmais.jpeg"))
+    fig16 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_NmeioSM.jpeg"))
+    fig17 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_Nmeioa1SM.jpeg"))
+    fig18 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_N1a3SM.jpeg"))
+    fig19 <- file.path("output",classe,"mapas",glue::glue("{RM} - LISA_2010_N3SMmais.jpeg"))
+  }
+
+  # Substituicao de arquivos no excel
+  if(classe == "SM"){
+    # Moran - 2000
+    openxlsx::writeData(
+      wb = wb,
+      sheet = sheet_number,
+      x = moran_index |> filter(ano == 2000 & RM == rm) |> select(2:3),
+      xy = c(4,5),
+      colNames = FALSE,
+      rowNames = FALSE,
+      keepNA = FALSE
+    )
+    # Moran - 2010
+    openxlsx::writeData(
+      wb = wb,
+      sheet = sheet_number,
+      x = moran_index |> filter(ano == 2010 & RM == rm) |> select(2:3),
+      xy = c(6,5),
+      colNames = FALSE,
+      rowNames = FALSE,
+      keepNA = FALSE
+    )
+  }else{
+    # Moran - 2000
+    openxlsx::writeData(
+      wb = wb,
+      sheet = sheet_number,
+      x = moran_index |> filter(ano == 2000 & RM == rm) |> select(2:3),
+      xy = c(3,5),
+      colNames = FALSE,
+      rowNames = FALSE,
+      keepNA = FALSE
+    )
+    # Moran - 2010
+    openxlsx::writeData(
+      wb = wb,
+      sheet = sheet_number,
+      x = moran_index |> filter(ano == 2010 & RM == rm) |> select(2:3),
+      xy = c(5,5),
+      colNames = FALSE,
+      rowNames = FALSE,
+      keepNA = FALSE
+    )
+  }
+  # Colocando imagens
+  openxlsx::insertImage(
+    wb,
+    sheet_number,
+    fig1,
+    startRow = 15,
+    startCol = 2,
+    width = 6,
+    height = 6
+  )
+  openxlsx::insertImage(
+    wb,
+    sheet_number,
+    fig2,
+    startRow = 2,
+    startCol = 9,
+    width = 6,
+    height = 6
+  )
+  openxlsx::insertImage(
+    wb,
+    sheet_number,
+    fig3,
+    startRow = 32,
+    startCol = 9,
+    width = 6,
+    height = 6
+  )
+  if(classe == "SM"){
+    openxlsx::insertImage(wb, sheet_number,fig4, startRow = 2, startCol = 15, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig5,startRow = 32, startCol = 15, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig6, startRow = 62, startCol = 15, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig7, startRow = 92, startCol = 15, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig8, startRow = 2, startCol = 21, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig9, startRow = 32, startCol = 21, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig10, startRow = 62, startCol = 21, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig11, startRow = 92, startCol = 21, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig12, startRow = 2, startCol = 27, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig13,startRow = 32, startCol = 27, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig14, startRow = 62, startCol = 27, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig15, startRow = 92, startCol = 27, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig16, startRow = 2, startCol = 33, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig17, startRow = 32, startCol = 33, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig18, startRow = 62, startCol = 33, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig19, startRow = 92, startCol = 33, width = 6, height = 6)
+  }else{
+    openxlsx::insertImage(wb, sheet_number,fig4, startRow = 2, startCol = 15, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig5,startRow = 32, startCol = 15, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig6, startRow = 62, startCol = 15, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig7, startRow = 2, startCol = 21, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig8, startRow = 32, startCol = 21, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig9, startRow = 62, startCol = 21, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig10, startRow = 2, startCol = 27, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig11,startRow = 32, startCol = 27, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig12, startRow = 62, startCol = 27, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig13, startRow = 2, startCol = 33, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig14, startRow = 32, startCol = 33, width = 6, height = 6)
+    openxlsx::insertImage(wb, sheet_number,fig15, startRow = 62, startCol = 33, width = 6, height = 6)
+  }
+}
+
+openxlsx::saveWorkbook(
+  wb,
+  paste0('./output/',classe,'/tabelas/','[Ultima atualizacao em ',today(),'] Tabela - Autocorrelacao espacial por RM.xlsx'),
+  overwrite = TRUE
+)
