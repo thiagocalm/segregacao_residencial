@@ -189,3 +189,95 @@ for(i in 1: length(ano)){
   }
 }
 
+
+# Exportacao dos dados para as RMs ----------------------------------------
+
+## 2000
+ano = "2000"
+UF = c("CE", "PE","BA","MG","RJ","PR","RS","SP")
+
+for(i in 1: length(ano)){
+  ano = ano[i]
+  for(k in 1: length(UF)){
+    uf = UF[k]
+    # Importacao dos dados
+    load(file.path("./dados",paste0("censo_tratado_",ano,"_",uf,".RData")))
+
+    # exportacao
+    assign(paste0("censo_",ano,"_",uf),censo)
+
+    # Proximo loop
+    print(paste0("Finalizamos a UF: ",uf,"!!!"))
+    rm(censo)
+    gc()
+  }
+}
+
+
+## Restrição dos dados para cada RM
+
+censo_2000_RMSalvador <- censo_2000_BA |> filter(rm == 7)
+censo_2000_RMFortaleza <- censo_2000_CE |> filter(rm == 3)
+censo_2000_RMBH <- censo_2000_MG |> filter(rm == 8)
+censo_2000_RMRecife <- censo_2000_PE |> filter(rm == 5)
+censo_2000_RMCuritiba <- censo_2000_PR |> filter(rm == 17)
+censo_2000_RMRJ <- censo_2000_RJ |> filter(rm == 13)
+censo_2000_RMPortoAlegre <- censo_2000_RS |> filter(rm == 26)
+censo_2000_RMCampinas <- censo_2000_SP |> filter(rm == 16)
+censo_2000_RMSP <- censo_2000_SP |> filter(rm == 14)
+
+rm(censo_2000_BA, censo_2000_CE, censo_2000_MG, censo_2000_PE, censo_2000_PR,
+   censo_2000_RJ, censo_2000_RS, censo_2000_SP)
+
+## 2010
+ano = 2010
+UF = c("CE", "PE","BA","MG","RJ","PR","RS","SP", "SP1")
+
+for(i in 1: length(ano)){
+  ano = ano[i]
+  for(k in 1: length(UF)){
+    uf = UF[k]
+    # Importacao dos dados
+    load(file.path("./dados",paste0("censo_tratado_",ano,"_",uf,".RData")))
+
+    # exportacao
+    assign(paste0("censo_",ano,"_",uf),censo)
+
+    # Proximo loop
+    print(paste0("Finalizamos a UF: ",uf,"!!!"))
+    rm(censo)
+    gc()
+  }
+}
+
+## Restrição dos dados para cada RM
+
+censo_2010_RMSalvador <- censo_2010_BA |> filter(rm == 15)
+censo_2010_RMFortaleza <- censo_2010_CE |> filter(rm == 7)
+censo_2010_RMBH <- censo_2010_MG |> filter(rm == 16)
+censo_2010_RMRecife <- censo_2010_PE |> filter(rm == 11)
+censo_2010_RMCuritiba <- censo_2010_PR |> filter(rm == 23)
+censo_2010_RMRJ <- censo_2010_RJ |> filter(rm == 19)
+censo_2010_RMPortoAlegre <- censo_2010_RS |> filter(rm == 34)
+censo_2010_RMCampinas <- censo_2010_SP1 |> filter(rm == 22)
+censo_2010_RMSP <- censo_2010_SP |> filter(rm == 20)
+
+rm(censo_2010_BA, censo_2010_CE, censo_2010_MG, censo_2010_PE, censo_2010_PR,
+   censo_2010_RJ, censo_2010_RS, censo_2010_SP, censo_2010_SP1)
+
+# Exportacao
+RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
+         "RMRJ","RMSalvador","RMSP")
+
+for(i in seq_along(anos)){
+  ano = anos[i]
+  for(k in seq_along(RMs)){
+    RM = RMs[k]
+    censo <- get(glue::glue("censo_{ano}_{RM}"))
+    save(censo, file = file.path("./dados",paste0("censo_tratado_",ano,"_",RM,".RData")))
+    # Proximo loop
+    rm(censo)
+    print(paste0("Finalizamos a UF ",RM," para ", ano,"..."))
+    invisible(gc())
+  }
+}
