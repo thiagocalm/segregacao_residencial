@@ -249,7 +249,7 @@ func_lisa_classes <- function(data, w = "queen", social_class = classe){
 
     # Branco - Superior
 
-    lisa <- local_moran(data, data["QL_Brancos_Alto"])
+    lisa <- local_moran(data_w, data["QL_Brancos_Alto"])
 
     data <- data |>
       mutate(
@@ -402,23 +402,43 @@ func_moran_classes <- function(data, w = "queen", social_classes = classe){
 
   # manipulacao da tabela
 
-  moran_test <- moran_test |>
-    pivot_longer(
-      everything(),
-      values_to = "valor",
-      names_to = "Raça-classe"
-    ) |>
-    mutate(
-      `Raça-classe` = str_remove(`Raça-classe`, "_value"),
-      `Raça-classe` = str_remove(`Raça-classe`, "_pvalue")
-    ) |>
-    mutate(
-      tipo = rep(c("Moran","P_value"),8)
-    ) |>
-    pivot_wider(
-      names_from = tipo,
-      values_from = valor
-    )
+  if(classe == "EGP"){
+    moran_test <- moran_test |>
+      pivot_longer(
+        everything(),
+        values_to = "valor",
+        names_to = "Raça-classe"
+      ) |>
+      mutate(
+        `Raça-classe` = str_remove(`Raça-classe`, "_value"),
+        `Raça-classe` = str_remove(`Raça-classe`, "_pvalue")
+      ) |>
+      mutate(
+        tipo = rep(c("Moran","P_value"),6)
+      ) |>
+      pivot_wider(
+        names_from = tipo,
+        values_from = valor
+      )
+  } else{
+    moran_test <- moran_test |>
+      pivot_longer(
+        everything(),
+        values_to = "valor",
+        names_to = "Raça-classe"
+      ) |>
+      mutate(
+        `Raça-classe` = str_remove(`Raça-classe`, "_value"),
+        `Raça-classe` = str_remove(`Raça-classe`, "_pvalue")
+      ) |>
+      mutate(
+        tipo = rep(c("Moran","P_value"),8)
+      ) |>
+      pivot_wider(
+        names_from = tipo,
+        values_from = valor
+      )
+  }
 
   # exportacao da funcao
 

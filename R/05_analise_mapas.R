@@ -24,7 +24,7 @@ source("./R/X_funcao_metodos_espacial.R") # importando funcoes para usar funcao 
 # Definicao de parametros --------------------------------
 
 # Definicao de qual classe usar
-classe <- "SM"
+classe <- "EGP"
 
 # Criacao de arquivo de referencia das RMs
 
