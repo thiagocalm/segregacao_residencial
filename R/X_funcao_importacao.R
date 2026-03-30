@@ -86,7 +86,10 @@ func_import_handl_data <- function(UF, ano) {
       mutate(n_pes_dom = v7100 - total_relacao_delet) |>
       # cor ou raca
       # filter(v0408 %in% c(1, 2, 4)) |>
-      mutate(cor_raca = case_when(v0408 == 1 ~ 1,v0408 %in% c(2, 4) ~ 2, TRUE ~ 0)) |>
+      mutate(
+        cor_raca = case_when(v0408 == 1 ~ 1,v0408 %in% c(2, 4) ~ 2, TRUE ~ 0),
+        cor_raca_d = case_when(v0408 == 1 ~ 1,v0408 == 2 ~ 2, v0408 == 4 ~ 4, TRUE ~ 0)
+      ) |>
       # deflacionamento do rendimento total
       mutate(v4614_defl = deflateBR::deflate(v4614, as.Date("2000-08-01"), "08/2022","inpc")) |>
       select(- c(relacao_delet, total_relacao_delet, v7100, v0408))
@@ -146,7 +149,10 @@ func_import_handl_data <- function(UF, ano) {
       mutate(n_pes_dom = v0401 - total_relacao_delet) |>
       # cor ou raca
       # filter(v0606 %in% c(1, 2, 4)) |>
-      mutate(cor_raca = case_when(v0606 == 1 ~ 1,v0606 %in% c(2, 4) ~ 2, TRUE ~ 0)) |>
+      mutate(
+        cor_raca = case_when(v0606 == 1 ~ 1,v0606 %in% c(2, 4) ~ 2, TRUE ~ 0),,
+        cor_raca_d = case_when(v0606 == 1 ~ 1,v0606 == 2 ~ 2, v0606 == 4 ~ 4, TRUE ~ 0)
+      ) |>
       # deflacionamento do rendimento total
       mutate(v6527_defl = deflateBR::deflate(v6527, as.Date("2010-08-01"), "08/2022","inpc")) |>
       select(- c(relacao_delet, total_relacao_delet, v0401, v0606))

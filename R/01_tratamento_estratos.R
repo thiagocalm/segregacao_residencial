@@ -52,7 +52,7 @@ for(i in 1: length(ano)){
       ) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0103, area_ponderacao = areap,
              idade = v4572, sexo = v0401, anos_estudo = v4300, especie_dom = v0201, situacao_dom = v1006,
-             cor_raca, v4614_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
+             cor_raca, cor_raca_d, v4614_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
              estrato_renda,decimos_renda_br, v4513, estrato_renda_sm)
 
     # Rendimento urbano-rural
@@ -145,7 +145,7 @@ for(i in 1: length(ano)){
       ) |>
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0002, area_ponderacao = v0011,
              idade = v6036, sexo = v0601, anos_estudo = v6400, especie_dom = v4001, situacao_dom = v1006,
-             cor_raca, v6527_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
+             cor_raca,cor_raca_d, v6527_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
              estrato_renda,decimos_renda_br, v6513, estrato_renda_sm)
 
     # Rendimento urbano-rural
@@ -266,6 +266,7 @@ rm(censo_2010_BA, censo_2010_CE, censo_2010_MG, censo_2010_PE, censo_2010_PR,
    censo_2010_RJ, censo_2010_RS, censo_2010_SP, censo_2010_SP1)
 
 # Exportacao
+anos <- c(2000,2010)
 RMs <- c("RMBH","RMCampinas","RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife",
          "RMRJ","RMSalvador","RMSP")
 
