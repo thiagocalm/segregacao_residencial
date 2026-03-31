@@ -30,11 +30,20 @@ for(i in 1: length(ano)){
     ## Tratamento quintil de renda pc
     # Rendimento geral
     censo <- censo |>
-      mutate(renda_pc_def = case_when(is.na(v4614_defl) ~ 0, TRUE ~ v4614_defl)) |>
+      mutate(
+        renda_pc_def = case_when(is.na(v4614_defl) ~ 0, TRUE ~ v4614_defl),
+        renda_pc = case_when(is.na(v4614) ~ 0, TRUE ~ v4614)
+      ) |>
       group_by(id_dom) |>
-      mutate(renda_pc_def = sum(renda_pc_def)) |>
+      mutate(
+        renda_pc_def = sum(renda_pc_def),
+        renda_pc = sum(renda_pc)
+      ) |>
       ungroup() |>
-      mutate(renda_pc_def = renda_pc_def/n_pes_dom) |>
+      mutate(
+        renda_pc_def = renda_pc_def/n_pes_dom,
+        renda_pc = renda_pc/n_pes_dom
+      ) |>
       mutate(
         estrato_renda = ntile(renda_pc_def, 5),
         decimos_renda_br = ntile(renda_pc_def, 10)
@@ -53,7 +62,7 @@ for(i in 1: length(ano)){
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0103, area_ponderacao = areap,
              idade = v4572, sexo = v0401, anos_estudo = v4300, especie_dom = v0201, situacao_dom = v1006,
              cor_raca, cor_raca_d, v4614_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda,decimos_renda_br, v4513, estrato_renda_sm)
+             renda_pc, estrato_renda,decimos_renda_br, v4513, estrato_renda_sm)
 
     # Rendimento urbano-rural
 
@@ -123,11 +132,20 @@ for(i in 1: length(ano)){
 
     ## Tratamento quintil de renda pc
     censo <- censo |>
-      mutate(renda_pc_def = case_when(is.na(v6527_defl) ~ 0, TRUE ~ v6527_defl)) |>
+      mutate(
+        renda_pc_def = case_when(is.na(v6527_defl) ~ 0, TRUE ~ v6527_defl),
+        renda_pc = case_when(is.na(v6527) ~ 0, TRUE ~ v6527)
+      ) |>
       group_by(id_dom) |>
-      mutate(renda_pc_def = sum(renda_pc_def)) |>
+      mutate(
+        renda_pc_def = sum(renda_pc_def),
+        renda_pc = sum(renda_pc)
+      ) |>
       ungroup() |>
-      mutate(renda_pc_def = renda_pc_def/n_pes_dom) |>
+      mutate(
+        renda_pc_def = renda_pc_def/n_pes_dom,
+        renda_pc = renda_pc/n_pes_dom
+      ) |>
       mutate(
         estrato_renda = ntile(renda_pc_def, 5),
         decimos_renda_br = ntile(renda_pc_def, 10)
@@ -146,7 +164,7 @@ for(i in 1: length(ano)){
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0002, area_ponderacao = v0011,
              idade = v6036, sexo = v0601, anos_estudo = v6400, especie_dom = v4001, situacao_dom = v1006,
              cor_raca,cor_raca_d, v6527_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO, EGP11, renda_pc_def,
-             estrato_renda,decimos_renda_br, v6513, estrato_renda_sm)
+             renda_pc, estrato_renda,decimos_renda_br, v6513, estrato_renda_sm)
 
     # Rendimento urbano-rural
 
