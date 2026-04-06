@@ -68,7 +68,7 @@ invisible(gc())
 #   )
 
 ###
-# Estrutura de rendimentos em decis para Brasil e RMs
+# Estrutura de rendimentos em decis para Brasil, RMs e Raca
 ###
 
 censo_2010_RMs <- censo_2010_RMs |>
@@ -80,6 +80,11 @@ censo_2010_RMs <- censo_2010_RMs |>
   mutate(
     decimos_renda_rm = ntile(renda_pc, 10),
     .by = rm
+  ) |>
+  # rm e raca
+  mutate(
+    decimos_renda_rm_raca = ntile(renda_pc, 10),
+    .by = c(rm, cor_raca_d)
   )
 
 ###
@@ -133,7 +138,7 @@ censo_2010_RMs <- censo_2010_RMs |>
   )
 
 # Tabela 1 ----------------------------------------------------------------
-#' Renda mínima de cada percentil
+#' Renda mínima de cada percentil calculado dentro de cada RM e grupo racial
 #' Desagregacao: RMs e Brasil, Brancos, Pretos, Pardos
 
 # t1_2000 <- censo_2000_RMs |>
@@ -166,28 +171,28 @@ censo_2010_RMs <- censo_2010_RMs |>
 t1_2010 <- censo_2010_RMs |>
   summarise(
     min = min(renda_pc),
-    .by = c(ano, rm, decimos_renda_rm)
+    .by = c(ano, rm, decimos_renda_rm_raca)
   ) |>
-  arrange(ano, rm, decimos_renda_rm) |>
+  arrange(ano, rm, decimos_renda_rm_raca) |>
   filter(
-    decimos_renda_rm %in% c(2,5,10)
+    decimos_renda_rm_raca %in% c(2,5,10)
   ) |>
   mutate(
     raca = 0
   ) |>
-  select(ano,rm, raca,decimos_renda_rm,min) |>
+  select(ano,rm, raca,decimos_renda_rm_raca,min) |>
   bind_rows(
     censo_2010_RMs |>
       summarise(
         min = min(renda_pc),
-        .by = c(ano, rm, cor_raca_d, decimos_renda_rm)
+        .by = c(ano, rm, cor_raca_d, decimos_renda_rm_raca)
       ) |>
-      arrange(ano, rm, cor_raca_d, decimos_renda_rm) |>
+      arrange(ano, rm, cor_raca_d, decimos_renda_rm_raca) |>
       filter(
-        decimos_renda_rm %in% c(2,5,10),
+        decimos_renda_rm_raca %in% c(2,5,10),
         cor_raca_d != 0
       ) |>
-      select(ano, rm, "raca" = cor_raca_d, decimos_renda_rm, min)
+      select(ano, rm, "raca" = cor_raca_d, decimos_renda_rm_raca, min)
   )
 
 # juntando dados para os anos
@@ -201,8 +206,8 @@ t1 <-
       levels = c(0,1,2,4),
       labels = c("Total","Branco","Preto","Pardo")
     ),
-    decimos_renda_rm = factor(
-      decimos_renda_rm,
+    decimos_renda_rm_raca = factor(
+      decimos_renda_rm_raca,
       levels = c(2,5,10),
       labels = c("P10","P50","P90")
     )
