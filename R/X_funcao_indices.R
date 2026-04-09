@@ -149,7 +149,7 @@ func_calcula_dissimilaridade <-
           df |>
             group_by(area_ponderacao) |>
             summarise(
-              cor_raca = 0,
+              cor_raca_d = 0,
               n = survey_total(na.rm = T))
         ) |>
         bind_rows(
@@ -197,7 +197,8 @@ func_calcula_dissimilaridade <-
             group_by(classe_raca, area_ponderacao) |>
             summarise(
               n = survey_total(na.rm = T))
-        )
+        ) |>
+        filter(!is.na(classe_raca))
     }
 
     print("Etapa de construição das tabelas de base finalizada...")
@@ -213,7 +214,7 @@ func_calcula_dissimilaridade <-
         pivot_wider(names_from = cor_raca_d, values_from = n) |>
         mutate(ratio_branca = `1`/pop_branca,
                ratio_preta = `2`/pop_preta,
-               ratio_parda = `3`/pop_parda,
+               ratio_parda = `4`/pop_parda,
                ratio_dif_branca_preta = abs(ratio_branca - ratio_preta),
                ratio_dif_branca_parda = abs(ratio_branca - ratio_parda),
                ratio_dif_preta_parda = abs(ratio_preta - ratio_parda),
@@ -973,6 +974,10 @@ func_calcula_dissimilaridade <-
               "Pretos - [0,75 a 1,25 SM)","Pretos - [1,25 a 4 SM)","Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,25 SM)","Pardos - [0,25 a 0,5 SM)","Pardos - [0,5 a 0,75 SM)",
               "Pardos - [0,75 a 1,25 SM)","Pardos - [1,25 a 4 SM)","Pardos - [4+ SM)"),
+            c("Pretos - [0 a 0,25 SM)","Pretos - [0,25 a 0,5 SM)","Pretos - [0,5 a 0,75 SM)",
+              "Pretos - [0,75 a 1,25 SM)","Pretos - [1,25 a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,25 SM)","Pardos - [0,25 a 0,5 SM)","Pardos - [0,5 a 0,75 SM)",
+              "Pardos - [0,75 a 1,25 SM)","Pardos - [1,25 a 4 SM)","Pardos - [4+ SM)"),
             c("Pretos - [0,25 a 0,5 SM)","Pretos - [0,5 a 0,75 SM)",
               "Pretos - [0,75 a 1,25 SM)","Pretos - [1,25 a 4 SM)","Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,25 SM)","Pardos - [0,25 a 0,5 SM)","Pardos - [0,5 a 0,75 SM)",
@@ -989,12 +994,14 @@ func_calcula_dissimilaridade <-
             c("Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,25 SM)","Pardos - [0,25 a 0,5 SM)","Pardos - [0,5 a 0,75 SM)",
               "Pardos - [0,75 a 1,25 SM)","Pardos - [1,25 a 4 SM)","Pardos - [4+ SM)"),
+            c("Pardos - [0 a 0,25 SM)","Pardos - [0,25 a 0,5 SM)","Pardos - [0,5 a 0,75 SM)",
+              "Pardos - [0,75 a 1,25 SM)","Pardos - [1,25 a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [0,25 a 0,5 SM)","Pardos - [0,5 a 0,75 SM)",
               "Pardos - [0,75 a 1,25 SM)","Pardos - [1,25 a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [0,5 a 0,75 SM)","Pardos - [0,75 a 1,25 SM)","Pardos - [1,25 a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [0,75 a 1,25 SM)","Pardos - [1,25 a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [1,25 a 4 SM)","Pardos - [4+ SM)"),
-            c("Pardos - [4+ SM)"),
+            c("Pardos - [4+ SM)")
           )
         )
     }
@@ -1387,11 +1394,11 @@ func_calcula_dissimilaridade <-
         pivot_longer(D_branco_0a050_branco_050a125:D_pardo_2a4_pardo_4mais, names_to = "grupo", values_to = "D") |>
         mutate(
           cor_classe1 = c(
-            rep("Brancos - [0 a 0,5 SM)",17),rep("Brancos - [0,5 a 1,25 SM)",16),rep("Brancos - [0,5 a 0,75 SM",15),
-            rep("Brancos - [2 SM a 4 SM)",13),rep("Brancos - [4+ SM)",12),
-            rep("Pretos - [0 a 0,5 SM)",11),rep("Pretos - [0,5 a 1,25 SM)",10),rep("Pretos - [0,5 a 0,75 SM",9),
-            rep("Pretos - [2 SM a 4 SM)",7),rep("Pretos - [4+ SM)",6),
-            rep("Pardos - [0 a 0,5 SM)",5),rep("Pardos - [0,5 a 1,25 SM)",4),rep("Pardos - [0,5 a 0,75 SM",3),
+            rep("Brancos - [0 a 0,5 SM)",14),rep("Brancos - [0,5 a 1,25 SM)",13),rep("Brancos - [0,5 a 0,75 SM",12),
+            rep("Brancos - [2 SM a 4 SM)",11),rep("Brancos - [4+ SM)",10),
+            rep("Pretos - [0 a 0,5 SM)",9),rep("Pretos - [0,5 a 1,25 SM)",8),rep("Pretos - [0,5 a 0,75 SM",7),
+            rep("Pretos - [2 SM a 4 SM)",6),rep("Pretos - [4+ SM)",5),
+            rep("Pardos - [0 a 0,5 SM)",4),rep("Pardos - [0,5 a 1,25 SM)",3),rep("Pardos - [0,5 a 0,75 SM",2),
             rep("Pardos - [2 SM a 4 SM)",1)
           ),
           cor_classe2 = c(
@@ -1412,12 +1419,11 @@ func_calcula_dissimilaridade <-
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Brancos - [2 SM a 4 SM)","Brancos - [4+ SM)"),
+            c("Brancos - [4+ SM)"),
             c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Brancos - [4+ SM)"),
             c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
@@ -1432,18 +1438,16 @@ func_calcula_dissimilaridade <-
             c("Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pretos - [4+ SM)"),
             c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [1,25 SM a 2 SM)","Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pardos - [4+ SM)"),
+            c("Pardos - [4+ SM)")
           )
         )
     }else{
