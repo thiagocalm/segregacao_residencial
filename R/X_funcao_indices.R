@@ -998,189 +998,453 @@ func_calcula_dissimilaridade <-
           )
         )
     }
-    if(tipo_variavel == "SM"){
+    if(tipo_variavel == "SM_SUL"){
       output_classe <- tabela_por_classe |>
         select(-n_se) |>
-        mutate(pop_branca_meioSM = n[classe_raca == "Brancos ate meio SM" & area_ponderacao == 0],
-               pop_branca_meioa1SM = n[classe_raca == "Brancos meio a 1SM" & area_ponderacao == 0],
-               pop_branca_1a3SM = n[classe_raca == "Brancos 1 a 3SM" & area_ponderacao == 0],
-               pop_branca_3SMmais = n[classe_raca == "Brancos 3SM mais" & area_ponderacao == 0],
+        mutate(
+          # brancos
+          pop_branca_0a050 = n[classe_raca == "Brancos - [0 a 0,5 SM)" & area_ponderacao == 0],
+          pop_branca_050a125 = n[classe_raca == "Brancos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
+          pop_branca_125a2 = n[classe_raca == "Brancos - [1,25 SM a 2 SM)" & area_ponderacao == 0],
+          pop_branca_2a4 = n[classe_raca == "Brancos - [2 SM a 4 SM)" & area_ponderacao == 0],
+          pop_branca_4mais = n[classe_raca == "Brancos - [4+ SM)" & area_ponderacao == 0],
 
-               pop_negra_meioSM = n[classe_raca == "Negros ate meio SM" & area_ponderacao == 0],
-               pop_negra_meioa1SM = n[classe_raca == "Negros meio a 1SM" & area_ponderacao == 0],
-               pop_negra_1a3SM = n[classe_raca == "Negros 1 a 3SM" & area_ponderacao == 0],
-               pop_negra_3SMmais = n[classe_raca == "Negros 3SM mais" & area_ponderacao == 0],
+          # pretos
+          pop_preta_0a050 = n[classe_raca == "Pretos - [0 a 0,5 SM)" & area_ponderacao == 0],
+          pop_preta_050a125 = n[classe_raca == "Pretos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
+          pop_preta_125a2 = n[classe_raca == "Pretos - [1,25 SM a 2 SM)" & area_ponderacao == 0],
+          pop_preta_2a4 = n[classe_raca == "Pretos - [2 SM a 4 SM)" & area_ponderacao == 0],
+          pop_preta_4mais = n[classe_raca == "Pretos - [4+ SM)" & area_ponderacao == 0],
 
-               pop_resto = n[classe_raca == "Resto da população" & area_ponderacao == 0]) |>
+          # pardos
+          pop_parda_0a050 = n[classe_raca == "Pardos - [0 a 0,5 SM)" & area_ponderacao == 0],
+          pop_parda_050a125 = n[classe_raca == "Pardos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
+          pop_parda_125a2 = n[classe_raca == "Pardos - [1,25 SM a 2 SM)" & area_ponderacao == 0],
+          pop_parda_2a4 = n[classe_raca == "Pardos - [2 SM a 4 SM)" & area_ponderacao == 0],
+          pop_parda_4mais = n[classe_raca == "Pardos - [4+ SM)" & area_ponderacao == 0],
+        ) |>
         pivot_wider(names_from = classe_raca, values_from = n) |>
         filter(area_ponderacao != 0) |>
         mutate(
-          # Razoes de cada grupo
-          ratio_Brancos_meioSM = `Brancos ate meio SM`/pop_branca_meioSM,
-          ratio_Brancos_meioa1SM = `Brancos meio a 1SM`/pop_branca_meioa1SM,
-          ratio_Brancos_1a3SM = `Brancos 1 a 3SM`/pop_branca_1a3SM,
-          ratio_Brancos_3SMmais = `Brancos 3SM mais`/pop_branca_3SMmais,
+          ### Razoes de cada grupo
 
-          ratio_Negros_meioSM = `Negros ate meio SM`/pop_negra_meioSM,
-          ratio_Negros_meioa1SM = `Negros meio a 1SM`/pop_negra_meioa1SM,
-          ratio_Negros_1a3SM = `Negros 1 a 3SM`/pop_negra_1a3SM,
-          ratio_Negros_3SMmais = `Negros 3SM mais`/pop_negra_3SMmais,
+          # brancos
+          ratio_branca_0a050 = `Brancos - [0 a 0,5 SM)`/pop_branca_0a050,
+          ratio_branca_050a125 = `Brancos - [0,5 a 1,25 SM)`/pop_branca_050a125,
+          ratio_branca_125a2 = `Brancos - [1,25 SM a 2 SM)`/pop_branca_125a2,
+          ratio_branca_2a4 = `Brancos - [2 SM a 4 SM)`/pop_branca_2a4,
+          ratio_branca_4mais = `Brancos - [4+ SM)`/pop_branca_4mais,
 
-          ratio_Resto_Pop = `Resto da população`/pop_resto,
+          # pretos
+          ratio_preta_0a050 = `Pretos - [0 a 0,5 SM)`/pop_preta_0a050,
+          ratio_preta_050a125 = `Pretos - [0,5 a 1,25 SM)`/pop_preta_050a125,
+          ratio_preta_125a2 = `Pretos - [1,25 SM a 2 SM)`/pop_preta_125a2,
+          ratio_preta_2a4 = `Pretos - [2 SM a 4 SM)`/pop_preta_2a4,
+          ratio_preta_4mais = `Pretos - [4+ SM)`/pop_preta_4mais,
 
-          ## Ratio diff
+          # pardos
+          ratio_parda_0a050 = `Pardos - [0 a 0,5 SM)`/pop_parda_0a050,
+          ratio_parda_050a125 = `Pardos - [0,5 a 1,25 SM)`/pop_parda_050a125,
+          ratio_parda_125a2 = `Pardos - [1,25 SM a 2 SM)`/pop_parda_125a2,
+          ratio_parda_2a4 = `Pardos - [2 SM a 4 SM)`/pop_parda_2a4,
+          ratio_parda_4mais = `Pardos - [4+ SM)`/pop_parda_4mais,
 
-          # Brancos 3SMmais
-          dif_branco_atemeioSM_branco_3SMmais = abs(ratio_Brancos_meioSM - ratio_Brancos_3SMmais),
-          dif_branco_meioa1SM_branco_3SMmais = abs(ratio_Brancos_meioa1SM - ratio_Brancos_3SMmais),
-          dif_branco_1a3SM_branco_3SMmais = abs(ratio_Brancos_1a3SM - ratio_Brancos_3SMmais),
 
-          dif_negro_atemeioSM_branco_3SMmais = abs(ratio_Negros_meioSM - ratio_Brancos_3SMmais),
-          dif_negro_meioa1SM_branco_3SMmais = abs(ratio_Negros_meioa1SM - ratio_Brancos_3SMmais),
-          dif_negro_1a3SM_branco_3SMmais = abs(ratio_Negros_1a3SM - ratio_Brancos_3SMmais),
-          dif_negro_3SMmais_branco_3SMmais = abs(ratio_Negros_3SMmais - ratio_Brancos_3SMmais),
 
-          dif_resto_branco_3SMmais = abs(ratio_Resto_Pop - ratio_Brancos_3SMmais),
+          #
+          ### Diferenca das razoes
+          #
 
-          # Brancos 1a3SM
-          dif_branco_atemeioSM_branco_1a3SM = abs(ratio_Brancos_meioSM - ratio_Brancos_1a3SM),
-          dif_branco_meioa1SM_branco_1a3SM = abs(ratio_Brancos_meioa1SM - ratio_Brancos_1a3SM),
+          ## Brancos - 0a050
+          # x brancos
+          dif_branco_0a050_branco_050a125 = abs(ratio_branca_0a050 - ratio_branca_050a125),
+          dif_branco_0a050_branco_125a2 = abs(ratio_branca_0a050 - ratio_branca_125a2),
+          dif_branco_0a050_branco_2a4 = abs(ratio_branca_0a050 - ratio_branca_2a4),
+          dif_branco_0a050_branco_4mais = abs(ratio_branca_0a050 - ratio_branca_4mais),
+          # x pretos
+          dif_branco_0a050_preto_0a050 = abs(ratio_branca_0a050 - ratio_preta_0a050),
+          dif_branco_0a050_preto_050a125 = abs(ratio_branca_0a050 - ratio_preta_050a125),
+          dif_branco_0a050_preto_125a2 = abs(ratio_branca_0a050 - ratio_preta_125a2),
+          dif_branco_0a050_preto_2a4 = abs(ratio_branca_0a050 - ratio_preta_2a4),
+          dif_branco_0a050_preto_4mais = abs(ratio_branca_0a050 - ratio_preta_4mais),
+          # x pardos
+          dif_branco_0a050_pardo_0a050 = abs(ratio_branca_0a050 - ratio_parda_0a050),
+          dif_branco_0a050_pardo_050a125 = abs(ratio_branca_0a050 - ratio_parda_050a125),
+          dif_branco_0a050_pardo_125a2 = abs(ratio_branca_0a050 - ratio_parda_125a2),
+          dif_branco_0a050_pardo_2a4 = abs(ratio_branca_0a050 - ratio_parda_2a4),
+          dif_branco_0a050_pardo_4mais = abs(ratio_branca_0a050 - ratio_parda_4mais),
 
-          dif_negro_atemeioSM_branco_1a3SM = abs(ratio_Negros_meioSM - ratio_Brancos_1a3SM),
-          dif_negro_meioa1SM_branco_1a3SM = abs(ratio_Negros_meioa1SM - ratio_Brancos_1a3SM),
-          dif_negro_1a3SM_branco_1a3SM = abs(ratio_Negros_1a3SM - ratio_Brancos_1a3SM),
-          dif_negro_3SMmais_branco_1a3SM = abs(ratio_Negros_3SMmais - ratio_Brancos_1a3SM),
+          ## Brancos - 050a125
+          # x brancos
+          dif_branco_050a125_branco_125a2 = abs(ratio_branca_050a125 - ratio_branca_125a2),
+          dif_branco_050a125_branco_2a4 = abs(ratio_branca_050a125 - ratio_branca_2a4),
+          dif_branco_050a125_branco_4mais = abs(ratio_branca_050a125 - ratio_branca_4mais),
+          # x pretos
+          dif_branco_050a125_preto_0a050 = abs(ratio_branca_050a125 - ratio_preta_0a050),
+          dif_branco_050a125_preto_050a125 = abs(ratio_branca_050a125 - ratio_preta_050a125),
+          dif_branco_050a125_preto_125a2 = abs(ratio_branca_050a125 - ratio_preta_125a2),
+          dif_branco_050a125_preto_2a4 = abs(ratio_branca_050a125 - ratio_preta_2a4),
+          dif_branco_050a125_preto_4mais = abs(ratio_branca_050a125 - ratio_preta_4mais),
+          # x pardos
+          dif_branco_050a125_pardo_0a050 = abs(ratio_branca_050a125 - ratio_parda_0a050),
+          dif_branco_050a125_pardo_050a125 = abs(ratio_branca_050a125 - ratio_parda_050a125),
+          dif_branco_050a125_pardo_125a2 = abs(ratio_branca_050a125 - ratio_parda_125a2),
+          dif_branco_050a125_pardo_2a4 = abs(ratio_branca_050a125 - ratio_parda_2a4),
+          dif_branco_050a125_pardo_4mais = abs(ratio_branca_050a125 - ratio_parda_4mais),
 
-          dif_resto_branco_1a3SM = abs(ratio_Resto_Pop - ratio_Brancos_1a3SM),
+          ## Brancos - 125a2
+          # x brancos
+          dif_branco_125a2_branco_2a4 = abs(ratio_branca_125a2 - ratio_branca_2a4),
+          dif_branco_125a2_branco_4mais = abs(ratio_branca_125a2 - ratio_branca_4mais),
+          # x pretos
+          dif_branco_125a2_preto_0a050 = abs(ratio_branca_125a2 - ratio_preta_0a050),
+          dif_branco_125a2_preto_050a125 = abs(ratio_branca_125a2 - ratio_preta_050a125),
+          dif_branco_125a2_preto_125a2 = abs(ratio_branca_125a2 - ratio_preta_125a2),
+          dif_branco_125a2_preto_2a4 = abs(ratio_branca_125a2 - ratio_preta_2a4),
+          dif_branco_125a2_preto_4mais = abs(ratio_branca_125a2 - ratio_preta_4mais),
+          # x pardos
+          dif_branco_125a2_pardo_0a050 = abs(ratio_branca_125a2 - ratio_parda_0a050),
+          dif_branco_125a2_pardo_050a125 = abs(ratio_branca_125a2 - ratio_parda_050a125),
+          dif_branco_125a2_pardo_125a2 = abs(ratio_branca_125a2 - ratio_parda_125a2),
+          dif_branco_125a2_pardo_2a4 = abs(ratio_branca_125a2 - ratio_parda_2a4),
+          dif_branco_125a2_pardo_4mais = abs(ratio_branca_125a2 - ratio_parda_4mais),
 
-          # Brancos meioa1SM
-          dif_branco_atemeioSM_branco_meioa1SM = abs(ratio_Brancos_meioSM - ratio_Brancos_meioa1SM),
+          ## Brancos - 2a4
+          # x brancos
+          dif_branco_2a4_branco_4mais = abs(ratio_branca_2a4 - ratio_branca_4mais),
+          # x pretos
+          dif_branco_2a4_preto_0a050 = abs(ratio_branca_2a4 - ratio_preta_0a050),
+          dif_branco_2a4_preto_050a125 = abs(ratio_branca_2a4 - ratio_preta_050a125),
+          dif_branco_2a4_preto_125a2 = abs(ratio_branca_2a4 - ratio_preta_125a2),
+          dif_branco_2a4_preto_2a4 = abs(ratio_branca_2a4 - ratio_preta_2a4),
+          dif_branco_2a4_preto_4mais = abs(ratio_branca_2a4 - ratio_preta_4mais),
+          # x pardos
+          dif_branco_2a4_pardo_0a050 = abs(ratio_branca_2a4 - ratio_parda_0a050),
+          dif_branco_2a4_pardo_050a125 = abs(ratio_branca_2a4 - ratio_parda_050a125),
+          dif_branco_2a4_pardo_125a2 = abs(ratio_branca_2a4 - ratio_parda_125a2),
+          dif_branco_2a4_pardo_2a4 = abs(ratio_branca_2a4 - ratio_parda_2a4),
+          dif_branco_2a4_pardo_4mais = abs(ratio_branca_2a4 - ratio_parda_4mais),
 
-          dif_negro_atemeioSM_branco_meioa1SM = abs(ratio_Negros_meioSM - ratio_Brancos_meioa1SM),
-          dif_negro_meioa1SM_branco_meioa1SM = abs(ratio_Negros_meioa1SM - ratio_Brancos_meioa1SM),
-          dif_negro_1a3SM_branco_meioa1SM = abs(ratio_Negros_1a3SM - ratio_Brancos_meioa1SM),
-          dif_negro_3SMmais_branco_meioa1SM = abs(ratio_Negros_3SMmais - ratio_Brancos_meioa1SM),
+          ## Brancos - 4mais
+          # x pretos
+          dif_branco_4mais_preto_0a050 = abs(ratio_branca_4mais - ratio_preta_0a050),
+          dif_branco_4mais_preto_050a125 = abs(ratio_branca_4mais - ratio_preta_050a125),
+          dif_branco_4mais_preto_125a2 = abs(ratio_branca_4mais - ratio_preta_125a2),
+          dif_branco_4mais_preto_2a4 = abs(ratio_branca_4mais - ratio_preta_2a4),
+          dif_branco_4mais_preto_4mais = abs(ratio_branca_4mais - ratio_preta_4mais),
+          # x pardos
+          dif_branco_4mais_pardo_0a050 = abs(ratio_branca_4mais - ratio_parda_0a050),
+          dif_branco_4mais_pardo_050a125 = abs(ratio_branca_4mais - ratio_parda_050a125),
+          dif_branco_4mais_pardo_125a2 = abs(ratio_branca_4mais - ratio_parda_125a2),
+          dif_branco_4mais_pardo_2a4 = abs(ratio_branca_4mais - ratio_parda_2a4),
+          dif_branco_4mais_pardo_4mais = abs(ratio_branca_4mais - ratio_parda_4mais),
 
-          dif_resto_branco_meioa1SM = abs(ratio_Resto_Pop - ratio_Brancos_meioa1SM),
+          ## Pretos - 0a25
+          # x pretos
+          dif_preto_0a050_preto_050a125 = abs(ratio_preta_0a050 - ratio_preta_050a125),
+          dif_preto_0a050_preto_125a2 = abs(ratio_preta_0a050 - ratio_preta_125a2),
+          dif_preto_0a050_preto_2a4 = abs(ratio_preta_0a050 - ratio_preta_2a4),
+          dif_preto_0a050_preto_4mais = abs(ratio_preta_0a050 - ratio_preta_4mais),
+          # x pardos
+          dif_preto_0a050_pardo_0a050 = abs(ratio_preta_0a050 - ratio_parda_0a050),
+          dif_preto_0a050_pardo_050a125 = abs(ratio_preta_0a050 - ratio_parda_050a125),
+          dif_preto_0a050_pardo_125a2 = abs(ratio_preta_0a050 - ratio_parda_125a2),
+          dif_preto_0a050_pardo_2a4 = abs(ratio_preta_0a050 - ratio_parda_2a4),
+          dif_preto_0a050_pardo_4mais = abs(ratio_preta_0a050 - ratio_parda_4mais),
 
-          # Brancos atemeioSM
+          ## Pretos - 050a125
+          # x pretos
+          dif_preto_050a125_preto_125a2 = abs(ratio_preta_050a125 - ratio_preta_125a2),
+          dif_preto_050a125_preto_2a4 = abs(ratio_preta_050a125 - ratio_preta_2a4),
+          dif_preto_050a125_preto_4mais = abs(ratio_preta_050a125 - ratio_preta_4mais),
+          # x pardos
+          dif_preto_050a125_pardo_0a050 = abs(ratio_preta_050a125 - ratio_parda_0a050),
+          dif_preto_050a125_pardo_050a125 = abs(ratio_preta_050a125 - ratio_parda_050a125),
+          dif_preto_050a125_pardo_125a2 = abs(ratio_preta_050a125 - ratio_parda_125a2),
+          dif_preto_050a125_pardo_2a4 = abs(ratio_preta_050a125 - ratio_parda_2a4),
+          dif_preto_050a125_pardo_4mais = abs(ratio_preta_050a125 - ratio_parda_4mais),
 
-          dif_negro_atemeioSM_branco_atemeioSM = abs(ratio_Negros_meioSM - ratio_Brancos_meioSM),
-          dif_negro_meioa1SM_branco_atemeioSM = abs(ratio_Negros_meioa1SM - ratio_Brancos_meioSM),
-          dif_negro_1a3SM_branco_atemeioSM = abs(ratio_Negros_1a3SM - ratio_Brancos_meioSM),
-          dif_negro_3SMmais_branco_atemeioSM = abs(ratio_Negros_3SMmais - ratio_Brancos_meioSM),
+          ## Pretos - 125a2
+          # x pretos
+          dif_preto_125a2_preto_2a4 = abs(ratio_preta_050a125 - ratio_preta_2a4),
+          dif_preto_125a2_preto_4mais = abs(ratio_preta_050a125 - ratio_preta_4mais),
+          # x pardos
+          dif_preto_125a2_pardo_0a050 = abs(ratio_preta_050a125 - ratio_parda_0a050),
+          dif_preto_125a2_pardo_050a125 = abs(ratio_preta_050a125 - ratio_parda_050a125),
+          dif_preto_125a2_pardo_125a2 = abs(ratio_preta_050a125 - ratio_parda_125a2),
+          dif_preto_125a2_pardo_2a4 = abs(ratio_preta_050a125 - ratio_parda_2a4),
+          dif_preto_125a2_pardo_4mais = abs(ratio_preta_050a125 - ratio_parda_4mais),
 
-          dif_resto_branco_atemeioSM = abs(ratio_Resto_Pop - ratio_Brancos_meioSM),
+          ## Pretos - 2a4
+          # x pretos
+          dif_preto_2a4_preto_4mais = abs(ratio_preta_2a4 - ratio_preta_4mais),
+          # x pardos
+          dif_preto_2a4_pardo_0a050 = abs(ratio_preta_2a4 - ratio_parda_0a050),
+          dif_preto_2a4_pardo_050a125 = abs(ratio_preta_2a4 - ratio_parda_050a125),
+          dif_preto_2a4_pardo_125a2 = abs(ratio_preta_2a4 - ratio_parda_125a2),
+          dif_preto_2a4_pardo_2a4 = abs(ratio_preta_2a4 - ratio_parda_2a4),
+          dif_preto_2a4_pardo_4mais = abs(ratio_preta_2a4 - ratio_parda_4mais),
 
-          # Negros 3SMmais
+          ## Pretos - 4mais
+          # x pardos
+          dif_preto_4mais_pardo_0a050 = abs(ratio_preta_4mais - ratio_parda_0a050),
+          dif_preto_4mais_pardo_050a125 = abs(ratio_preta_4mais - ratio_parda_050a125),
+          dif_preto_4mais_pardo_125a2 = abs(ratio_preta_4mais - ratio_parda_125a2),
+          dif_preto_4mais_pardo_2a4 = abs(ratio_preta_4mais - ratio_parda_2a4),
+          dif_preto_4mais_pardo_4mais = abs(ratio_preta_4mais - ratio_parda_4mais),
 
-          dif_negro_atemeioSM_negro_3SMmais = abs(ratio_Negros_meioSM - ratio_Negros_3SMmais),
-          dif_negro_meioa1SM_negro_3SMmais = abs(ratio_Negros_meioa1SM - ratio_Negros_3SMmais),
-          dif_negro_1a3SM_negro_3SMmais = abs(ratio_Negros_1a3SM - ratio_Negros_3SMmais),
+          ## Pardos - 0a050
+          # x pardos
+          dif_pardo_0a050_pardo_050a125 = abs(ratio_parda_0a050 - ratio_parda_050a125),
+          dif_pardo_0a050_pardo_125a2 = abs(ratio_parda_0a050 - ratio_parda_125a2),
+          dif_pardo_0a050_pardo_2a4 = abs(ratio_parda_0a050 - ratio_parda_2a4),
+          dif_pardo_0a050_pardo_4mais = abs(ratio_parda_0a050 - ratio_parda_4mais),
 
-          dif_resto_negro_3SMmais = abs(ratio_Resto_Pop - ratio_Negros_3SMmais),
+          ## Pardos - 050a125
+          # x pardos
+          dif_pardo_050a125_pardo_125a2 = abs(ratio_parda_050a125 - ratio_parda_125a2),
+          dif_pardo_050a125_pardo_2a4 = abs(ratio_parda_050a125 - ratio_parda_2a4),
+          dif_pardo_050a125_pardo_4mais = abs(ratio_parda_050a125 - ratio_parda_4mais),
 
-          # Negros 1a3SM
+          ## Pardos - 125a2
+          # x pardos
+          dif_pardo_125a2_pardo_2a4 = abs(ratio_parda_125a2 - ratio_parda_2a4),
+          dif_pardo_125a2_pardo_4mais = abs(ratio_parda_125a2 - ratio_parda_4mais),
 
-          dif_negro_atemeioSM_negro_1a3SM = abs(ratio_Negros_meioSM - ratio_Negros_1a3SM),
-          dif_negro_meioa1SM_negro_1a3SM = abs(ratio_Negros_meioa1SM - ratio_Negros_1a3SM),
-
-          dif_resto_negro_1a3SM = abs(ratio_Resto_Pop - ratio_Negros_1a3SM),
-
-          # Negros meioa1SM
-
-          dif_negro_atemeioSM_negro_meioa1SM = abs(ratio_Negros_meioSM - ratio_Negros_meioa1SM),
-
-          dif_resto_negro_meioa1SM = abs(ratio_Resto_Pop - ratio_Negros_meioa1SM),
-
-          # Negros atemeioSM
-
-          dif_resto_negro_atemeioSM = abs(ratio_Resto_Pop - ratio_Negros_meioSM)
+          ## Pardos - 2a4
+          # x pardos
+          dif_pardo_2a4_pardo_4mais = abs(ratio_parda_2a4 - ratio_parda_4mais),
 
         ) |>
         mutate(across(starts_with("dif_"), ~ replace_na(.x, 0))) |>
         summarise(
-          # negros 3SMmais
-          D_negro_3SMmais_branco_3SMmais = sum(dif_negro_3SMmais_branco_3SMmais)*.5,
-          D_negro_3SMmais_branco_1a3SM = sum(dif_negro_3SMmais_branco_1a3SM)*.5,
-          D_negro_3SMmais_branco_meioa1SM = sum(dif_negro_3SMmais_branco_meioa1SM)*.5,
-          D_negro_3SMmais_branco_atemeioSM = sum(dif_negro_3SMmais_branco_atemeioSM)*.5,
 
-          D_negro_3SMmais_negro_1a3SM = sum(dif_negro_1a3SM_negro_3SMmais)*.5,
-          D_negro_3SMmais_negro_meioa1SM = sum(dif_negro_meioa1SM_negro_3SMmais)*.5,
-          D_negro_3SMmais_negro_atemeioSM = sum(dif_negro_atemeioSM_negro_3SMmais)*.5,
+          #
+          ### Divisao das razoes por 2
+          #
 
-          D_negro_3SMmais_resto = sum(dif_resto_negro_3SMmais)*.5,
+          ## Brancos - 0a050
+          # x brancos
+          D_branco_0a050_branco_050a125 = sum(dif_branco_0a050_branco_050a125) * 0.5,
+          D_branco_0a050_branco_125a2 = sum(dif_branco_0a050_branco_125a2) * 0.5,
+          D_branco_0a050_branco_2a4 = sum(dif_branco_0a050_branco_2a4) * 0.5,
+          D_branco_0a050_branco_4mais = sum(dif_branco_0a050_branco_4mais) * 0.5,
+          # x pretos
+          D_branco_0a050_preto_0a050 = sum(dif_branco_0a050_preto_0a050) * 0.5,
+          D_branco_0a050_preto_050a125 = sum(dif_branco_0a050_preto_050a125) * 0.5,
+          D_branco_0a050_preto_125a2 = sum(dif_branco_0a050_preto_125a2) * 0.5,
+          D_branco_0a050_preto_2a4 = sum(dif_branco_0a050_preto_2a4) * 0.5,
+          D_branco_0a050_preto_4mais = sum(dif_branco_0a050_preto_4mais) * 0.5,
+          # x pardos
+          D_branco_0a050_pardo_0a050 = sum(dif_branco_0a050_pardo_0a050) * 0.5,
+          D_branco_0a050_pardo_050a125 = sum(dif_branco_0a050_pardo_050a125) * 0.5,
+          D_branco_0a050_pardo_125a2 = sum(dif_branco_0a050_pardo_125a2) * 0.5,
+          D_branco_0a050_pardo_2a4 = sum(dif_branco_0a050_pardo_2a4) * 0.5,
+          D_branco_0a050_pardo_4mais = sum(dif_branco_0a050_pardo_4mais) * 0.5,
 
-          # Negros 1a3SM
-          D_negro_1a3SM_branco_3SMmais = sum(dif_negro_1a3SM_branco_3SMmais)*.5,
-          D_negro_1a3SM_branco_1a3SM = sum(dif_negro_1a3SM_branco_1a3SM)*.5,
-          D_negro_1a3SM_branco_meioa1SM = sum(dif_negro_1a3SM_branco_meioa1SM)*.5,
-          D_negro_1a3SM_branco_atemeioSM = sum(dif_negro_1a3SM_branco_atemeioSM)*.5,
+          ## Brancos - 050a125
+          # x brancos
+          D_branco_050a125_branco_125a2 = sum(dif_branco_050a125_branco_125a2) * 0.5,
+          D_branco_050a125_branco_2a4 = sum(dif_branco_050a125_branco_2a4) * 0.5,
+          D_branco_050a125_branco_4mais = sum(dif_branco_050a125_branco_4mais) * 0.5,
+          # x pretos
+          D_branco_050a125_preto_0a050 = sum(dif_branco_050a125_preto_0a050) * 0.5,
+          D_branco_050a125_preto_050a125 = sum(dif_branco_050a125_preto_050a125) * 0.5,
+          D_branco_050a125_preto_125a2 = sum(dif_branco_050a125_preto_125a2) * 0.5,
+          D_branco_050a125_preto_2a4 = sum(dif_branco_050a125_preto_2a4) * 0.5,
+          D_branco_050a125_preto_4mais = sum(dif_branco_050a125_preto_4mais) * 0.5,
+          # x pardos
+          D_branco_050a125_pardo_0a050 = sum(dif_branco_050a125_pardo_0a050) * 0.5,
+          D_branco_050a125_pardo_050a125 = sum(dif_branco_050a125_pardo_050a125) * 0.5,
+          D_branco_050a125_pardo_125a2 = sum(dif_branco_050a125_pardo_125a2) * 0.5,
+          D_branco_050a125_pardo_2a4 = sum(dif_branco_050a125_pardo_2a4) * 0.5,
+          D_branco_050a125_pardo_4mais = sum(dif_branco_050a125_pardo_4mais) * 0.5,
 
-          D_negro_1a3SM_negro_meioa1SM = sum(dif_negro_meioa1SM_negro_1a3SM)*.5,
-          D_negro_1a3SM_negro_atemeioSM = sum(dif_negro_atemeioSM_negro_1a3SM)*.5,
+          ## Brancos - 125a2
+          # x brancos
+          D_branco_125a2_branco_2a4 = sum(dif_branco_125a2_branco_2a4) * 0.5,
+          D_branco_125a2_branco_4mais = sum(dif_branco_125a2_branco_4mais) * 0.5,
+          # x pretos
+          D_branco_125a2_preto_0a050 = sum(dif_branco_125a2_preto_0a050) * 0.5,
+          D_branco_125a2_preto_050a125 = sum(dif_branco_125a2_preto_050a125) * 0.5,
+          D_branco_125a2_preto_125a2 = sum(dif_branco_125a2_preto_125a2) * 0.5,
+          D_branco_125a2_preto_2a4 = sum(dif_branco_125a2_preto_2a4) * 0.5,
+          D_branco_125a2_preto_4mais = sum(dif_branco_125a2_preto_4mais) * 0.5,
+          # x pardos
+          D_branco_125a2_pardo_0a050 = sum(dif_branco_125a2_pardo_0a050) * 0.5,
+          D_branco_125a2_pardo_050a125 = sum(dif_branco_125a2_pardo_050a125) * 0.5,
+          D_branco_125a2_pardo_125a2 = sum(dif_branco_125a2_pardo_125a2) * 0.5,
+          D_branco_125a2_pardo_2a4 = sum(dif_branco_125a2_pardo_2a4) * 0.5,
+          D_branco_125a2_pardo_4mais = sum(dif_branco_125a2_pardo_4mais) * 0.5,
 
-          D_negro_1a3SM_resto = sum(dif_resto_negro_1a3SM)*.5,
+          ## Brancos - 2a4
+          # x brancos
+          D_branco_2a4_branco_4mais = sum(dif_branco_2a4_branco_4mais) * 0.5,
+          # x pretos
+          D_branco_2a4_preto_0a050 = sum(dif_branco_2a4_preto_0a050) * 0.5,
+          D_branco_2a4_preto_050a125 = sum(dif_branco_2a4_preto_050a125) * 0.5,
+          D_branco_2a4_preto_125a2 = sum(dif_branco_2a4_preto_125a2) * 0.5,
+          D_branco_2a4_preto_2a4 = sum(dif_branco_2a4_preto_2a4) * 0.5,
+          D_branco_2a4_preto_4mais = sum(dif_branco_2a4_preto_4mais) * 0.5,
+          # x pardos
+          D_branco_2a4_pardo_0a050 = sum(dif_branco_2a4_pardo_0a050) * 0.5,
+          D_branco_2a4_pardo_050a125 = sum(dif_branco_2a4_pardo_050a125) * 0.5,
+          D_branco_2a4_pardo_125a2 = sum(dif_branco_2a4_pardo_125a2) * 0.5,
+          D_branco_2a4_pardo_2a4 = sum(dif_branco_2a4_pardo_2a4) * 0.5,
+          D_branco_2a4_pardo_4mais = sum(dif_branco_2a4_pardo_4mais) * 0.5,
 
-          # Negros meio a 1 SM
-          D_negro_meioa1SM_branco_3SMmais = sum(dif_branco_meioa1SM_branco_3SMmais)*.5,
-          D_negro_meioa1SM_branco_1a3SM = sum(dif_negro_meioa1SM_branco_1a3SM)*.5,
-          D_negro_meioa1SM_branco_meioa1SM = sum(dif_negro_meioa1SM_branco_meioa1SM)*.5,
-          D_negro_meioa1SM_branco_atemeioSM = sum(dif_negro_meioa1SM_branco_atemeioSM)*.5,
+          ## Brancos - 4mais
+          # x pretos
+          D_branco_4mais_preto_0a050 = sum(dif_branco_4mais_preto_0a050) * 0.5,
+          D_branco_4mais_preto_050a125 = sum(dif_branco_4mais_preto_050a125) * 0.5,
+          D_branco_4mais_preto_125a2 = sum(dif_branco_4mais_preto_125a2) * 0.5,
+          D_branco_4mais_preto_2a4 = sum(dif_branco_4mais_preto_2a4) * 0.5,
+          D_branco_4mais_preto_4mais = sum(dif_branco_4mais_preto_4mais) * 0.5,
+          # x pardos
+          D_branco_4mais_pardo_0a050 = sum(dif_branco_4mais_pardo_0a050) * 0.5,
+          D_branco_4mais_pardo_050a125 = sum(dif_branco_4mais_pardo_050a125) * 0.5,
+          D_branco_4mais_pardo_125a2 = sum(dif_branco_4mais_pardo_125a2) * 0.5,
+          D_branco_4mais_pardo_2a4 = sum(dif_branco_4mais_pardo_2a4) * 0.5,
+          D_branco_4mais_pardo_4mais = sum(dif_branco_4mais_pardo_4mais) * 0.5,
 
-          D_negro_meioa1SM_negro_atemeioSM = sum(dif_negro_atemeioSM_negro_meioa1SM)*.5,
+          ## Pretos - 0a25
+          # x pretos
+          D_preto_0a050_preto_050a125 = sum(dif_preto_0a050_preto_050a125) * 0.5,
+          D_preto_0a050_preto_125a2 = sum(dif_preto_0a050_preto_125a2) * 0.5,
+          D_preto_0a050_preto_2a4 = sum(dif_preto_0a050_preto_2a4) * 0.5,
+          D_preto_0a050_preto_4mais = sum(dif_preto_0a050_preto_4mais) * 0.5,
+          # x pardos
+          D_preto_0a050_pardo_0a050 = sum(dif_preto_0a050_pardo_0a050) * 0.5,
+          D_preto_0a050_pardo_050a125 = sum(dif_preto_0a050_pardo_050a125) * 0.5,
+          D_preto_0a050_pardo_125a2 = sum(dif_preto_0a050_pardo_125a2) * 0.5,
+          D_preto_0a050_pardo_2a4 = sum(dif_preto_0a050_pardo_2a4) * 0.5,
+          D_preto_0a050_pardo_4mais = sum(dif_preto_0a050_pardo_4mais) * 0.5,
 
-          D_negro_meioa1SM_resto = sum(dif_resto_negro_meioa1SM)*.5,
+          ## Pretos - 050a125
+          # x pretos
+          D_preto_050a125_preto_125a2 = sum(dif_preto_050a125_preto_125a2) * 0.5,
+          D_preto_050a125_preto_2a4 = sum(dif_preto_050a125_preto_2a4) * 0.5,
+          D_preto_050a125_preto_4mais = sum(dif_preto_050a125_preto_4mais) * 0.5,
+          # x pardos
+          D_preto_050a125_pardo_0a050 = sum(dif_preto_050a125_pardo_0a050) * 0.5,
+          D_preto_050a125_pardo_050a125 = sum(dif_preto_050a125_pardo_050a125) * 0.5,
+          D_preto_050a125_pardo_125a2 = sum(dif_preto_050a125_pardo_125a2) * 0.5,
+          D_preto_050a125_pardo_2a4 = sum(dif_preto_050a125_pardo_2a4) * 0.5,
+          D_preto_050a125_pardo_4mais = sum(dif_preto_050a125_pardo_4mais) * 0.5,
 
-          # Negros ate meio SM
-          D_negro_atemeioSM_branco_3SMmais = sum(dif_negro_atemeioSM_branco_3SMmais)*.5,
-          D_negro_atemeioSM_branco_1a3SM = sum(dif_negro_atemeioSM_branco_1a3SM)*.5,
-          D_negro_atemeioSM_branco_meioa1SM = sum(dif_negro_atemeioSM_branco_meioa1SM)*.5,
-          D_negro_atemeioSM_branco_atemeioSM = sum(dif_negro_atemeioSM_branco_atemeioSM)*.5,
+          ## Pretos - 125a2
+          # x pretos
+          D_preto_125a2_preto_2a4 = sum(dif_preto_125a2_preto_2a4) * 0.5,
+          D_preto_125a2_preto_4mais = sum(dif_preto_125a2_preto_4mais) * 0.5,
+          # x pardos
+          D_preto_125a2_pardo_0a050 = sum(dif_preto_125a2_pardo_0a050) * 0.5,
+          D_preto_125a2_pardo_050a125 = sum(dif_preto_125a2_pardo_050a125) * 0.5,
+          D_preto_125a2_pardo_125a2 = sum(dif_preto_125a2_pardo_125a2) * 0.5,
+          D_preto_125a2_pardo_2a4 = sum(dif_preto_125a2_pardo_2a4) * 0.5,
+          D_preto_125a2_pardo_4mais = sum(dif_preto_125a2_pardo_4mais) * 0.5,
 
-          D_negro_atemeioSM_resto = sum(dif_resto_negro_atemeioSM)*.5,
+          ## Pretos - 2a4
+          # x pretos
+          D_preto_2a4_preto_4mais = sum(dif_preto_2a4_preto_4mais) * 0.5,
+          # x pardos
+          D_preto_2a4_pardo_0a050 = sum(dif_preto_2a4_pardo_0a050) * 0.5,
+          D_preto_2a4_pardo_050a125 = sum(dif_preto_2a4_pardo_050a125) * 0.5,
+          D_preto_2a4_pardo_125a2 = sum(dif_preto_2a4_pardo_125a2) * 0.5,
+          D_preto_2a4_pardo_2a4 = sum(dif_preto_2a4_pardo_2a4) * 0.5,
+          D_preto_2a4_pardo_4mais = sum(dif_preto_2a4_pardo_4mais) * 0.5,
 
-          # Brancos 3SMmais
-          D_branco_3SMmais_branco_1a3SM = sum(dif_branco_1a3SM_branco_3SMmais)*.5,
-          D_branco_3SMmais_branco_meioa1SM = sum(dif_branco_meioa1SM_branco_3SMmais)*.5,
-          D_branco_3SMmais_branco_atemeioSM = sum(dif_branco_atemeioSM_branco_3SMmais)*.5,
+          ## Pretos - 4mais
+          # x pardos
+          D_preto_4mais_pardo_0a050 = sum(dif_preto_4mais_pardo_0a050) * 0.5,
+          D_preto_4mais_pardo_050a125 = sum(dif_preto_4mais_pardo_050a125) * 0.5,
+          D_preto_4mais_pardo_125a2 = sum(dif_preto_4mais_pardo_125a2) * 0.5,
+          D_preto_4mais_pardo_2a4 = sum(dif_preto_4mais_pardo_2a4) * 0.5,
+          D_preto_4mais_pardo_4mais = sum(dif_preto_4mais_pardo_4mais) * 0.5,
 
-          D_branco_3SMmais_resto = sum(dif_resto_branco_3SMmais)*.5,
+          ## Pardos - 0a050
+          # x pardos
+          D_pardo_0a050_pardo_050a125 = sum(dif_pardo_0a050_pardo_050a125) * 0.5,
+          D_pardo_0a050_pardo_125a2 = sum(dif_pardo_0a050_pardo_125a2) * 0.5,
+          D_pardo_0a050_pardo_2a4 = sum(dif_pardo_0a050_pardo_2a4) * 0.5,
+          D_pardo_0a050_pardo_4mais = sum(dif_pardo_0a050_pardo_4mais) * 0.5,
 
-          # Brancos 1a3 SM
-          D_branco_1a3SM_branco_meioa1SM = sum(dif_branco_meioa1SM_branco_1a3SM)*.5,
-          D_branco_1a3SM_branco_atemeioSM = sum(dif_branco_atemeioSM_branco_1a3SM)*.5,
+          ## Pardos - 050a125
+          # x pardos
+          D_pardo_050a125_pardo_125a2 = sum(dif_pardo_050a125_pardo_125a2) * 0.5,
+          D_pardo_050a125_pardo_2a4 = sum(dif_pardo_050a125_pardo_2a4) * 0.5,
+          D_pardo_050a125_pardo_4mais = sum(dif_pardo_050a125_pardo_4mais) * 0.5,
 
-          D_branco_1a3SM_resto = sum(dif_resto_branco_1a3SM)*.5,
+          ## Pardos - 125a2
+          # x pardos
+          D_pardo_125a2_pardo_2a4 = sum(dif_pardo_125a2_pardo_2a4) * 0.5,
+          D_pardo_125a2_pardo_4mais = sum(dif_pardo_125a2_pardo_4mais) * 0.5,
 
-          # Brancos meio a 1 SM
-          D_branco_meioa1SM_branco_atemeioSM = sum(dif_branco_atemeioSM_branco_meioa1SM)*.5,
-
-          D_branco_meioa1SM_resto = sum(dif_resto_branco_meioa1SM)*.5,
-
-          # Brancos ate meio SM
-
-          D_branco_atemeioSM_resto = sum(dif_resto_branco_atemeioSM)*.5
+          ## Pardos - 2a4
+          # x pardos
+          D_pardo_2a4_pardo_4mais = sum(dif_pardo_2a4_pardo_4mais) * 0.5,
 
         ) |>
-        pivot_longer(D_negro_3SMmais_branco_3SMmais:D_branco_atemeioSM_resto, names_to = "grupo", values_to = "D") |>
+        pivot_longer(D_branco_0a050_branco_050a125:D_pardo_2a4_pardo_4mais, names_to = "grupo", values_to = "D") |>
         mutate(
-          cor_classe1 = c(rep("Negros 3SMmais",8),rep("Negros 1a3SM",7),rep("Negros meioa1SM",6),
-                          rep("Negros atemeioSM",5),rep("Brancos 3SMmais",4),rep("Brancos 1a3SM",3),
-                          rep("Brancos meioa1SM",2),rep("Brancos atemeioSM",1)),
-          cor_classe2 = c(c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
-                          c("Negros 1a3SM","Negros meioa1SM","Negros atemeioSM", "Resto da população"),
-                          c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
-                          c("Negros meioa1SM","Negros atemeioSM", "Resto da população"),
-                          c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
-                          c("Negros atemeioSM", "Resto da população"),
-                          c("Brancos 3SMmais","Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
-                          c("Resto da população"),
-                          c("Brancos 1a3SM","Brancos meioa1SM","Brancos atemeioSM"),
-                          c("Resto da população"),c("Brancos meioa1SM","Brancos atemeioSM"),
-                          c("Resto da população"),c("Brancos atemeioSM"),
-                          c("Resto da população"),c("Resto da população"))
+          cor_classe1 = c(
+            rep("Brancos - [0 a 0,5 SM)",17),rep("Brancos - [0,5 a 1,25 SM)",16),rep("Brancos - [0,5 a 0,75 SM",15),
+            rep("Brancos - [2 SM a 4 SM)",13),rep("Brancos - [4+ SM)",12),
+            rep("Pretos - [0 a 0,5 SM)",11),rep("Pretos - [0,5 a 1,25 SM)",10),rep("Pretos - [0,5 a 0,75 SM",9),
+            rep("Pretos - [2 SM a 4 SM)",7),rep("Pretos - [4+ SM)",6),
+            rep("Pardos - [0 a 0,5 SM)",5),rep("Pardos - [0,5 a 1,25 SM)",4),rep("Pardos - [0,5 a 0,75 SM",3),
+            rep("Pardos - [2 SM a 4 SM)",1)
+          ),
+          cor_classe2 = c(
+            c("Brancos - [0,5 a 1,25 SM)","Brancos - [1,25 SM a 2 SM)",
+              "Brancos - [2 SM a 4 SM)","Brancos - [4+ SM)"),
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+              "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Brancos - [1,25 SM a 2 SM)",
+              "Brancos - [2 SM a 4 SM)","Brancos - [4+ SM)"),
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+              "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Brancos - [2 SM a 4 SM)","Brancos - [4+ SM)"),
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+              "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Brancos - [2 SM a 4 SM)","Brancos - [4+ SM)"),
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+              "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Brancos - [4+ SM)"),
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+              "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+              "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pretos - [1,25 SM a 2 SM)","Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+              "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pardos - [1,25 SM a 2 SM)","Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pardos - [4+ SM)"),
+          )
         )
     }else{
       output_classe <- tabela_por_classe |>
