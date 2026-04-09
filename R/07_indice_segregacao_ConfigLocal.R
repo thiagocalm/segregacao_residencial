@@ -228,4 +228,5 @@ t1_SUL <- t1_SUL |>
 
 # Calculo do D ------------------------------------------------------------
 
-
+# funcao
+source("./R/X_funcao_indices.R")
