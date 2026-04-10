@@ -94,19 +94,19 @@ func_calcula_dissimilaridade <-
           # Brancos
           var_estrato == 1 & cor_raca_d == 1 ~ "Brancos - [0 a 0,5 SM)",
           var_estrato == 2 & cor_raca_d == 1 ~ "Brancos - [0,5 a 1,25 SM)",
-          var_estrato == 3 & cor_raca_d == 1 ~ "Brancos - [1,25 SM a 2 SM)",
+          var_estrato == 3 & cor_raca_d == 1 ~ "Brancos - [1,25 a 2 SM)",
           var_estrato == 4 & cor_raca_d == 1 ~ "Brancos - [2 SM a 4 SM)",
           var_estrato == 5 & cor_raca_d == 1 ~ "Brancos - [4+ SM)",
           # Pretos
           var_estrato == 1 & cor_raca_d == 2 ~ "Pretos - [0 a 0,5 SM)",
           var_estrato == 2 & cor_raca_d == 2 ~ "Pretos - [0,5 a 1,25 SM)",
-          var_estrato == 3 & cor_raca_d == 2 ~ "Pretos - [1,25 SM a 2 SM)",
+          var_estrato == 3 & cor_raca_d == 2 ~ "Pretos - [1,25 a 2 SM)",
           var_estrato == 4 & cor_raca_d == 2 ~ "Pretos - [2 SM a 4 SM)",
           var_estrato == 5 & cor_raca_d == 2 ~ "Pretos - [4+ SM)",
           # Pardos
           var_estrato == 1 & cor_raca_d == 4 ~ "Pardos - [0 a 0,5 SM)",
           var_estrato == 2 & cor_raca_d == 4 ~ "Pardos - [0,5 a 1,25 SM)",
-          var_estrato == 3 & cor_raca_d == 4 ~ "Pardos - [1,25 SM a 2 SM)",
+          var_estrato == 3 & cor_raca_d == 4 ~ "Pardos - [1,25 a 2 SM)",
           var_estrato == 4 & cor_raca_d == 4 ~ "Pardos - [2 SM a 4 SM)",
           var_estrato == 5 & cor_raca_d == 4 ~ "Pardos - [4+ SM)"
         )) |>
@@ -923,11 +923,11 @@ func_calcula_dissimilaridade <-
         pivot_longer(D_branco_0a025_branco_025a050:D_pardo_125a4_pardo_4mais, names_to = "grupo", values_to = "D") |>
         mutate(
           cor_classe1 = c(
-            rep("Brancos - [0 a 0,25 SM)",17),rep("Brancos - [0,25 a 0,5 SM)",16),rep("Brancos - [0,5 a 0,75 SM",15),
+            rep("Brancos - [0 a 0,25 SM)",17),rep("Brancos - [0,25 a 0,5 SM)",16),rep("Brancos - [0,5 a 0,75 SM)",15),
             rep("Brancos - [0,75 a 1,25 SM)",14),rep("Brancos - [1,25 a 4 SM)",13),rep("Brancos - [4+ SM)",12),
-            rep("Pretos - [0 a 0,25 SM)",11),rep("Pretos - [0,25 a 0,5 SM)",10),rep("Pretos - [0,5 a 0,75 SM",9),
+            rep("Pretos - [0 a 0,25 SM)",11),rep("Pretos - [0,25 a 0,5 SM)",10),rep("Pretos - [0,5 a 0,75 SM)",9),
             rep("Pretos - [0,75 a 1,25 SM)",8),rep("Pretos - [1,25 a 4 SM)",7),rep("Pretos - [4+ SM)",6),
-            rep("Pardos - [0 a 0,25 SM)",5),rep("Pardos - [0,25 a 0,5 SM)",4),rep("Pardos - [0,5 a 0,75 SM",3),
+            rep("Pardos - [0 a 0,25 SM)",5),rep("Pardos - [0,25 a 0,5 SM)",4),rep("Pardos - [0,5 a 0,75 SM)",3),
             rep("Pardos - [0,75 a 1,25 SM)",2),rep("Pardos - [1,25 a 4 SM)",1)
           ),
           cor_classe2 = c(
@@ -996,21 +996,21 @@ func_calcula_dissimilaridade <-
           # brancos
           pop_branca_0a050 = n[classe_raca == "Brancos - [0 a 0,5 SM)" & area_ponderacao == 0],
           pop_branca_050a125 = n[classe_raca == "Brancos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
-          pop_branca_125a2 = n[classe_raca == "Brancos - [1,25 SM a 2 SM)" & area_ponderacao == 0],
+          pop_branca_125a2 = n[classe_raca == "Brancos - [1,25 a 2 SM)" & area_ponderacao == 0],
           pop_branca_2a4 = n[classe_raca == "Brancos - [2 SM a 4 SM)" & area_ponderacao == 0],
           pop_branca_4mais = n[classe_raca == "Brancos - [4+ SM)" & area_ponderacao == 0],
 
           # pretos
           pop_preta_0a050 = n[classe_raca == "Pretos - [0 a 0,5 SM)" & area_ponderacao == 0],
           pop_preta_050a125 = n[classe_raca == "Pretos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
-          pop_preta_125a2 = n[classe_raca == "Pretos - [1,25 SM a 2 SM)" & area_ponderacao == 0],
+          pop_preta_125a2 = n[classe_raca == "Pretos - [1,25 a 2 SM)" & area_ponderacao == 0],
           pop_preta_2a4 = n[classe_raca == "Pretos - [2 SM a 4 SM)" & area_ponderacao == 0],
           pop_preta_4mais = n[classe_raca == "Pretos - [4+ SM)" & area_ponderacao == 0],
 
           # pardos
           pop_parda_0a050 = n[classe_raca == "Pardos - [0 a 0,5 SM)" & area_ponderacao == 0],
           pop_parda_050a125 = n[classe_raca == "Pardos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
-          pop_parda_125a2 = n[classe_raca == "Pardos - [1,25 SM a 2 SM)" & area_ponderacao == 0],
+          pop_parda_125a2 = n[classe_raca == "Pardos - [1,25 a 2 SM)" & area_ponderacao == 0],
           pop_parda_2a4 = n[classe_raca == "Pardos - [2 SM a 4 SM)" & area_ponderacao == 0],
           pop_parda_4mais = n[classe_raca == "Pardos - [4+ SM)" & area_ponderacao == 0],
         ) |>
@@ -1022,21 +1022,21 @@ func_calcula_dissimilaridade <-
           # brancos
           ratio_branca_0a050 = `Brancos - [0 a 0,5 SM)`/pop_branca_0a050,
           ratio_branca_050a125 = `Brancos - [0,5 a 1,25 SM)`/pop_branca_050a125,
-          ratio_branca_125a2 = `Brancos - [1,25 SM a 2 SM)`/pop_branca_125a2,
+          ratio_branca_125a2 = `Brancos - [1,25 a 2 SM)`/pop_branca_125a2,
           ratio_branca_2a4 = `Brancos - [2 SM a 4 SM)`/pop_branca_2a4,
           ratio_branca_4mais = `Brancos - [4+ SM)`/pop_branca_4mais,
 
           # pretos
           ratio_preta_0a050 = `Pretos - [0 a 0,5 SM)`/pop_preta_0a050,
           ratio_preta_050a125 = `Pretos - [0,5 a 1,25 SM)`/pop_preta_050a125,
-          ratio_preta_125a2 = `Pretos - [1,25 SM a 2 SM)`/pop_preta_125a2,
+          ratio_preta_125a2 = `Pretos - [1,25 a 2 SM)`/pop_preta_125a2,
           ratio_preta_2a4 = `Pretos - [2 SM a 4 SM)`/pop_preta_2a4,
           ratio_preta_4mais = `Pretos - [4+ SM)`/pop_preta_4mais,
 
           # pardos
           ratio_parda_0a050 = `Pardos - [0 a 0,5 SM)`/pop_parda_0a050,
           ratio_parda_050a125 = `Pardos - [0,5 a 1,25 SM)`/pop_parda_050a125,
-          ratio_parda_125a2 = `Pardos - [1,25 SM a 2 SM)`/pop_parda_125a2,
+          ratio_parda_125a2 = `Pardos - [1,25 a 2 SM)`/pop_parda_125a2,
           ratio_parda_2a4 = `Pardos - [2 SM a 4 SM)`/pop_parda_2a4,
           ratio_parda_4mais = `Pardos - [4+ SM)`/pop_parda_4mais,
 
@@ -1157,14 +1157,14 @@ func_calcula_dissimilaridade <-
 
           ## Pretos - 125a2
           # x pretos
-          dif_preto_125a2_preto_2a4 = abs(ratio_preta_050a125 - ratio_preta_2a4),
-          dif_preto_125a2_preto_4mais = abs(ratio_preta_050a125 - ratio_preta_4mais),
+          dif_preto_125a2_preto_2a4 = abs(ratio_preta_125a2 - ratio_preta_2a4),
+          dif_preto_125a2_preto_4mais = abs(ratio_preta_125a2 - ratio_preta_4mais),
           # x pardos
-          dif_preto_125a2_pardo_0a050 = abs(ratio_preta_050a125 - ratio_parda_0a050),
-          dif_preto_125a2_pardo_050a125 = abs(ratio_preta_050a125 - ratio_parda_050a125),
-          dif_preto_125a2_pardo_125a2 = abs(ratio_preta_050a125 - ratio_parda_125a2),
-          dif_preto_125a2_pardo_2a4 = abs(ratio_preta_050a125 - ratio_parda_2a4),
-          dif_preto_125a2_pardo_4mais = abs(ratio_preta_050a125 - ratio_parda_4mais),
+          dif_preto_125a2_pardo_0a050 = abs(ratio_preta_125a2 - ratio_parda_0a050),
+          dif_preto_125a2_pardo_050a125 = abs(ratio_preta_125a2 - ratio_parda_050a125),
+          dif_preto_125a2_pardo_125a2 = abs(ratio_preta_125a2 - ratio_parda_125a2),
+          dif_preto_125a2_pardo_2a4 = abs(ratio_preta_125a2 - ratio_parda_2a4),
+          dif_preto_125a2_pardo_4mais = abs(ratio_preta_125a2 - ratio_parda_4mais),
 
           ## Pretos - 2a4
           # x pretos
@@ -1378,58 +1378,58 @@ func_calcula_dissimilaridade <-
         pivot_longer(D_branco_0a050_branco_050a125:D_pardo_2a4_pardo_4mais, names_to = "grupo", values_to = "D") |>
         mutate(
           cor_classe1 = c(
-            rep("Brancos - [0 a 0,5 SM)",14),rep("Brancos - [0,5 a 1,25 SM)",13),rep("Brancos - [0,5 a 0,75 SM",12),
+            rep("Brancos - [0 a 0,5 SM)",14),rep("Brancos - [0,5 a 1,25 SM)",13),rep("Brancos - [1,25 a 2 SM)",12),
             rep("Brancos - [2 SM a 4 SM)",11),rep("Brancos - [4+ SM)",10),
-            rep("Pretos - [0 a 0,5 SM)",9),rep("Pretos - [0,5 a 1,25 SM)",8),rep("Pretos - [0,5 a 0,75 SM",7),
+            rep("Pretos - [0 a 0,5 SM)",9),rep("Pretos - [0,5 a 1,25 SM)",8),rep("Pretos - [1,25 a 2 SM)",7),
             rep("Pretos - [2 SM a 4 SM)",6),rep("Pretos - [4+ SM)",5),
-            rep("Pardos - [0 a 0,5 SM)",4),rep("Pardos - [0,5 a 1,25 SM)",3),rep("Pardos - [0,5 a 0,75 SM",2),
+            rep("Pardos - [0 a 0,5 SM)",4),rep("Pardos - [0,5 a 1,25 SM)",3),rep("Pardos - [1,25 a 2 SM)",2),
             rep("Pardos - [2 SM a 4 SM)",1)
           ),
           cor_classe2 = c(
-            c("Brancos - [0,5 a 1,25 SM)","Brancos - [1,25 SM a 2 SM)",
+            c("Brancos - [0,5 a 1,25 SM)","Brancos - [1,25 a 2 SM)",
               "Brancos - [2 SM a 4 SM)","Brancos - [4+ SM)"),
-            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 a 2 SM)",
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Brancos - [1,25 SM a 2 SM)",
+            c("Brancos - [1,25 a 2 SM)",
               "Brancos - [2 SM a 4 SM)","Brancos - [4+ SM)"),
-            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 a 2 SM)",
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Brancos - [2 SM a 4 SM)","Brancos - [4+ SM)"),
-            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 a 2 SM)",
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Brancos - [4+ SM)"),
-            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 a 2 SM)",
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+            c("Pretos - [0 a 0,5 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 a 2 SM)",
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 SM a 2 SM)",
+            c("Pretos - [0,5 a 1,25 SM)","Pretos - [1,25 a 2 SM)",
               "Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pretos - [1,25 SM a 2 SM)","Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pretos - [1,25 a 2 SM)","Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Pretos - [2 SM a 4 SM)","Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Pretos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0 a 0,5 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 SM a 2 SM)",
+            c("Pardos - [0,5 a 1,25 SM)","Pardos - [1,25 a 2 SM)",
               "Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
-            c("Pardos - [1,25 SM a 2 SM)","Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
+            c("Pardos - [1,25 a 2 SM)","Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [2 SM a 4 SM)","Pardos - [4+ SM)"),
             c("Pardos - [4+ SM)")
           )
