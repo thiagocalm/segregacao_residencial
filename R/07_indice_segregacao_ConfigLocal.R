@@ -258,7 +258,7 @@ for(k in 1: length(RMs)){
     cor_raca = "cor_raca_d",
     raca_d = TRUE
   )
-  assign(paste0("D_",ano,"_",RM),D)
+  assign(paste0("D_2010_",RM),D)
 
   print(paste0("Finalizamos o cáculo do D para RM: ",RM,"!!!"))
 
@@ -267,3 +267,40 @@ for(k in 1: length(RMs)){
   rm(censo, D, QL)
   invisible(gc())
 }
+
+###
+# Criando tabelas para os resultados
+###
+
+RMs <- c("RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife")
+
+for(k in 1: length(RMs)){
+  RM = RMs[k]
+
+  print(paste0("Começando a RM: ",RM,"!!!"))
+
+  # D - geral
+
+  D_resultado_geral <- get(glue::glue("D_2010_{RM}"))$geral
+
+  # D - por classe
+  D_resultado_classes <- func_fazer_tabela(
+    get(glue::glue("D_2010_{RM}"))$classe |>
+      bind_rows(
+        get(glue::glue("D_2010_{RM}"))$classe |>
+          dplyr::select(grupo, D, cor_classe1 = cor_classe2, cor_classe2 = cor_classe1)
+      ) |>
+      distinct()
+  )
+  output <- list(
+    D_resultado_geral = D_resultado_geral,
+    D_resultado_classes = D_resultado_classes
+  )
+
+  assign(paste0("output_",RM),output)
+
+  # Proximo loop
+  print(paste0("Finalizamos a RM: ",RM,"!!!"))
+  invisible(gc())
+}
+

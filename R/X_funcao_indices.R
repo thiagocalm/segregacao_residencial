@@ -111,22 +111,6 @@ func_calcula_dissimilaridade <-
           var_estrato == 5 & cor_raca_d == 4 ~ "Pardos - [4+ SM)"
         )) |>
         as_survey_design(ids = id_pes, weights = peso)
-    }else{
-      df <- data |>
-        filter(situacao_dom == 1) |>
-        select(all_of(vars)) |>
-        select(var_estrato = all_of(var_estrato), everything()) |>
-        filter(idade >= 10) |>
-        mutate(classe_raca = case_when(
-          var_estrato == 0 & cor_raca == 1 ~ "Brancos baixo",
-          var_estrato == 1 & cor_raca == 1 ~ "Brancos intermediário",
-          var_estrato == 2 & cor_raca == 1 ~ "Brancos alto",
-          var_estrato == 0 & cor_raca == 2 ~ "Negros baixo",
-          var_estrato == 1 & cor_raca == 2 ~ "Negros intermediário",
-          var_estrato == 2 & cor_raca == 2 ~ "Negros alto",
-          TRUE ~ "Resto da população"
-        )) |>
-        as_survey_design(ids = id_pessoa, weights = peso)
     }
 
     print("Etapa de criação de variável finalizada...")
@@ -429,12 +413,12 @@ func_calcula_dissimilaridade <-
         select(-n_se) |>
         mutate(
           # brancos
-          pop_branca_0a025 = n[classe_raca == "Brancos - [0 a 0,25 SM)" & area_ponderacao == 0],
-          pop_branca_025a050 = n[classe_raca == "Brancos - [0,25 a 0,5 SM)" & area_ponderacao == 0],
-          pop_branca_050a075 = n[classe_raca == "Brancos - [0,5 a 0,75 SM)" & area_ponderacao == 0],
+          pop_branca_0a025   = n[classe_raca == "Brancos - [0 a 0,25 SM)"    & area_ponderacao == 0],
+          pop_branca_025a050 = n[classe_raca == "Brancos - [0,25 a 0,5 SM)"  & area_ponderacao == 0],
+          pop_branca_050a075 = n[classe_raca == "Brancos - [0,5 a 0,75 SM)"  & area_ponderacao == 0],
           pop_branca_075a125 = n[classe_raca == "Brancos - [0,75 a 1,25 SM)" & area_ponderacao == 0],
-          pop_branca_125a4 = n[classe_raca == "Brancos - [1,25 a 4 SM)" & area_ponderacao == 0],
-          pop_branca_4mais = n[classe_raca == "Brancos - [4+ SM)" & area_ponderacao == 0],
+          pop_branca_125a4   = n[classe_raca == "Brancos - [1,25 a 4 SM)"    & area_ponderacao == 0],
+          pop_branca_4mais   = n[classe_raca == "Brancos - [4+ SM)"          & area_ponderacao == 0],
 
           # pretos
           pop_preta_0a025 = n[classe_raca == "Pretos - [0 a 0,25 SM)" & area_ponderacao == 0],
@@ -1450,7 +1434,8 @@ func_calcula_dissimilaridade <-
             c("Pardos - [4+ SM)")
           )
         )
-    }else{
+    }
+    if(tipo_variavel == "EGP"){
       output_classe <- tabela_por_classe |>
         select(-n_se) |>
         mutate(pop_branca_baixo = n[classe_raca == "Brancos baixo" & area_ponderacao == 0],
@@ -1535,9 +1520,6 @@ func_calcula_dissimilaridade <-
                           "Branco intermediário",rep("Resto da população",6))
         )
     }
-
-
-
 
     if(por_classe == TRUE){
       output <- list(geral = output_geral,
