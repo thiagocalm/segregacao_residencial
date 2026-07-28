@@ -304,3 +304,287 @@ for(k in 1: length(RMs)){
   invisible(gc())
 }
 
+###
+# Resultados
+###
+
+output_RMRecife$D_resultado_geral
+output_RMRecife$D_resultado_classes
+
+# Calculo do QL ------------------------------------------------------------
+
+# funcao
+source("./R/X_funcao_indices.R")
+
+RMs <- c("RMCuritiba","RMFortaleza","RMPortoAlegre","RMRecife")
+
+for(k in 1: length(RMs)){
+  RM = RMs[k]
+
+  print(paste0("Começando a RM: ",RM,"!!!"))
+
+  # Importacao dos dados
+  censo <- censo_2010_RMs |> filter(rm == RM)
+
+  # definindo variavel renda e tipo de variavel
+  if(RM %in% c("RMFortaleza","RMRecife")){
+    var_renda <- "SM_NE"
+    tipo <- "SM_NE"
+  } else{
+    var_renda <- "SM_SUL"
+    tipo <- "SM_SUL"
+  }
+
+  # Calcula QL
+  QL <- func_calcula_quociente_locacional(
+    data = censo,
+    var_estrato = var_renda,
+    tipo_variavel = tipo,
+    cor_raca = "cor_raca_d",
+    raca_d = TRUE
+  )
+  assign(paste0("QL_2010_",RM),QL)
+
+  print(paste0("Finalizamos o cáculo do QL para RM: ",RM,"!!!"))
+
+  # Proximo loop
+  print(paste0("Finalizamos a RM: ",RM,"!!!"))
+  rm(censo, QL)
+  invisible(gc())
+}
+
+###
+# Resultados
+###
+
+### Curitiba
+# Brancos
+cor <- QL_2010_RMCuritiba$classe |>
+  select(starts_with("QL_branco")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMCuritiba$classe |>
+  select(starts_with("QL_branco")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+# Pretos
+cor <- QL_2010_RMCuritiba$classe |>
+  select(starts_with("QL_preto")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMCuritiba$classe |>
+  select(starts_with("QL_preto")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+# Pardos
+cor <- QL_2010_RMCuritiba$classe |>
+  select(starts_with("QL_pardo")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMCuritiba$classe |>
+  select(starts_with("QL_pardo")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+### Porto Alegre
+# Brancos
+cor <- QL_2010_RMPortoAlegre$classe |>
+  select(starts_with("QL_branco")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMPortoAlegre$classe |>
+  select(starts_with("QL_branco")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+# Pretos
+cor <- QL_2010_RMPortoAlegre$classe |>
+  select(starts_with("QL_preto")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMPortoAlegre$classe |>
+  select(starts_with("QL_preto")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+# Pardos
+cor <- QL_2010_RMPortoAlegre$classe |>
+  select(starts_with("QL_pardo")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMPortoAlegre$classe |>
+  select(starts_with("QL_pardo")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+### Fortaleza
+# Brancos
+cor <- QL_2010_RMFortaleza$classe |>
+  select(starts_with("QL_branco")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMFortaleza$classe |>
+  select(starts_with("QL_branco")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+# Pretos
+cor <- QL_2010_RMFortaleza$classe |>
+  select(starts_with("QL_preto")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMFortaleza$classe |>
+  select(starts_with("QL_preto")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+# Pardos
+cor <- QL_2010_RMFortaleza$classe |>
+  select(starts_with("QL_pardo")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMFortaleza$classe |>
+  select(starts_with("QL_pardo")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+### Recife
+# Brancos
+cor <- QL_2010_RMRecife$classe |>
+  select(starts_with("QL_branco")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMRecife$classe |>
+  select(starts_with("QL_branco")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+# Pretos
+cor <- QL_2010_RMRecife$classe |>
+  select(starts_with("QL_preto")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMRecife$classe |>
+  select(starts_with("QL_preto")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+# Pardos
+cor <- QL_2010_RMRecife$classe |>
+  select(starts_with("QL_pardo")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMRecife$classe |>
+  select(starts_with("QL_pardo")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)

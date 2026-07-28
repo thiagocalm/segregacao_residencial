@@ -56,17 +56,6 @@ invisible(gc())
 # Estrutura de rendimentos em decis para Brasil e RMs
 ###
 
-# censo_2000_RMs <- censo_2000_RMs |>
-#   # brasil
-#   mutate(
-#     decimos_renda_br = ntile(renda_pc_def, 10)
-#   ) |>
-#   # rm
-#   mutate(
-#     decimos_renda_rm = ntile(renda_pc_def, 10),
-#     .by = rm
-#   )
-
 ###
 # Estrutura de rendimentos em decis para Brasil, RMs e Raca
 ###
@@ -90,29 +79,6 @@ censo_2010_RMs <- censo_2010_RMs |>
 ###
 # Salarios minimos
 ###
-
-# censo_2000_RMs <- censo_2000_RMs |>
-#   mutate(
-#     SM_desagregado = case_when(
-#       renda_pc_def < 1212 * 0.25 ~ 1,
-#       renda_pc_def >= 1212* 0.25 & renda_pc_def < 1212 * 0.5 ~ 2,
-#       renda_pc_def >= 1212 * 0.5 & renda_pc_def < 1212 * 0.75 ~ 3,
-#       renda_pc_def >= 1212 * 0.75 & renda_pc_def < 1212 * 1 ~ 4,
-#       renda_pc_def >= 1212 & renda_pc_def < 1212 * 1.25 ~ 5,
-#       renda_pc_def >= 1212 * 1.25 & renda_pc_def < 1212 * 1.5 ~ 6,
-#       renda_pc_def >= 1212 * 1.5 & renda_pc_def < 1212 * 1.75 ~ 7,
-#       renda_pc_def >= 1212 * 1.75 & renda_pc_def < 1212 * 2 ~ 8,
-#       renda_pc_def >= 1212 * 2 & renda_pc_def < 1212 * 2.25 ~ 9,
-#       renda_pc_def >= 1212 * 2.25 & renda_pc_def < 1212 * 2.5 ~ 10,
-#       renda_pc_def >= 1212 * 2.5 & renda_pc_def < 1212 * 2.75 ~ 11,
-#       renda_pc_def >= 1212 * 2.75 & renda_pc_def < 1212 * 3 ~ 12,
-#       renda_pc_def >= 1212 * 3 & renda_pc_def < 1212 * 3.25 ~ 13,
-#       renda_pc_def >= 1212 * 3.25 & renda_pc_def < 1212 * 3.5 ~ 14,
-#       renda_pc_def >= 1212 * 3.5 & renda_pc_def < 1212 * 3.75 ~ 15,
-#       renda_pc_def >= 1212 * 3.75 & renda_pc_def < 1212 * 4 ~ 16,
-#       TRUE ~ 17
-#     )
-#   )
 
 censo_2010_RMs <- censo_2010_RMs |>
   mutate(
@@ -140,33 +106,6 @@ censo_2010_RMs <- censo_2010_RMs |>
 # Tabela 1 ----------------------------------------------------------------
 #' Renda mínima de cada percentil calculado dentro de cada RM e grupo racial
 #' Desagregacao: RMs e Brasil, Brancos, Pretos, Pardos
-
-# t1_2000 <- censo_2000_RMs |>
-#   summarise(
-#     min = min(renda_pc_def),
-#     .by = c(ano, rm, decimos_renda_rm)
-#   ) |>
-#   arrange(ano, rm, decimos_renda_rm) |>
-#   filter(
-#     decimos_renda_rm %in% c(1,5,10)
-#   ) |>
-#   mutate(
-#     raca = 0
-#   ) |>
-#   select(ano,rm, raca,decimos_renda_rm,min) |>
-#   bind_rows(
-#     censo_2000_RMs |>
-#       summarise(
-#         min = min(renda_pc_def),
-#         .by = c(ano, rm, cor_raca_d, decimos_renda_rm)
-#       ) |>
-#       arrange(ano, rm, cor_raca_d, decimos_renda_rm) |>
-#       filter(
-#         decimos_renda_rm %in% c(1,5,10),
-#         cor_raca_d != 0
-#       ) |>
-#       select(ano, rm, "raca" = cor_raca_d, decimos_renda_rm, min)
-#   )
 
 t1_2010 <- censo_2010_RMs |>
   summarise(
@@ -217,113 +156,9 @@ t1 <-
     values_from = min
   )
 
-#'------------------------------ Usando dados de decil de renda para Brasil
-#
-# # t1_2000 <- censo_2000_RMs |>
-# #   summarise(
-# #     min = min(renda_pc_def),
-# #     .by = c(ano, rm, decimos_renda_br)
-# #   ) |>
-# #   arrange(ano, rm, decimos_renda_br) |>
-# #   filter(
-# #     decimos_renda_br %in% c(1,5,10)
-# #   ) |>
-# #   mutate(
-# #     raca = 0
-# #   ) |>
-# #   select(ano,rm, raca,decimos_renda_br,min) |>
-# #   bind_rows(
-# #     censo_2000_RMs |>
-# #       summarise(
-# #         min = min(renda_pc_def),
-# #         .by = c(ano, rm, cor_raca_d, decimos_renda_br)
-# #       ) |>
-# #       arrange(ano, rm, cor_raca_d, decimos_renda_br) |>
-# #       filter(
-# #         decimos_renda_br %in% c(1,5,10),
-# #         cor_raca_d != 0
-# #       ) |>
-# #       select(ano, rm, "raca" = cor_raca_d, decimos_renda_br, min)
-# #   )
-#
-# t1_2010 <- censo_2010_RMs |>
-#   summarise(
-#     min = min(renda_pc),
-#     .by = c(ano, rm, decimos_renda_br)
-#   ) |>
-#   arrange(ano, rm, decimos_renda_br) |>
-#   filter(
-#     decimos_renda_br %in% c(2,5,10)
-#   ) |>
-#   mutate(
-#     raca = 0
-#   ) |>
-#   select(ano,rm, raca,decimos_renda_br,min) |>
-#   bind_rows(
-#     censo_2010_RMs |>
-#       summarise(
-#         min = min(renda_pc),
-#         .by = c(ano, rm, cor_raca_d, decimos_renda_br)
-#       ) |>
-#       arrange(ano, rm, cor_raca_d, decimos_renda_br) |>
-#       filter(
-#         decimos_renda_br %in% c(2,5,10),
-#         cor_raca_d != 0
-#       ) |>
-#       select(ano, rm, "raca" = cor_raca_d, decimos_renda_br, min)
-#   )
-#
-# # juntando dados para os anos
-#
-# t1 <-
-#   # t1_2000 |>
-#   bind_rows(t1_2010) |>
-#   mutate(
-#     raca = factor(
-#       raca,
-#       levels = c(0,1,2,4),
-#       labels = c("Brasil","Branco","Preto","Pardo")
-#     ),
-#     decimos_renda_br = factor(
-#       decimos_renda_br,
-#       levels = c(2,5,10),
-#       labels = c("P10","P50","P90")
-#     )
-#   ) |>
-#   pivot_wider(
-#     names_from = raca,
-#     values_from = min
-#   )
-
 # Tabela 2 ----------------------------------------------------------------
 #' Rendimento em SMs desagregados
 #' Desagregacao: RMs e Brasil, Brancos, Pretos, Pardos
-
-# t2_2000 <- censo_2000_RMs |>
-#   summarise(
-#     raca = 0,
-#     n = sum(peso),
-#     .by = c(ano, rm, SM_desagregado)
-#   ) |>
-#   mutate(
-#     perc = round(n / sum(n) * 100, 2),
-#     .by = c(ano, rm, raca)
-#   ) |>
-#   select(ano, rm, raca, everything()) |>
-#   bind_rows(
-#     censo_2000_RMs |>
-#       filter(cor_raca_d != 0) |>
-#       summarise(
-#         n = sum(peso),
-#         .by = c(ano, rm, cor_raca_d, SM_desagregado)
-#       ) |>
-#       mutate(
-#         perc = round(n / sum(n) * 100, 2),
-#         .by = c(ano, rm, cor_raca_d)
-#       ) |>
-#       select(ano, rm, "raca" = cor_raca_d, everything())
-#   ) |>
-#   arrange(ano, rm, raca, SM_desagregado)
 
 t2_2010 <- censo_2010_RMs |>
   summarise(

@@ -1557,6 +1557,7 @@ func_calcula_quociente_locacional <-
     data,
     var_estrato,
     cor_raca = "cor_raca",
+    raca_d = FALSE,
     area_ponderacao = "area_ponderacao",
     idade = "idade",
     PO = "PO",
@@ -1666,21 +1667,39 @@ func_calcula_quociente_locacional <-
     print("Etapa de criação de variável finalizada...")
 
     # cria tabela de base para calculo
-    tabela <- df |>
-      group_by(cor_raca) |>
-      summarise(area_ponderacao = 0,
-                prop = survey_mean(na.rm = T)) |>
-      ungroup() |>
-      select(area_ponderacao, cor_raca, everything()) |>
-      bind_rows(
-        df |>
-          group_by(area_ponderacao, cor_raca) |>
-          summarise(prop = survey_mean(na.rm = T)) |>
-          ungroup() |>
-          select(area_ponderacao, cor_raca, everything())
-      ) |>
-      select(-prop_se)
-
+    if(raca_d == TRUE){
+      # cria tabela de base para calculo
+      tabela <- df |>
+        group_by(cor_raca_d) |>
+        summarise(area_ponderacao = 0,
+                  prop = survey_mean(na.rm = T)) |>
+        ungroup() |>
+        select(area_ponderacao, cor_raca_d, everything()) |>
+        bind_rows(
+          df |>
+            group_by(area_ponderacao, cor_raca_d) |>
+            summarise(prop = survey_mean(na.rm = T)) |>
+            ungroup() |>
+            select(area_ponderacao, cor_raca_d, everything())
+        ) |>
+        select(-prop_se)
+    } else{
+      # cria tabela de base para calculo
+      tabela <- df |>
+        group_by(cor_raca) |>
+        summarise(area_ponderacao = 0,
+                  prop = survey_mean(na.rm = T)) |>
+        ungroup() |>
+        select(area_ponderacao, cor_raca, everything()) |>
+        bind_rows(
+          df |>
+            group_by(area_ponderacao, cor_raca) |>
+            summarise(prop = survey_mean(na.rm = T)) |>
+            ungroup() |>
+            select(area_ponderacao, cor_raca, everything())
+        ) |>
+        select(-prop_se)
+    }
     if(por_classe == TRUE){
       tabela_por_classe <- df |>
         select(classe_raca) |>
@@ -1704,13 +1723,15 @@ func_calcula_quociente_locacional <-
 
     # calcula o indice
     output_geral <- tabela |>
-      mutate(prop_branca = prop[cor_raca == 1 & area_ponderacao == 0],
-             prop_negra = prop[cor_raca == 2 & area_ponderacao == 0]) |>
+      mutate(prop_branca = prop[cor_raca_d == 1 & area_ponderacao == 0],
+             prop_preta  = prop[cor_raca_d == 2 & area_ponderacao == 0],
+             prop_parda  = prop[cor_raca_d == 4 & area_ponderacao == 0]) |>
       filter(area_ponderacao != 0) |>
-      pivot_wider(names_from = cor_raca, values_from = prop) |>
-      mutate(across(c(`1`,`2`), ~ replace_na(.x, 0))) |>
+      pivot_wider(names_from = cor_raca_d, values_from = prop) |>
+      mutate(across(c(`0`,`1`,`2`,`4`), ~ replace_na(.x, 0))) |>
       mutate(QL_branca = `1`/prop_branca,
-             QL_negra = `2`/prop_negra)
+             QL_preta  = `2`/prop_preta,
+             QL_parda  = `4`/prop_parda)
 
     if(tipo_variavel == "SM"){
       output_classe <- tabela_por_classe |>
@@ -1749,6 +1770,7 @@ func_calcula_quociente_locacional <-
     }
     if(tipo_variavel == "SM_NE"){
       output_classe <- tabela_por_classe |>
+        filter(!is.na(classe_raca)) |>
         mutate(
           # brancos
           prop_branca_0a025   = prop[classe_raca == "Brancos - [0 a 0,25 SM)"    & area_ponderacao == 0],
@@ -1815,7 +1837,7 @@ func_calcula_quociente_locacional <-
     }
     if(tipo_variavel == "SM_SUL"){
       output_classe <- tabela_por_classe |>
-        select(-n_se) |>
+        filter(!is.na(classe_raca)) |>
         mutate(
           # brancos
           prop_branca_0a050   = prop[classe_raca == "Brancos - [0 a 0,5 SM)" & area_ponderacao == 0],
@@ -1836,39 +1858,38 @@ func_calcula_quociente_locacional <-
           prop_parda_050a125  = prop[classe_raca == "Pardos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
           prop_parda_125a2    = prop[classe_raca == "Pardos - [1,25 a 2 SM)" & area_ponderacao == 0],
           prop_parda_2a4      = prop[classe_raca == "Pardos - [2 SM a 4 SM)" & area_ponderacao == 0],
-          prop_parda_4mais    = prop[classe_raca == "Pardos - [4+ SM)" & area_ponderacao == 0],
+          prop_parda_4mais    = prop[classe_raca == "Pardos - [4+ SM)" & area_ponderacao == 0]
         ) |>
         pivot_wider(names_from = classe_raca, values_from = prop) |>
-        filter(area_ponderacao != 0) |>
         mutate(
-          across(c(`Brancos - [0 a 0,50 SM)`,`Brancos - [0,50 a 1,25 SM)`,`Brancos - [1,25 a 2 SM)`,
-                   `Brancos - [2 SM a 4 SM)`,`Brancos - c`,
+          across(c(`Brancos - [0 a 0,5 SM)`,`Brancos - [0,5 a 1,25 SM)`,`Brancos - [1,25 a 2 SM)`,
+                   `Brancos - [2 SM a 4 SM)`,`Brancos - [4+ SM)`,
 
-                   `Pretos - [0 a 0,50 SM)`,`Pretos - [0,50 a 1,25 SM)`,`Pretos - [1,25 a 2 SM)`,
+                   `Pretos - [0 a 0,5 SM)`,`Pretos - [0,5 a 1,25 SM)`,`Pretos - [1,25 a 2 SM)`,
                    `Pretos - [2 SM a 4 SM)`,`Pretos - [4+ SM)`,
 
-                   `Pardos - [0 a 0,50 SM)`,`Pardos - [0,50 a 1,25 SM)`,`Pardos - [1,25 a 2 SM)`,
+                   `Pardos - [0 a 0,5 SM)`,`Pardos - [0,5 a 1,25 SM)`,`Pardos - [1,25 a 2 SM)`,
                    `Pardos - [2 SM a 4 SM)`,`Pardos - [4+ SM)`),
                  ~ replace_na(.x, 0))
         ) |>
         mutate(
           # Brancos
           QL_branco_0a050   = `Brancos - [0 a 0,5 SM)`/prop_branca_0a050,
-          QL_branco_050a125 = `Brancos - [0,50 a 1,25 SM)`/prop_branca_050a125,
+          QL_branco_050a125 = `Brancos - [0,5 a 1,25 SM)`/prop_branca_050a125,
           QL_branco_125a2   = `Brancos - [1,25 a 2 SM)`/prop_branca_125a2,
           QL_branco_2a4     = `Brancos - [2 SM a 4 SM)`/prop_branca_2a4,
           QL_branco_4mais   = `Brancos - [4+ SM)`/prop_branca_4mais,
 
           # Pretos
           QL_preto_0a050   = `Pretos - [0 a 0,5 SM)`/prop_preta_0a050,
-          QL_preto_050a125 = `Pretos - [0,50 a 1,25 SM)`/prop_preta_050a125,
+          QL_preto_050a125 = `Pretos - [0,5 a 1,25 SM)`/prop_preta_050a125,
           QL_preto_125a2   = `Pretos - [1,25 a 2 SM)`/prop_preta_125a2,
           QL_preto_2a4     = `Pretos - [2 SM a 4 SM)`/prop_preta_2a4,
           QL_preto_4mais   = `Pretos - [4+ SM)`/prop_preta_4mais,
 
           # x Pardos
           QL_pardo_0a050   = `Pardos - [0 a 0,5 SM)`/prop_parda_0a050,
-          QL_pardo_050a125 = `Pardos - [0,50 a 1,25 SM)`/prop_parda_050a125,
+          QL_pardo_050a125 = `Pardos - [0,5 a 1,25 SM)`/prop_parda_050a125,
           QL_pardo_125a2   = `Pardos - [1,25 a 2 SM)`/prop_parda_125a2,
           QL_pardo_2a4     = `Pardos - [2 SM a 4 SM)`/prop_parda_2a4,
           QL_pardo_4mais   = `Pardos - [4+ SM)`/prop_parda_4mais,
@@ -1901,9 +1922,11 @@ func_calcula_quociente_locacional <-
     output_geral_sintese <- output_geral |>
       summarise(
         mean_QL_branca = mean(QL_branca),
-        mean_QL_negra = mean(QL_negra),
+        mean_QL_preta = mean(QL_preta),
+        mean_QL_parda = mean(QL_parda),
         desv_pad_QL_branca = sd(QL_branca),
-        desv_pad_QL_negra = sd(QL_negra)
+        desv_pad_QL_preta = sd(QL_preta),
+        desv_pad_QL_parda = sd(QL_parda)
       )
 
     if(por_classe == TRUE){
@@ -1936,51 +1959,51 @@ func_calcula_quociente_locacional <-
           summarise(
             ## Brancos
             # media
-            mean_QL_Brancos_4mais   = mean(QL_Brancos_4mais),
-            mean_QL_Brancos_125a4   = mean(QL_Brancos_125a4),
-            mean_QL_Brancos_075a125 = mean(QL_Brancos_075a125),
-            mean_QL_Brancos_050a075 = mean(QL_Brancos_050a075),
-            mean_QL_Brancos_025a050 = mean(QL_Brancos_025a050),
-            mean_QL_Brancos_0a025   = mean(QL_Brancos_0a025),
+            mean_QL_Brancos_4mais   = mean(QL_branco_4mais),
+            mean_QL_Brancos_125a4   = mean(QL_branco_125a4),
+            mean_QL_Brancos_075a125 = mean(QL_branco_075a125),
+            mean_QL_Brancos_050a075 = mean(QL_branco_050a075),
+            mean_QL_Brancos_025a050 = mean(QL_branco_025a050),
+            mean_QL_Brancos_0a025   = mean(QL_branco_0a025),
             # desv pad
-            desv_pad_QL_Brancos_4mais   = sd(QL_Brancos_4mais),
-            desv_pad_QL_Brancos_125a4   = sd(QL_Brancos_125a4),
-            desv_pad_QL_Brancos_075a125 = sd(QL_Brancos_075a125),
-            desv_pad_QL_Brancos_050a075 = sd(QL_Brancos_050a075),
-            desv_pad_QL_Brancos_025a050 = sd(QL_Brancos_025a050),
-            desv_pad_QL_Brancos_0a025   = sd(QL_Brancos_0a025),
+            desv_pad_QL_Brancos_4mais   = sd(QL_branco_4mais),
+            desv_pad_QL_Brancos_125a4   = sd(QL_branco_125a4),
+            desv_pad_QL_Brancos_075a125 = sd(QL_branco_075a125),
+            desv_pad_QL_Brancos_050a075 = sd(QL_branco_050a075),
+            desv_pad_QL_Brancos_025a050 = sd(QL_branco_025a050),
+            desv_pad_QL_Brancos_0a025   = sd(QL_branco_0a025),
 
             ## Pretos
             # media
-            mean_QL_Pretos_4mais   = mean(QL_Pretos_4mais),
-            mean_QL_Pretos_125a4   = mean(QL_Pretos_125a4),
-            mean_QL_Pretos_075a125 = mean(QL_Pretos_075a125),
-            mean_QL_Pretos_050a075 = mean(QL_Pretos_050a075),
-            mean_QL_Pretos_025a050 = mean(QL_Pretos_025a050),
-            mean_QL_Pretos_0a025   = mean(QL_Pretos_0a025),
+            mean_QL_Pretos_4mais   = mean(QL_preto_4mais),
+            mean_QL_Pretos_125a4   = mean(QL_preto_125a4),
+            mean_QL_Pretos_075a125 = mean(QL_preto_075a125),
+            mean_QL_Pretos_050a075 = mean(QL_preto_050a075),
+            mean_QL_Pretos_025a050 = mean(QL_preto_025a050),
+            mean_QL_Pretos_0a025   = mean(QL_preto_0a025),
             # desv pad
-            desv_pad_QL_Pretos_4mais   = sd(QL_Pretos_4mais),
-            desv_pad_QL_Pretos_125a4   = sd(QL_Pretos_125a4),
-            desv_pad_QL_Pretos_075a125 = sd(QL_Pretos_075a125),
-            desv_pad_QL_Pretos_050a075 = sd(QL_Pretos_050a075),
-            desv_pad_QL_Pretos_025a050 = sd(QL_Pretos_025a050),
-            desv_pad_QL_Pretos_0a025   = sd(QL_Pretos_0a025),
+            desv_pad_QL_Pretos_4mais   = sd(QL_preto_4mais),
+            desv_pad_QL_Pretos_125a4   = sd(QL_preto_125a4),
+            desv_pad_QL_Pretos_075a125 = sd(QL_preto_075a125),
+            desv_pad_QL_Pretos_050a075 = sd(QL_preto_050a075),
+            desv_pad_QL_Pretos_025a050 = sd(QL_preto_025a050),
+            desv_pad_QL_Pretos_0a025   = sd(QL_preto_0a025),
 
             ## Pardos
             # media
-            mean_QL_Pardos_4mais   = mean(QL_Pardos_4mais),
-            mean_QL_Pardos_125a4   = mean(QL_Pardos_125a4),
-            mean_QL_Pardos_075a125 = mean(QL_Pardos_075a125),
-            mean_QL_Pardos_050a075 = mean(QL_Pardos_050a075),
-            mean_QL_Pardos_025a050 = mean(QL_Pardos_025a050),
-            mean_QL_Pardos_0a025   = mean(QL_Pardos_0a025),
+            mean_QL_Pardos_4mais   = mean(QL_pardo_4mais),
+            mean_QL_Pardos_125a4   = mean(QL_pardo_125a4),
+            mean_QL_Pardos_075a125 = mean(QL_pardo_075a125),
+            mean_QL_Pardos_050a075 = mean(QL_pardo_050a075),
+            mean_QL_Pardos_025a050 = mean(QL_pardo_025a050),
+            mean_QL_Pardos_0a025   = mean(QL_pardo_0a025),
             # desv pad
-            desv_pad_QL_Pardos_4mais   = sd(QL_Pardos_4mais),
-            desv_pad_QL_Pardos_125a4   = sd(QL_Pardos_125a4),
-            desv_pad_QL_Pardos_075a125 = sd(QL_Pardos_075a125),
-            desv_pad_QL_Pardos_050a075 = sd(QL_Pardos_050a075),
-            desv_pad_QL_Pardos_025a050 = sd(QL_Pardos_025a050),
-            desv_pad_QL_Pardos_0a025   = sd(QL_Pardos_0a025)
+            desv_pad_QL_Pardos_4mais   = sd(QL_pardo_4mais),
+            desv_pad_QL_Pardos_125a4   = sd(QL_pardo_125a4),
+            desv_pad_QL_Pardos_075a125 = sd(QL_pardo_075a125),
+            desv_pad_QL_Pardos_050a075 = sd(QL_pardo_050a075),
+            desv_pad_QL_Pardos_025a050 = sd(QL_pardo_025a050),
+            desv_pad_QL_Pardos_0a025   = sd(QL_pardo_0a025)
           )
       }
       if(tipo_variavel == "SM_SUL"){
@@ -1988,45 +2011,45 @@ func_calcula_quociente_locacional <-
           summarise(
             ## Brancos
             # media
-            mean_QL_Brancos_4mais   = mean(QL_Brancos_4mais),
-            mean_QL_Brancos_2a4   = mean(QL_Brancos_2a4),
-            mean_QL_Brancos_125a2 = mean(QL_Brancos_125a2),
-            mean_QL_Brancos_050a125 = mean(QL_Brancos_050a125),
-            mean_QL_Brancos_0a050   = mean(QL_Brancos_0a050),
+            mean_QL_Brancos_4mais   = mean(QL_branco_4mais),
+            mean_QL_Brancos_2a4     = mean(QL_branco_2a4),
+            mean_QL_Brancos_125a2   = mean(QL_branco_125a2),
+            mean_QL_Brancos_050a125 = mean(QL_branco_050a125),
+            mean_QL_Brancos_0a050   = mean(QL_branco_0a050),
             # desv pad
-            desv_pad_QL_Brancos_4mais   = sd(QL_Brancos_4mais),
-            desv_pad_QL_Brancos_2a4   = sd(QL_Brancos_2a4),
-            desv_pad_QL_Brancos_125a2 = sd(QL_Brancos_125a2),
-            desv_pad_QL_Brancos_050a125 = sd(QL_Brancos_050a125),
-            desv_pad_QL_Brancos_0a050   = sd(QL_Brancos_0a050),
+            desv_pad_QL_Brancos_4mais   = sd(QL_branco_4mais),
+            desv_pad_QL_Brancos_2a4     = sd(QL_branco_2a4),
+            desv_pad_QL_Brancos_125a2   = sd(QL_branco_125a2),
+            desv_pad_QL_Brancos_050a125 = sd(QL_branco_050a125),
+            desv_pad_QL_Brancos_0a050   = sd(QL_branco_0a050),
 
             ## Pretos
             # media
-            mean_QL_Pretos_4mais   = mean(QL_Pretos_4mais),
-            mean_QL_Pretos_2a4   = mean(QL_Pretos_2a4),
-            mean_QL_Pretos_125a2 = mean(QL_Pretos_125a2),
-            mean_QL_Pretos_050a125 = mean(QL_Pretos_050a125),
-            mean_QL_Pretos_0a050   = mean(QL_Pretos_0a050),
+            mean_QL_Pretos_4mais   = mean(QL_preto_4mais),
+            mean_QL_Pretos_2a4     = mean(QL_preto_2a4),
+            mean_QL_Pretos_125a2   = mean(QL_preto_125a2),
+            mean_QL_Pretos_050a125 = mean(QL_preto_050a125),
+            mean_QL_Pretos_0a050   = mean(QL_preto_0a050),
             # desv pad
-            desv_pad_QL_Pretos_4mais   = sd(QL_Pretos_4mais),
-            desv_pad_QL_Pretos_2a4   = sd(QL_Pretos_2a4),
-            desv_pad_QL_Pretos_125a2 = sd(QL_Pretos_125a2),
-            desv_pad_QL_Pretos_050a125 = sd(QL_Pretos_050a125),
-            desv_pad_QL_Pretos_0a050   = sd(QL_Pretos_0a050),
+            desv_pad_QL_Pretos_4mais   = sd(QL_preto_4mais),
+            desv_pad_QL_Pretos_2a4     = sd(QL_preto_2a4),
+            desv_pad_QL_Pretos_125a2   = sd(QL_preto_125a2),
+            desv_pad_QL_Pretos_050a125 = sd(QL_preto_050a125),
+            desv_pad_QL_Pretos_0a050   = sd(QL_preto_0a050),
 
             ## Pardos
             # media
-            mean_QL_Pardos_4mais   = mean(QL_Pardos_4mais),
-            mean_QL_Pardos_2a4   = mean(QL_Pardos_2a4),
-            mean_QL_Pardos_125a2 = mean(QL_Pardos_125a2),
-            mean_QL_Pardos_050a125 = mean(QL_Pardos_050a125),
-            mean_QL_Pardos_0a050   = mean(QL_Pardos_0a050),
+            mean_QL_Pardos_4mais   = mean(QL_pardo_4mais),
+            mean_QL_Pardos_2a4     = mean(QL_pardo_2a4),
+            mean_QL_Pardos_125a2   = mean(QL_pardo_125a2),
+            mean_QL_Pardos_050a125 = mean(QL_pardo_050a125),
+            mean_QL_Pardos_0a050   = mean(QL_pardo_0a050),
             # desv pad
-            desv_pad_QL_Pardos_4mais   = sd(QL_Pardos_4mais),
-            desv_pad_QL_Pardos_2a4   = sd(QL_Pardos_2a4),
-            desv_pad_QL_Pardos_125a2 = sd(QL_Pardos_125a2),
-            desv_pad_QL_Pardos_050a125 = sd(QL_Pardos_050a125),
-            desv_pad_QL_Pardos_0a050   = sd(QL_Pardos_0a050)
+            desv_pad_QL_Pardos_4mais   = sd(QL_pardo_4mais),
+            desv_pad_QL_Pardos_2a4     = sd(QL_pardo_2a4),
+            desv_pad_QL_Pardos_125a2   = sd(QL_pardo_125a2),
+            desv_pad_QL_Pardos_050a125 = sd(QL_pardo_050a125),
+            desv_pad_QL_Pardos_0a050   = sd(QL_pardo_0a050)
           )
       }
       if(tipo == "EGP"){
