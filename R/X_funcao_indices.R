@@ -1604,22 +1604,63 @@ func_calcula_quociente_locacional <-
           TRUE ~ "Resto da população"
         )) |>
         as_survey_design(ids = id_pes, weights = peso)
-    }else{
+    }
+    if(tipo_variavel == "SM_NE"){
       df <- data |>
         filter(situacao_dom == 1) |>
         select(all_of(vars)) |>
         select(var_estrato = all_of(var_estrato), everything()) |>
-        filter(idade >= 10) |>
         mutate(classe_raca = case_when(
-          var_estrato == 0 & cor_raca == 1 ~ "Brancos baixo",
-          var_estrato == 1 & cor_raca == 1 ~ "Brancos intermediário",
-          var_estrato == 2 & cor_raca == 1 ~ "Brancos alto",
-          var_estrato == 0 & cor_raca == 2 ~ "Negros baixo",
-          var_estrato == 1 & cor_raca == 2 ~ "Negros intermediário",
-          var_estrato == 2 & cor_raca == 2 ~ "Negros alto",
-          TRUE ~ "Resto da população"
+          # Brancos
+          var_estrato == 1 & cor_raca_d == 1 ~ "Brancos - [0 a 0,25 SM)",
+          var_estrato == 2 & cor_raca_d == 1 ~ "Brancos - [0,25 a 0,5 SM)",
+          var_estrato == 3 & cor_raca_d == 1 ~ "Brancos - [0,5 a 0,75 SM)",
+          var_estrato == 4 & cor_raca_d == 1 ~ "Brancos - [0,75 a 1,25 SM)",
+          var_estrato == 5 & cor_raca_d == 1 ~ "Brancos - [1,25 a 4 SM)",
+          var_estrato == 6 & cor_raca_d == 1 ~ "Brancos - [4+ SM)",
+          # Pretos
+          var_estrato == 1 & cor_raca_d == 2 ~ "Pretos - [0 a 0,25 SM)",
+          var_estrato == 2 & cor_raca_d == 2 ~ "Pretos - [0,25 a 0,5 SM)",
+          var_estrato == 3 & cor_raca_d == 2 ~ "Pretos - [0,5 a 0,75 SM)",
+          var_estrato == 4 & cor_raca_d == 2 ~ "Pretos - [0,75 a 1,25 SM)",
+          var_estrato == 5 & cor_raca_d == 2 ~ "Pretos - [1,25 a 4 SM)",
+          var_estrato == 6 & cor_raca_d == 2 ~ "Pretos - [4+ SM)",
+          # Pardos
+          var_estrato == 1 & cor_raca_d == 4 ~ "Pardos - [0 a 0,25 SM)",
+          var_estrato == 2 & cor_raca_d == 4 ~ "Pardos - [0,25 a 0,5 SM)",
+          var_estrato == 3 & cor_raca_d == 4 ~ "Pardos - [0,5 a 0,75 SM)",
+          var_estrato == 4 & cor_raca_d == 4 ~ "Pardos - [0,75 a 1,25 SM)",
+          var_estrato == 5 & cor_raca_d == 4 ~ "Pardos - [1,25 a 4 SM)",
+          var_estrato == 6 & cor_raca_d == 4 ~ "Pardos - [4+ SM)"
         )) |>
-        as_survey_design(ids = id_pessoa, weights = peso)
+        as_survey_design(ids = id_pes, weights = peso)
+    }
+    if(tipo_variavel == "SM_SUL"){
+      df <- data |>
+        filter(situacao_dom == 1) |>
+        select(all_of(vars)) |>
+        select(var_estrato = all_of(var_estrato), everything()) |>
+        mutate(classe_raca = case_when(
+          # Brancos
+          var_estrato == 1 & cor_raca_d == 1 ~ "Brancos - [0 a 0,5 SM)",
+          var_estrato == 2 & cor_raca_d == 1 ~ "Brancos - [0,5 a 1,25 SM)",
+          var_estrato == 3 & cor_raca_d == 1 ~ "Brancos - [1,25 a 2 SM)",
+          var_estrato == 4 & cor_raca_d == 1 ~ "Brancos - [2 SM a 4 SM)",
+          var_estrato == 5 & cor_raca_d == 1 ~ "Brancos - [4+ SM)",
+          # Pretos
+          var_estrato == 1 & cor_raca_d == 2 ~ "Pretos - [0 a 0,5 SM)",
+          var_estrato == 2 & cor_raca_d == 2 ~ "Pretos - [0,5 a 1,25 SM)",
+          var_estrato == 3 & cor_raca_d == 2 ~ "Pretos - [1,25 a 2 SM)",
+          var_estrato == 4 & cor_raca_d == 2 ~ "Pretos - [2 SM a 4 SM)",
+          var_estrato == 5 & cor_raca_d == 2 ~ "Pretos - [4+ SM)",
+          # Pardos
+          var_estrato == 1 & cor_raca_d == 4 ~ "Pardos - [0 a 0,5 SM)",
+          var_estrato == 2 & cor_raca_d == 4 ~ "Pardos - [0,5 a 1,25 SM)",
+          var_estrato == 3 & cor_raca_d == 4 ~ "Pardos - [1,25 a 2 SM)",
+          var_estrato == 4 & cor_raca_d == 4 ~ "Pardos - [2 SM a 4 SM)",
+          var_estrato == 5 & cor_raca_d == 4 ~ "Pardos - [4+ SM)"
+        )) |>
+        as_survey_design(ids = id_pes, weights = peso)
     }
 
     print("Etapa de criação de variável finalizada...")
@@ -1705,7 +1746,135 @@ func_calcula_quociente_locacional <-
           QL_Negros_meioa1SM = `Negros meio a 1SM`/prop_negra_meioa1SM,
           QL_Negros_meioSM = `Negros ate meio SM`/prop_negra_meioSM
         )
-    }else{
+    }
+    if(tipo_variavel == "SM_NE"){
+      output_classe <- tabela_por_classe |>
+        mutate(
+          # brancos
+          prop_branca_0a025   = prop[classe_raca == "Brancos - [0 a 0,25 SM)"    & area_ponderacao == 0],
+          prop_branca_025a050 = prop[classe_raca == "Brancos - [0,25 a 0,5 SM)"  & area_ponderacao == 0],
+          prop_branca_050a075 = prop[classe_raca == "Brancos - [0,5 a 0,75 SM)"  & area_ponderacao == 0],
+          prop_branca_075a125 = prop[classe_raca == "Brancos - [0,75 a 1,25 SM)" & area_ponderacao == 0],
+          prop_branca_125a4   = prop[classe_raca == "Brancos - [1,25 a 4 SM)"    & area_ponderacao == 0],
+          prop_branca_4mais   = prop[classe_raca == "Brancos - [4+ SM)"          & area_ponderacao == 0],
+
+          # pretos
+          prop_preta_0a025     = prop[classe_raca == "Pretos - [0 a 0,25 SM)" & area_ponderacao == 0],
+          prop_preta_025a050   = prop[classe_raca == "Pretos - [0,25 a 0,5 SM)" & area_ponderacao == 0],
+          prop_preta_050a075   = prop[classe_raca == "Pretos - [0,5 a 0,75 SM)" & area_ponderacao == 0],
+          prop_preta_075a125   = prop[classe_raca == "Pretos - [0,75 a 1,25 SM)" & area_ponderacao == 0],
+          prop_preta_125a4     = prop[classe_raca == "Pretos - [1,25 a 4 SM)" & area_ponderacao == 0],
+          prop_preta_4mais     = prop[classe_raca == "Pretos - [4+ SM)" & area_ponderacao == 0],
+
+          # pardos
+          prop_parda_0a025     = prop[classe_raca == "Pardos - [0 a 0,25 SM)" & area_ponderacao == 0],
+          prop_parda_025a050   = prop[classe_raca == "Pardos - [0,25 a 0,5 SM)" & area_ponderacao == 0],
+          prop_parda_050a075   = prop[classe_raca == "Pardos - [0,5 a 0,75 SM)" & area_ponderacao == 0],
+          prop_parda_075a125   = prop[classe_raca == "Pardos - [0,75 a 1,25 SM)" & area_ponderacao == 0],
+          prop_parda_125a4     = prop[classe_raca == "Pardos - [1,25 a 4 SM)" & area_ponderacao == 0],
+          prop_parda_4mais     = prop[classe_raca == "Pardos - [4+ SM)" & area_ponderacao == 0],
+        ) |>
+        pivot_wider(names_from = classe_raca, values_from = prop) |>
+        filter(area_ponderacao != 0) |>
+        mutate(
+          across(c(`Brancos - [0 a 0,25 SM)`,`Brancos - [0,25 a 0,5 SM)`,`Brancos - [0,5 a 0,75 SM)`,
+                   `Brancos - [0,75 a 1,25 SM)`,`Brancos - [1,25 a 4 SM)`,`Brancos - [4+ SM)`,
+
+                   `Pretos - [0 a 0,25 SM)`,`Pretos - [0,25 a 0,5 SM)`,`Pretos - [0,5 a 0,75 SM)`,
+                   `Pretos - [0,75 a 1,25 SM)`,`Pretos - [1,25 a 4 SM)`,`Pretos - [4+ SM)`,
+
+                   `Pardos - [0 a 0,25 SM)`,`Pardos - [0,25 a 0,5 SM)`,`Pardos - [0,5 a 0,75 SM)`,
+                   `Pardos - [0,75 a 1,25 SM)`,`Pardos - [1,25 a 4 SM)`,`Pardos - [4+ SM)`),
+                 ~ replace_na(.x, 0))
+        ) |>
+        mutate(
+          # Brancos
+          QL_branco_0a025   = `Brancos - [0 a 0,25 SM)`/prop_branca_0a025,
+          QL_branco_025a050 = `Brancos - [0,25 a 0,5 SM)`/prop_branca_025a050,
+          QL_branco_050a075 = `Brancos - [0,5 a 0,75 SM)`/prop_branca_050a075,
+          QL_branco_075a125 = `Brancos - [0,75 a 1,25 SM)`/prop_preta_075a125,
+          QL_branco_125a4   = `Brancos - [1,25 a 4 SM)`/prop_branca_125a4,
+          QL_branco_4mais   = `Brancos - [4+ SM)`/prop_branca_4mais,
+
+          # Pretos
+          QL_preto_0a025   = `Pretos - [0 a 0,25 SM)`/prop_preta_0a025,
+          QL_preto_025a050 = `Pretos - [0,25 a 0,5 SM)`/prop_preta_025a050,
+          QL_preto_050a075 = `Pretos - [0,5 a 0,75 SM)`/prop_preta_050a075,
+          QL_preto_075a125 = `Pretos - [0,75 a 1,25 SM)`/prop_preta_075a125,
+          QL_preto_125a4   = `Pretos - [1,25 a 4 SM)`/prop_preta_125a4,
+          QL_preto_4mais   = `Pretos - [4+ SM)`/prop_preta_4mais,
+
+          # x Pardos
+          QL_pardo_0a025   = `Pardos - [0 a 0,25 SM)`/prop_parda_0a025,
+          QL_pardo_025a050 = `Pardos - [0,25 a 0,5 SM)`/prop_parda_025a050,
+          QL_pardo_050a075 = `Pardos - [0,5 a 0,75 SM)`/prop_parda_050a075,
+          QL_pardo_075a125 = `Pardos - [0,75 a 1,25 SM)`/prop_preta_075a125,
+          QL_pardo_125a4   = `Pardos - [1,25 a 4 SM)`/prop_parda_125a4,
+          QL_pardo_4mais   = `Pardos - [4+ SM)`/prop_parda_4mais
+        )
+    }
+    if(tipo_variavel == "SM_SUL"){
+      output_classe <- tabela_por_classe |>
+        select(-n_se) |>
+        mutate(
+          # brancos
+          prop_branca_0a050   = prop[classe_raca == "Brancos - [0 a 0,5 SM)" & area_ponderacao == 0],
+          prop_branca_050a125 = prop[classe_raca == "Brancos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
+          prop_branca_125a2   = prop[classe_raca == "Brancos - [1,25 a 2 SM)" & area_ponderacao == 0],
+          prop_branca_2a4     = prop[classe_raca == "Brancos - [2 SM a 4 SM)" & area_ponderacao == 0],
+          prop_branca_4mais   = prop[classe_raca == "Brancos - [4+ SM)" & area_ponderacao == 0],
+
+          # pretos
+          prop_preta_0a050    = prop[classe_raca == "Pretos - [0 a 0,5 SM)" & area_ponderacao == 0],
+          prop_preta_050a125  = prop[classe_raca == "Pretos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
+          prop_preta_125a2    = prop[classe_raca == "Pretos - [1,25 a 2 SM)" & area_ponderacao == 0],
+          prop_preta_2a4      = prop[classe_raca == "Pretos - [2 SM a 4 SM)" & area_ponderacao == 0],
+          prop_preta_4mais    = prop[classe_raca == "Pretos - [4+ SM)" & area_ponderacao == 0],
+
+          # pardos
+          prop_parda_0a050    = prop[classe_raca == "Pardos - [0 a 0,5 SM)" & area_ponderacao == 0],
+          prop_parda_050a125  = prop[classe_raca == "Pardos - [0,5 a 1,25 SM)" & area_ponderacao == 0],
+          prop_parda_125a2    = prop[classe_raca == "Pardos - [1,25 a 2 SM)" & area_ponderacao == 0],
+          prop_parda_2a4      = prop[classe_raca == "Pardos - [2 SM a 4 SM)" & area_ponderacao == 0],
+          prop_parda_4mais    = prop[classe_raca == "Pardos - [4+ SM)" & area_ponderacao == 0],
+        ) |>
+        pivot_wider(names_from = classe_raca, values_from = prop) |>
+        filter(area_ponderacao != 0) |>
+        mutate(
+          across(c(`Brancos - [0 a 0,50 SM)`,`Brancos - [0,50 a 1,25 SM)`,`Brancos - [1,25 a 2 SM)`,
+                   `Brancos - [2 SM a 4 SM)`,`Brancos - c`,
+
+                   `Pretos - [0 a 0,50 SM)`,`Pretos - [0,50 a 1,25 SM)`,`Pretos - [1,25 a 2 SM)`,
+                   `Pretos - [2 SM a 4 SM)`,`Pretos - [4+ SM)`,
+
+                   `Pardos - [0 a 0,50 SM)`,`Pardos - [0,50 a 1,25 SM)`,`Pardos - [1,25 a 2 SM)`,
+                   `Pardos - [2 SM a 4 SM)`,`Pardos - [4+ SM)`),
+                 ~ replace_na(.x, 0))
+        ) |>
+        mutate(
+          # Brancos
+          QL_branco_0a050   = `Brancos - [0 a 0,5 SM)`/prop_branca_0a050,
+          QL_branco_050a125 = `Brancos - [0,50 a 1,25 SM)`/prop_branca_050a125,
+          QL_branco_125a2   = `Brancos - [1,25 a 2 SM)`/prop_branca_125a2,
+          QL_branco_2a4     = `Brancos - [2 SM a 4 SM)`/prop_branca_2a4,
+          QL_branco_4mais   = `Brancos - [4+ SM)`/prop_branca_4mais,
+
+          # Pretos
+          QL_preto_0a050   = `Pretos - [0 a 0,5 SM)`/prop_preta_0a050,
+          QL_preto_050a125 = `Pretos - [0,50 a 1,25 SM)`/prop_preta_050a125,
+          QL_preto_125a2   = `Pretos - [1,25 a 2 SM)`/prop_preta_125a2,
+          QL_preto_2a4     = `Pretos - [2 SM a 4 SM)`/prop_preta_2a4,
+          QL_preto_4mais   = `Pretos - [4+ SM)`/prop_preta_4mais,
+
+          # x Pardos
+          QL_pardo_0a050   = `Pardos - [0 a 0,5 SM)`/prop_parda_0a050,
+          QL_pardo_050a125 = `Pardos - [0,50 a 1,25 SM)`/prop_parda_050a125,
+          QL_pardo_125a2   = `Pardos - [1,25 a 2 SM)`/prop_parda_125a2,
+          QL_pardo_2a4     = `Pardos - [2 SM a 4 SM)`/prop_parda_2a4,
+          QL_pardo_4mais   = `Pardos - [4+ SM)`/prop_parda_4mais,
+        )
+    }
+    if(tipo == "EGP"){
       output_classe <- tabela_por_classe |>
         mutate(prop_branca_baixo = prop[classe_raca == "Brancos baixo" & area_ponderacao == 0],
                prop_branca_intermediario = prop[classe_raca == "Brancos intermediário" & area_ponderacao == 0],
@@ -1761,7 +1930,106 @@ func_calcula_quociente_locacional <-
             desv_pad_QL_Negros_meioa1SM = sd(QL_Negros_meioa1SM),
             desv_pad_QL_Negros_meioSM = sd(QL_Negros_meioSM)
           )
-      }else{
+      }
+      if(tipo_variavel == "SM_NE"){
+        output_classe_sintese <- output_classe |>
+          summarise(
+            ## Brancos
+            # media
+            mean_QL_Brancos_4mais   = mean(QL_Brancos_4mais),
+            mean_QL_Brancos_125a4   = mean(QL_Brancos_125a4),
+            mean_QL_Brancos_075a125 = mean(QL_Brancos_075a125),
+            mean_QL_Brancos_050a075 = mean(QL_Brancos_050a075),
+            mean_QL_Brancos_025a050 = mean(QL_Brancos_025a050),
+            mean_QL_Brancos_0a025   = mean(QL_Brancos_0a025),
+            # desv pad
+            desv_pad_QL_Brancos_4mais   = sd(QL_Brancos_4mais),
+            desv_pad_QL_Brancos_125a4   = sd(QL_Brancos_125a4),
+            desv_pad_QL_Brancos_075a125 = sd(QL_Brancos_075a125),
+            desv_pad_QL_Brancos_050a075 = sd(QL_Brancos_050a075),
+            desv_pad_QL_Brancos_025a050 = sd(QL_Brancos_025a050),
+            desv_pad_QL_Brancos_0a025   = sd(QL_Brancos_0a025),
+
+            ## Pretos
+            # media
+            mean_QL_Pretos_4mais   = mean(QL_Pretos_4mais),
+            mean_QL_Pretos_125a4   = mean(QL_Pretos_125a4),
+            mean_QL_Pretos_075a125 = mean(QL_Pretos_075a125),
+            mean_QL_Pretos_050a075 = mean(QL_Pretos_050a075),
+            mean_QL_Pretos_025a050 = mean(QL_Pretos_025a050),
+            mean_QL_Pretos_0a025   = mean(QL_Pretos_0a025),
+            # desv pad
+            desv_pad_QL_Pretos_4mais   = sd(QL_Pretos_4mais),
+            desv_pad_QL_Pretos_125a4   = sd(QL_Pretos_125a4),
+            desv_pad_QL_Pretos_075a125 = sd(QL_Pretos_075a125),
+            desv_pad_QL_Pretos_050a075 = sd(QL_Pretos_050a075),
+            desv_pad_QL_Pretos_025a050 = sd(QL_Pretos_025a050),
+            desv_pad_QL_Pretos_0a025   = sd(QL_Pretos_0a025),
+
+            ## Pardos
+            # media
+            mean_QL_Pardos_4mais   = mean(QL_Pardos_4mais),
+            mean_QL_Pardos_125a4   = mean(QL_Pardos_125a4),
+            mean_QL_Pardos_075a125 = mean(QL_Pardos_075a125),
+            mean_QL_Pardos_050a075 = mean(QL_Pardos_050a075),
+            mean_QL_Pardos_025a050 = mean(QL_Pardos_025a050),
+            mean_QL_Pardos_0a025   = mean(QL_Pardos_0a025),
+            # desv pad
+            desv_pad_QL_Pardos_4mais   = sd(QL_Pardos_4mais),
+            desv_pad_QL_Pardos_125a4   = sd(QL_Pardos_125a4),
+            desv_pad_QL_Pardos_075a125 = sd(QL_Pardos_075a125),
+            desv_pad_QL_Pardos_050a075 = sd(QL_Pardos_050a075),
+            desv_pad_QL_Pardos_025a050 = sd(QL_Pardos_025a050),
+            desv_pad_QL_Pardos_0a025   = sd(QL_Pardos_0a025)
+          )
+      }
+      if(tipo_variavel == "SM_SUL"){
+        output_classe_sintese <- output_classe |>
+          summarise(
+            ## Brancos
+            # media
+            mean_QL_Brancos_4mais   = mean(QL_Brancos_4mais),
+            mean_QL_Brancos_2a4   = mean(QL_Brancos_2a4),
+            mean_QL_Brancos_125a2 = mean(QL_Brancos_125a2),
+            mean_QL_Brancos_050a125 = mean(QL_Brancos_050a125),
+            mean_QL_Brancos_0a050   = mean(QL_Brancos_0a050),
+            # desv pad
+            desv_pad_QL_Brancos_4mais   = sd(QL_Brancos_4mais),
+            desv_pad_QL_Brancos_2a4   = sd(QL_Brancos_2a4),
+            desv_pad_QL_Brancos_125a2 = sd(QL_Brancos_125a2),
+            desv_pad_QL_Brancos_050a125 = sd(QL_Brancos_050a125),
+            desv_pad_QL_Brancos_0a050   = sd(QL_Brancos_0a050),
+
+            ## Pretos
+            # media
+            mean_QL_Pretos_4mais   = mean(QL_Pretos_4mais),
+            mean_QL_Pretos_2a4   = mean(QL_Pretos_2a4),
+            mean_QL_Pretos_125a2 = mean(QL_Pretos_125a2),
+            mean_QL_Pretos_050a125 = mean(QL_Pretos_050a125),
+            mean_QL_Pretos_0a050   = mean(QL_Pretos_0a050),
+            # desv pad
+            desv_pad_QL_Pretos_4mais   = sd(QL_Pretos_4mais),
+            desv_pad_QL_Pretos_2a4   = sd(QL_Pretos_2a4),
+            desv_pad_QL_Pretos_125a2 = sd(QL_Pretos_125a2),
+            desv_pad_QL_Pretos_050a125 = sd(QL_Pretos_050a125),
+            desv_pad_QL_Pretos_0a050   = sd(QL_Pretos_0a050),
+
+            ## Pardos
+            # media
+            mean_QL_Pardos_4mais   = mean(QL_Pardos_4mais),
+            mean_QL_Pardos_2a4   = mean(QL_Pardos_2a4),
+            mean_QL_Pardos_125a2 = mean(QL_Pardos_125a2),
+            mean_QL_Pardos_050a125 = mean(QL_Pardos_050a125),
+            mean_QL_Pardos_0a050   = mean(QL_Pardos_0a050),
+            # desv pad
+            desv_pad_QL_Pardos_4mais   = sd(QL_Pardos_4mais),
+            desv_pad_QL_Pardos_2a4   = sd(QL_Pardos_2a4),
+            desv_pad_QL_Pardos_125a2 = sd(QL_Pardos_125a2),
+            desv_pad_QL_Pardos_050a125 = sd(QL_Pardos_050a125),
+            desv_pad_QL_Pardos_0a050   = sd(QL_Pardos_0a050)
+          )
+      }
+      if(tipo == "EGP"){
         output_classe_sintese <- output_classe |>
           summarise(
             mean_QL_Brancos_Alto = mean(QL_Brancos_Alto),
