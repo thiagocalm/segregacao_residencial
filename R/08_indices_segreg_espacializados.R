@@ -178,3 +178,51 @@ ap_sf_ne <- ap_sf |>
 
 rm(ap_sf, pop_grupos_ne, pop_grupos_sul)
 
+
+# 4. Centroides -----------------------------------------------------------
+
+# calcula centroides
+
+cent_ne <- st_centroid(ap_sf_ne)
+cent_sul <- st_centroid(ap_sf_sul)
+
+
+# 5. Matriz de distancias -------------------------------------------------
+
+dist_ne <- sf::st_distance(cent_ne) |>
+  units::drop_units() |>
+  as.matrix()
+
+dist_sul <- sf::st_distance(cent_sul) |>
+  units::drop_units() |>
+  as.matrix()
+
+# 6. Kernel gaussiano -----------------------------------------------------
+
+# bandwidth
+
+bw <- 700
+
+# matriz de pesos usando kernel gaussino
+
+W_sul <- exp(-(dist_sul^2)/(2*bw^2))
+W_ne <- exp(-(dist_ne^2)/(2*bw^2))
+
+# Incluindo auto-interacao
+diag(W_sul) <- 1
+diag(W_ne) <- 1
+
+# normalizacao
+
+rs <- rowSums(W_sul)
+rs[rs==0] <- 1
+W_sul <- W_sul / rs
+rs <- rowSums(W_ne)
+rs[rs==0] <- 1
+W_ne <- W_ne / rs
+
+
+# 7. Matriz de populacao local --------------------------------------------
+# L = W X
+# Cada linha contém a população local estimada por kernel
+
