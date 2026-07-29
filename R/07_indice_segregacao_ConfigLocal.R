@@ -357,6 +357,95 @@ for(k in 1: length(RMs)){
 # Resultados
 ###
 
+#'-----
+#'Tabelao por raca e classe
+#'-----
+
+### Curitiba
+
+cor <- QL_2010_RMCuritiba$classe |>
+  select(starts_with("QL_")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMCuritiba$classe |>
+  select(starts_with("QL_")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+### Porto Alegre
+
+cor <- QL_2010_RMPortoAlegre$classe |>
+  select(starts_with("QL_")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMPortoAlegre$classe |>
+  select(starts_with("QL_")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+### Fortaleza
+
+cor <- QL_2010_RMFortaleza$classe |>
+  select(starts_with("QL_")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMFortaleza$classe |>
+  select(starts_with("QL_")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+### Recife
+
+cor <- QL_2010_RMRecife$classe |>
+  select(starts_with("QL_")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(1) |>
+  round(2)
+
+clipr::write_clip(cor)
+
+pvalue <- QL_2010_RMRecife$classe |>
+  select(starts_with("QL_")) |>
+  as.matrix() |>
+  Hmisc::rcorr(type="pearson") |>
+  pluck(3) |>
+  round(2)
+
+clipr::write_clip(pvalue)
+
+
+#'-----
+#'Tabela por classe
+#'-----
+
 ### Curitiba
 # Brancos
 cor <- QL_2010_RMCuritiba$classe |>
