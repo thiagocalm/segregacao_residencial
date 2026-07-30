@@ -10,7 +10,7 @@ rm(list = ls())
 
 library(pacman)
 pacman::p_load(tidyverse, srvyr, readr, sf, geobr, spdep, FNN, Matrix,
-               terra, tmap, scales)
+               terra, tmap, scales, patchwork)
 
 
 # 1. Importacao de areas de ponderacao ------------------------------------
@@ -411,6 +411,224 @@ spatial_d |>
 # mapas
 ###
 
+# tema
+
+theme_maps <- function(){
+  theme(
+    plot.title = element_text(lineheight=1, size=30, face="bold",hjust = 0.5),
+    plot.subtitle = element_text(lineheight=1, size=25, hjust = 0),
+    plot.caption = element_text(lineheight=1, size=15, hjust=0.5),
+    legend.title = element_blank (),
+    legend.text = element_text(colour="black", size = 13),
+    legend.position="bottom",
+    legend.background = element_rect(fill=NA, colour = NA),
+    legend.key.size = unit(1.5, 'lines'),
+    legend.key = element_rect(colour = NA, fill = NA),
+    axis.title.x = element_blank (),
+    axis.text.x  = element_text(colour = "grey80"),
+    axis.title.y =  element_blank (),
+    axis.text.y  = element_text(colour = "grey80"),
+    axis.ticks= element_blank (),
+    strip.text = element_text(size=15, face="bold",margin = margin(.1,0,.1,0, "cm")),
+    plot.background =  element_rect(fill = "white"),
+    panel.grid.major=element_line(colour="grey95",linewidth=.5),
+    panel.grid.minor=element_line(colour="grey95",linewidth=.15),
+    panel.border = element_rect(colour = "grey95", fill=NA, linewidth=.75),
+    panel.background =element_rect(fill ="#FFFFFF", colour = "#FFFFFF")
+  )
+}
+
+# ajustes na base
+
+spatial_d <- spatial_d |>
+  mutate(
+    D_quartil = cut(
+      D_local,
+      breaks = quantile(D_local,
+                        probs = seq(0,1,0.25),
+                        na.rm = TRUE),
+      include.lowest = TRUE,
+      labels = c("Q1","Q2","Q3","Q4")
+    ),
+    .by = rm
+  ) |>
+  mutate(
+    D_quartil = factor(D_quartil,
+                       levels = c("Q1","Q2","Q3","Q4"))
+  )
+
+## Curitiba
+
+df_spatial <- spatial_d |>
+  filter(rm == "Curitiba")
+
+map_1 <- df_spatial |>
+  filter(bandwidth %in% c(700,7000)) |>
+  mutate(bandwidth = factor(bandwidth,
+                            levels = c(700,7000),
+                            labels = c("Bandwidth = 700m","Bandwidth = 7000m"))) |>
+  ggplot() +
+  geom_sf(
+    aes(fill = D_quartil),
+    color = NA
+  ) +
+  scale_fill_manual(
+    name = "D (local)",
+    values = c("Q1" = "#FEE5D9","Q2" = "#fdbb84","Q3" = "#e34a33","Q4" = "#7f0000"),
+    # Legend on the bottom part of the graph
+    guide = guide_legend(
+      title.position = "top",
+      title.hjust = 0.5,
+      direction = "horizontal",
+      nrow = 1,
+      keywidth = 4,
+      keyheight = .5,
+      label.position = "bottom"
+    )
+  ) +
+  coord_sf() +
+  labs(title = paste0(df_spatial$rm |> unique())) +
+  facet_wrap(
+    . ~ bandwidth,
+    ncol = 4
+  ) +
+  theme_maps()
+
+ggsave(file.path("output","ConfigLocal","Mapa_DLocal_Curitiba.png"), # name of the file of the image
+       scale = 1,
+       dpi = 300,
+       height =10, #25  #10
+       width = 15)
+
+## Porto Alegre
+
+df_spatial <- spatial_d |>
+  filter(rm == "PortoAlegre")
+
+map_2 <- df_spatial |>
+  filter(bandwidth %in% c(700,7000)) |>
+  mutate(bandwidth = factor(bandwidth,
+                            levels = c(700,7000),
+                            labels = c("Bandwidth = 700m","Bandwidth = 7000m")),
+         rm = case_when(rm == "PortoAlegre" ~ "Porto Alegre")) |>
+  ggplot() +
+  geom_sf(
+    aes(fill = D_quartil),
+    color = NA
+  ) +
+  scale_fill_manual(
+    name = "D (local)",
+    values = c("Q1" = "#FEE5D9","Q2" = "#fdbb84","Q3" = "#e34a33","Q4" = "#7f0000"),
+    # Legend on the bottom part of the graph
+    guide = guide_legend(
+      title.position = "top",
+      title.hjust = 0.5,
+      direction = "horizontal",
+      nrow = 1,
+      keywidth = 4,
+      keyheight = .5,
+      label.position = "bottom"
+    )
+  ) +
+  coord_sf() +
+  labs(title = paste0(df_spatial$rm |> unique())) +
+  facet_wrap(
+    . ~ bandwidth,
+    ncol = 4
+  ) +
+  theme_maps()
+
+ggsave(file.path("output","ConfigLocal","Mapa_DLocal_PortoAlegre.png"), # name of the file of the image
+       scale = 1,
+       dpi = 300,
+       height =10, #25  #10
+       width = 15)
+
+## Fortaleza
+
+df_spatial <- spatial_d |>
+  filter(rm == "Fortaleza")
+
+map_3 <- df_spatial |>
+  filter(bandwidth %in% c(700,7000)) |>
+  mutate(bandwidth = factor(bandwidth,
+                            levels = c(700,7000),
+                            labels = c("Bandwidth = 700m","Bandwidth = 7000m"))) |>
+  ggplot() +
+  geom_sf(
+    aes(fill = D_quartil),
+    color = NA
+  ) +
+  scale_fill_manual(
+    name = "D (local)",
+    values = c("Q1" = "#FEE5D9","Q2" = "#fdbb84","Q3" = "#e34a33","Q4" = "#7f0000"),
+    # Legend on the bottom part of the graph
+    guide = guide_legend(
+      title.position = "top",
+      title.hjust = 0.5,
+      direction = "horizontal",
+      nrow = 1,
+      keywidth = 4,
+      keyheight = .5,
+      label.position = "bottom"
+    )
+  ) +
+  coord_sf() +
+  labs(title = paste0(df_spatial$rm |> unique())) +
+  facet_wrap(
+    . ~ bandwidth,
+    ncol = 4
+  ) +
+  theme_maps()
+
+ggsave(file.path("output","ConfigLocal","Mapa_DLocal_Fortaleza.png"), # name of the file of the image
+       scale = 1,
+       dpi = 300,
+       height =10, #25  #10
+       width = 15)
+
+## Recife
+
+df_spatial <- spatial_d |>
+  filter(rm == "Recife")
+
+map_4 <- df_spatial |>
+  filter(bandwidth %in% c(700,7000)) |>
+  mutate(bandwidth = factor(bandwidth,
+                            levels = c(700,7000),
+                            labels = c("Bandwidth = 700m","Bandwidth = 7000m"))) |>
+  ggplot() +
+  geom_sf(
+    aes(fill = D_quartil),
+    color = NA
+  ) +
+  scale_fill_manual(
+    name = "D (local)",
+    values = c("Q1" = "#FEE5D9","Q2" = "#fdbb84","Q3" = "#e34a33","Q4" = "#7f0000"),
+    # Legend on the bottom part of the graph
+    guide = guide_legend(
+      title.position = "top",
+      title.hjust = 0.5,
+      direction = "horizontal",
+      nrow = 1,
+      keywidth = 4,
+      keyheight = .5,
+      label.position = "bottom"
+    )
+  ) +
+  coord_sf() +
+  labs(title = paste0(df_spatial$rm |> unique())) +
+  facet_wrap(
+    . ~ bandwidth,
+    ncol = 4
+  ) +
+  theme_maps()
+
+ggsave(file.path("output","ConfigLocal","Mapa_DLocal_Recife.png"), # name of the file of the image
+       scale = 1,
+       dpi = 300,
+       height =10, #25  #10
+       width = 15)
 
 
 # Exportacao --------------------------------------------------------------
