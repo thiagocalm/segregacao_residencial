@@ -179,50 +179,247 @@ ap_sf_ne <- ap_sf |>
 rm(ap_sf, pop_grupos_ne, pop_grupos_sul)
 
 
-# 4. Centroides -----------------------------------------------------------
+# 4. parametros --------------------------------------------
 
-# calcula centroides
+# bandwidths
 
-cent_ne <- st_centroid(ap_sf_ne)
-cent_sul <- st_centroid(ap_sf_sul)
+bandwidths <- c(
+  1,
+  700,
+  1000,
+  2000,
+  3000,
+  4000,
+  5000,
+  6000,
+  7000
+)
+
+# nomes das colunas dos grupos
+
+grupos_ne <- ap_sf_ne |>
+  st_drop_geometry() |>
+  select(-1:-10) |>
+  colnames()
+
+grupos_sul <- ap_sf_sul |>
+  st_drop_geometry() |>
+  select(-1:-10) |>
+  colnames()
 
 
 # 5. Matriz de distancias -------------------------------------------------
 
-dist_ne <- sf::st_distance(cent_ne) |>
+dist_ne <- ap_sf_ne |>
+  st_distance() |>
   units::drop_units() |>
   as.matrix()
 
-dist_sul <- sf::st_distance(cent_sul) |>
+dist_sul <- ap_sf_sul |>
+  st_distance() |>
   units::drop_units() |>
   as.matrix()
 
-# 6. Kernel gaussiano -----------------------------------------------------
+# 6. Calcula indice -------------------------------------------------------
 
-# bandwidth
+calc_dissimilarity <- function(data, grupo, bw){
 
-bw <- 700
+  ###
+  # calcula matriz de distancia
+  ###
 
-# matriz de pesos usando kernel gaussino
+  Dmat <- data |>
+    st_distance() |>
+    units::drop_units() |>
+    as.matrix()
 
-W_sul <- exp(-(dist_sul^2)/(2*bw^2))
-W_ne <- exp(-(dist_ne^2)/(2*bw^2))
+  ###
+  # matriz de populacao
+  ###
 
-# Incluindo auto-interacao
-diag(W_sul) <- 1
-diag(W_ne) <- 1
+  X <- data |>
+    st_drop_geometry() |>
+    select(all_of(grupo)) |>
+    as.matrix()
 
-# normalizacao
+  ## número de áreas
 
-rs <- rowSums(W_sul)
-rs[rs==0] <- 1
-W_sul <- W_sul / rs
-rs <- rowSums(W_ne)
-rs[rs==0] <- 1
-W_ne <- W_ne / rs
+  J <- nrow(X)
+
+  ## número de grupos
+
+  M <- ncol(X)
+
+  ## população de cada área
+
+  Nj <- rowSums(X)
+
+  ## população total
+
+  N <- sum(Nj)
+
+  ## proporção metropolitana
+
+  tau_global <- colSums(X) / N
+
+  ## índice de informação
+
+  I <- sum( tau_global * (1 - tau_global) )
+
+  ###
+  # kernel gaussiano
+  ###
+
+  # calcula matriz de pesos
+  W <- exp(-(Dmat^2)/(2*bw^2))
+
+  # Incluindo auto-interacao
+  diag(W) <- 1
+
+  ## padronizacao
+
+  rs <- rowSums(W)
+  rs[rs==0] <- 1
+  W <- W / rs
+
+  W <- Matrix(W, sparse = TRUE)
+
+  ###
+  # população suavizada
+  ###
+
+  L <- W %*% X
+
+  # população total suavizada
+
+  Lj <- rowSums(L)
+
+  ###
+  # proporções locais
+  ###
+
+  tau_local <- sweep(L, 1, Lj, "/")
+
+  ###
+  # diferença absoluta
+  ###
+
+  dif <- abs( sweep(tau_local,2,tau_global,"-") )
+
+  ###
+  # índice local
+  ###
+
+  d_local <- (Nj/(N*I)) * ( rowSums(dif)/2 )
+
+  ###
+  # índice global
+  ###
+
+  D_global <- sum(d_local)
+
+  output <- data |>
+    mutate(
+      bandwidth = bw,
+      D_global = D_global,
+      D_local = d_local
+    )
+
+  ###
+  # return
+  ###
+
+  return(output)
+}
+
+###
+# calcular para todas as escalas
+###
+
+# resultado <- purrr::map_dfr(
+#   bandwidths,
+#   \(bw)
+#   calc_dissimilarity(
+#     data  = ap_sf_ne,
+#     grupo = grupos_ne,
+#     bw    = bw,
+#     Dmat  = dist_ne
+#   )
+# )
+
+resultado_ne <- split(ap_sf_ne, ap_sf_ne$rm) |>
+  purrr::imap_dfr(\(dados_rm, rm){
+    purrr::map_dfr(bandwidths,
+                   \(bw)
+                   calc_dissimilarity(
+                     data = dados_rm,
+                     grupo = grupos_ne,
+                     bw = bw
+                    )
+                   )
+    }
+  )
+
+resultado_sul <- split(ap_sf_sul, ap_sf_sul$rm) |>
+  purrr::imap_dfr(\(dados_rm, rm){
+    purrr::map_dfr(bandwidths,
+                   \(bw)
+                   calc_dissimilarity(
+                     data = dados_rm,
+                     grupo = grupos_sul,
+                     bw = bw
+                   )
+    )
+   }
+  )
+
+# combinando ambos
+
+spatial_d <- resultado_ne |>
+  mutate(regiao = "Nordeste") |>
+  select(rm, regiao, bandwidth, D_global, D_local, geometry) |>
+  distinct() |>
+  bind_rows(
+    resultado_sul |>
+      mutate(regiao = "Sul") |>
+      select(rm, regiao, bandwidth, D_global, D_local, geometry) |>
+      distinct()
+  )
 
 
-# 7. Matriz de populacao local --------------------------------------------
-# L = W X
-# Cada linha contém a população local estimada por kernel
+###
+# índice global
+###
+
+spatial_d |>
+  st_drop_geometry() |>
+  select(rm, bandwidth, D_global) |>
+  distinct()
+
+###
+# perfil multiescalar
+###
+
+spatial_d |>
+  st_drop_geometry() |>
+  distinct() |>
+  ggplot() +
+  aes(bandwidth , D_global, color = rm) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  coord_cartesian(ylim = c(0,round(max(spatial_d$D_global) * 1.2,2))) +
+  scale_x_continuous(breaks = bandwidths) +
+  scale_y_continuous() +
+  facet_wrap(. ~ regiao) +
+  labs(
+    x = "Bandwidth (m)",
+    y = "Índice Global de Dissimilaridade"
+  )+
+  theme_bw()
+
+###
+# mapas
+###
+
+
 
