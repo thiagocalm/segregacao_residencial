@@ -207,20 +207,7 @@ grupos_sul <- ap_sf_sul |>
   select(-1:-10) |>
   colnames()
 
-
-# 5. Matriz de distancias -------------------------------------------------
-
-dist_ne <- ap_sf_ne |>
-  st_distance() |>
-  units::drop_units() |>
-  as.matrix()
-
-dist_sul <- ap_sf_sul |>
-  st_distance() |>
-  units::drop_units() |>
-  as.matrix()
-
-# 6. Calcula indice -------------------------------------------------------
+# 5. Calcula indice -------------------------------------------------------
 
 calc_dissimilarity <- function(data, grupo, bw){
 
@@ -377,14 +364,17 @@ resultado_sul <- split(ap_sf_sul, ap_sf_sul$rm) |>
 
 spatial_d <- resultado_ne |>
   mutate(regiao = "Nordeste") |>
-  select(rm, regiao, bandwidth, D_global, D_local, geometry) |>
+  select(rm, regiao, bandwidth, D_global, D_local, geometry,
+         "area_ponderacao" = code_weighting, "municipio" = name_muni) |>
   distinct() |>
   bind_rows(
     resultado_sul |>
       mutate(regiao = "Sul") |>
-      select(rm, regiao, bandwidth, D_global, D_local, geometry) |>
+      select(rm, regiao, bandwidth, D_global, D_local, geometry,
+             "area_ponderacao" = code_weighting, "municipio" = name_muni) |>
       distinct()
-  )
+  ) |>
+  mutate(rm = str_sub(rm, 3))
 
 
 ###
@@ -423,3 +413,25 @@ spatial_d |>
 
 
 
+# Exportacao --------------------------------------------------------------
+
+# exportar tabela com a base de dados
+
+df <- spatial_d |>
+  st_drop_geometry() |>
+  select(regiao, rm, municipio, area_ponderacao, everything())
+
+clipr::write_clip(df)
+
+# dissimilaridade global
+
+spatial_d |>
+  st_drop_geometry() |>
+  select(rm, bandwidth, D_global) |>
+  distinct() |>
+  pivot_wider(
+    names_from = rm,
+    values_from = D_global
+  )
+
+clipr::write_last_clip()
