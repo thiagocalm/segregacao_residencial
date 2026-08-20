@@ -385,10 +385,20 @@ t4_curve |>
   aes(x = pop_cum, y = renda_cum, color = raca, group = interaction(raca,raca)) +
   geom_line(size = 1.2) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray40") +
-  facet_wrap(. ~ rm) +
+  lemon::facet_rep_wrap(. ~ rm,repeat.tick.labels = TRUE) +
   labs(
     title = "Curva de Lorenz para distribuição de renda domicilar total per capita por RMs e raça.",
     x = "Distribuição da populalação acumulada",
-    y = "Distribuição da renda acumulada"
+    y = "Distribuição da renda acumulada",
+    color = "Cor ou raça",
+    caption = "Fonte: IBGE, Censo Demográfico 2010, microdados."
   ) +
-  theme_classic()
+  theme_classic() +
+  theme(
+    axis.title = element_text(face = "bold", hjust = .5),
+    legend.title = element_text(face = "bold"),
+    legend.position = "bottom",
+    # legend.position.inside = c(.94,.94),
+    legend.background = element_blank(),
+    plot.caption = element_text(hjust = 0)
+  )
