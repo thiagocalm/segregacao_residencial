@@ -557,16 +557,16 @@ func_calcula_dissimilaridade <-
           dif_pardo_4SMmais_preto_0a050 = abs(ratio_Pardos_4SMmais - ratio_Pretos_0a050),
 
           # Pardos 4SMmais X Pardos
-          dif_pardo_0a050_preto_4SMmais = abs(ratio_Pardos_0a050 - ratio_Pardos_4SMmais),
-          dif_pardo_050a125_preto_4SMmais = abs(ratio_Pardos_050a125 - ratio_Pardos_4SMmais),
-          dif_pardo_125a4SM_preto_4SMmais = abs(ratio_Pardos_125a4SM - ratio_Pardos_4SMmais),
+          dif_pardo_0a050_pardo_4SMmais = abs(ratio_Pardos_0a050 - ratio_Pardos_4SMmais),
+          dif_pardo_050a125_pardo_4SMmais = abs(ratio_Pardos_050a125 - ratio_Pardos_4SMmais),
+          dif_pardo_125a4SM_pardo_4SMmais = abs(ratio_Pardos_125a4SM - ratio_Pardos_4SMmais),
 
           # Pardos 125a4SM X Pardos
-          dif_pardo_0a050_preto_125a4SM = abs(ratio_Pardos_0a050 - ratio_Pardos_125a4SM),
-          dif_pardo_050a125_preto_125a4SM = abs(ratio_Pardos_050a125 - ratio_Pardos_125a4SM),
+          dif_pardo_0a050_pardo_125a4SM = abs(ratio_Pardos_0a050 - ratio_Pardos_125a4SM),
+          dif_pardo_050a125_pardo_125a4SM = abs(ratio_Pardos_050a125 - ratio_Pardos_125a4SM),
 
           # Pardos 050a125SM X Pardos
-          dif_pardo_0a050_preto_050a125 = abs(ratio_Pardos_0a050 - ratio_Pardos_050a125)
+          dif_pardo_0a050_pardo_050a125 = abs(ratio_Pardos_0a050 - ratio_Pardos_050a125)
 
         ) |>
         mutate(across(starts_with("dif_"), ~ replace_na(.x, 0))) |>
@@ -653,15 +653,41 @@ func_calcula_dissimilaridade <-
           D_branco_125a4SM_branco_0a050SM = sum(dif_branco_0a050_branco_125a4SM)*.5,
 
           # Brancos 050a125 X brancos
-          D_branco_050a125_branco_0a050SM = sum(dif_branco_0a050_branco_050a125)*.5
+          D_branco_050a125_branco_0a050SM = sum(dif_branco_0a050_branco_050a125)*.5,
+
+          # Pretos 4SMmais X Pretos
+          D_preto_4SMmais_preto_125a4SM = sum(dif_preto_125a4SM_preto_4SMmais)*.5,
+          D_preto_4SMmais_preto_050a125SM = sum(dif_preto_050a125_preto_4SMmais)*.5,
+          D_preto_4SMmais_preto_0a050SM = sum(dif_preto_0a050_preto_4SMmais)*.5,
+
+          # Pretos 125a4SM X Pretos
+          D_preto_125a4SM_preto_050a125SM = sum(dif_preto_050a125_preto_125a4SM)*.5,
+          D_preto_125a4SM_preto_0a050SM = sum(dif_preto_0a050_preto_125a4SM)*.5,
+
+          # Pretos 050a125 X Pretos
+          D_preto_050a125_preto_0a050SM = sum(dif_preto_0a050_preto_050a125)*.5,
+
+          # Pardos 4SMmais X pardo
+          D_pardo_4SMmais_pardo_125a4SM = sum(dif_pardo_125a4SM_pardo_4SMmais)*.5,
+          D_pardo_4SMmais_pardo_050a125SM = sum(dif_pardo_050a125_pardo_4SMmais)*.5,
+          D_pardo_4SMmais_pardo_0a050SM = sum(dif_pardo_0a050_pardo_4SMmais)*.5,
+
+          # Pardos 125a4SM X pardos
+          D_pardo_125a4SM_pardo_050a125SM = sum(dif_pardo_050a125_pardo_125a4SM)*.5,
+          D_pardo_125a4SM_pardo_0a050SM = sum(dif_pardo_0a050_pardo_125a4SM)*.5,
+
+          # Pardos 050a125 X Pardos
+          D_pardo_050a125_pardo_0a050SM = sum(dif_pardo_0a050_pardo_050a125)*.5,
 
         ) |>
         pivot_longer(D_preto_4SMmais_branco_4SMmais:D_branco_050a125_branco_0a050SM, names_to = "grupo", values_to = "D") |>
         mutate(
           cor_classe1 = c(rep("Pretos - [4+ SM)",4),rep("Pardos - [4+ SM)",8),rep("Pretos - [1,25 a 4 SM)",4),
                           rep("Pardos - [1,25 a 4 SM)",8),rep("Pretos - [0,5 a 1,25 SM)",4),rep("Pardos - [0,5 a 1,25 SM)",8),
-                          rep("Pretos - [0 a 0,5 SM)",4),rep("Pardos - [0 a 0,5 SM)",8),rep("Brancos - [4+ SM)",3),
-                          rep("Brancos - [1,25 a 4 SM)",2),rep("Brancos - [0,5 a 1,25 SM)",1)),
+                          rep("Pretos - [0 a 0,5 SM)",4),rep("Pardos - [0 a 0,5 SM)",8),
+                          rep("Brancos - [4+ SM)",3),rep("Brancos - [1,25 a 4 SM)",2),rep("Brancos - [0,5 a 1,25 SM)",1),
+                          rep("Pretos - [4+ SM)",3),rep("Pretos - [1,25 a 4 SM)",2),rep("Pretos - [0,5 a 1,25 SM)",1),
+                          rep("Pardos - [4+ SM)",3),rep("Pardos - [1,25 a 4 SM)",2),rep("Pardos - [0,5 a 1,25 SM)",1)),
           cor_classe2 = c(c("Brancos - [4+ SM)","Brancos - [1,25 a 4 SM)","Brancos - [0,5 a 1,25 SM)","Brancos - [0 a 0,5 SM)"),
                           c("Brancos - [4+ SM)","Brancos - [1,25 a 4 SM)","Brancos - [0,5 a 1,25 SM)","Brancos - [0 a 0,5 SM)"),
                           c("Pretos - [4+ SM)","Pretos - [1,25 a 4 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [0 a 0,5 SM)"),
@@ -676,7 +702,13 @@ func_calcula_dissimilaridade <-
                           c("Pretos - [4+ SM)","Pretos - [1,25 a 4 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [0 a 0,5 SM)"),
                           c("Brancos - [1,25 a 4 SM)","Brancos - [0,5 a 1,25 SM)","Brancos - [0 a 0,5 SM)"),
                           c("Brancos - [0,5 a 1,25 SM)","Brancos - [0 a 0,5 SM)"),
-                          c("Brancos - [0 a 0,5 SM)"))
+                          c("Brancos - [0 a 0,5 SM)"),
+                          c("Pretos - [1,25 a 4 SM)","Pretos - [0,5 a 1,25 SM)","Pretos - [0 a 0,5 SM)"),
+                          c("Pretos - [0,5 a 1,25 SM)","Pretos - [0 a 0,5 SM)"),
+                          c("Pretos - [0 a 0,5 SM)"),
+                          c("Pardos - [1,25 a 4 SM)","Pardos - [0,5 a 1,25 SM)","Pardos - [0 a 0,5 SM)"),
+                          c("Pardos - [0,5 a 1,25 SM)","Pardos - [0 a 0,5 SM)"),
+                          c("Pardos - [0 a 0,5 SM)"))
         )
     }
     if(tipo_variavel == "SM_NE"){
@@ -2064,6 +2096,7 @@ func_calcula_quociente_locacional <-
     }
     if(tipo_variavel == "SM_local"){
       output_classe <- tabela_por_classe |>
+        filter(!is.na(classe_raca)) |>
         mutate(
           # Prop pop branca
           prop_branca_0a050 = prop[classe_raca == "Brancos - [0 a 0,5 SM)" & area_ponderacao == 0],
