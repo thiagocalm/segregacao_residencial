@@ -313,6 +313,8 @@ t3 <- t3_2010 |>
   arrange(rm) |>
   pivot_wider(names_from = raca,values_from = ratio)
 
+clipr::write_clip(t3)
+
 # Tabela 4 - Desigualdade de renda, Gini ----------------------------------
 
 t4_2010 <- censo_2010_RMs |>
@@ -366,7 +368,10 @@ t4_gini <- t4_2010 |>
   summarise(
     gini = mean(2 * renda_cum) * 100,
     .by = c(rm, raca)
-  )
+  ) |>
+  pivot_wider(names_from = raca,
+              values_from = gini)
+clipr::write_clip(t4_gini)
 
 t4_curve <- t4_2010 |>
   # bind_rows(t3_2000) |>

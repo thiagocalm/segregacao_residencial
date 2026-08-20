@@ -677,10 +677,10 @@ func_calcula_dissimilaridade <-
           D_pardo_125a4SM_pardo_0a050SM = sum(dif_pardo_0a050_pardo_125a4SM)*.5,
 
           # Pardos 050a125 X Pardos
-          D_pardo_050a125_pardo_0a050SM = sum(dif_pardo_0a050_pardo_050a125)*.5,
+          D_pardo_050a125_pardo_0a050SM = sum(dif_pardo_0a050_pardo_050a125)*.5
 
         ) |>
-        pivot_longer(D_preto_4SMmais_branco_4SMmais:D_branco_050a125_branco_0a050SM, names_to = "grupo", values_to = "D") |>
+        pivot_longer(D_preto_4SMmais_branco_4SMmais:D_pardo_050a125_pardo_0a050SM, names_to = "grupo", values_to = "D") |>
         mutate(
           cor_classe1 = c(rep("Pretos - [4+ SM)",4),rep("Pardos - [4+ SM)",8),rep("Pretos - [1,25 a 4 SM)",4),
                           rep("Pardos - [1,25 a 4 SM)",8),rep("Pretos - [0,5 a 1,25 SM)",4),rep("Pardos - [0,5 a 1,25 SM)",8),

@@ -77,6 +77,12 @@ censo_2010_RMs <- censo_2010_RMs |>
       renda_pc >= 510 * 3.75 & renda_pc < 510 * 4 ~ 16,
       TRUE ~ 17
     ),
+    SM_local = case_when(
+      renda_pc < 510 * 0.5 ~ 1,
+      renda_pc >= 510 * 0.5 & renda_pc < 510 * 1.25 ~ 2,
+      renda_pc >= 510 * 1.25 & renda_pc < 510 * 4 ~ 3,
+      renda_pc >= 510 * 4  ~ 4
+    ),
     SM_NE = case_when(
       renda_pc < 510 * 0.25 ~ 1,
       renda_pc >= 510 * 0.25 & renda_pc < 510 * 0.5 ~ 2,
@@ -105,18 +111,14 @@ censo_2010_RMs <- censo_2010_RMs |>
 
 # Table 1 - distribuicao da categoria criada por par de rms ---------------
 
-###
-# Nordeste
-###
-
-t1_NE <- censo_2010_RMs |>
+t1 <- censo_2010_RMs |>
   filter(
-    rm %in% c("RMFortaleza","RMRecife")
+    rm %in% c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre")
   ) |>
   summarise(
     raca = 0,
     n = sum(peso),
-    .by = c(ano, rm, SM_NE)
+    .by = c(ano, rm, SM_local)
   ) |>
   mutate(
     perc = round(n / sum(n) * 100, 2),
@@ -126,12 +128,12 @@ t1_NE <- censo_2010_RMs |>
   bind_rows(
     censo_2010_RMs |>
       filter(
-        rm %in% c("RMFortaleza","RMRecife")
+        rm %in% c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre")
       ) |>
       filter(cor_raca_d != 0) |>
       summarise(
         n = sum(peso),
-        .by = c(ano, rm, cor_raca_d, SM_NE)
+        .by = c(ano, rm, cor_raca_d, SM_local)
       ) |>
       mutate(
         perc = round(n / sum(n) * 100, 2),
@@ -139,91 +141,31 @@ t1_NE <- censo_2010_RMs |>
       ) |>
       select(ano, rm, "raca" = cor_raca_d, everything())
   ) |>
-  arrange(ano, rm, raca, SM_NE)
+  arrange(ano, rm, raca, SM_local)
 
 # ajustes de tabela
 
-t1_NE <- t1_NE |>
+t1 <- t1 |>
   mutate(
     raca = factor(
       raca,
       levels = c(0,1,2,4),
       labels = c("Total","Branco","Preto","Pardo")
     ),
-    SM_NE = factor(
-      SM_NE,
-      levels = seq(1L,6L),
-      labels = c(
-        "[0 a 0,25 SM)", "[0,25 a 0,5 SM)",  "[0,5 a 0,75 SM)",
-        "[0,75 a 1,25 SM)", "[1,25 a 4 SM)","[4 SM+"
-      )
-    )
-  ) |>
-  select(-n, -ano) |>
-  pivot_wider(
-    names_from = raca,
-    values_from = perc
-  )
-
-###
-# Sul
-###
-
-t1_SUL <- censo_2010_RMs |>
-  filter(
-    rm %in% c("RMCuritiba","RMPortoAlegre")
-  ) |>
-  summarise(
-    raca = 0,
-    n = sum(peso),
-    .by = c(ano, rm, SM_SUL)
-  ) |>
-  mutate(
-    perc = round(n / sum(n) * 100, 2),
-    .by = c(ano, rm, raca)
-  ) |>
-  select(ano, rm, raca, everything()) |>
-  bind_rows(
-    censo_2010_RMs |>
-      filter(
-        rm %in% c("RMCuritiba","RMPortoAlegre")
-      ) |>
-      filter(cor_raca_d != 0) |>
-      summarise(
-        n = sum(peso),
-        .by = c(ano, rm, cor_raca_d, SM_SUL)
-      ) |>
-      mutate(
-        perc = round(n / sum(n) * 100, 2),
-        .by = c(ano, rm, cor_raca_d)
-      ) |>
-      select(ano, rm, "raca" = cor_raca_d, everything())
-  ) |>
-  arrange(ano, rm, raca, SM_SUL)
-
-# ajustes de tabela
-
-t1_SUL <- t1_SUL |>
-  mutate(
-    raca = factor(
-      raca,
-      levels = c(0,1,2,4),
-      labels = c("Total","Branco","Preto","Pardo")
+    SM_local = factor(
+      SM_local,
+      levels = seq(1L,4L),
+      labels = c("[0 a 0,5 SM)", "[0,5 a 1,25 SM)",  "[1,25 a 4 SM)","[4 SM+")
     ),
-    SM_SUL = factor(
-      SM_SUL,
-      levels = seq(1L,5L),
-      labels = c(
-        "[0 a 0,5 SM)", "[0,5 a 1,25 SM)",  "[1,25 a 2 SM)",
-        "[2 a 4 SM)", "[4 SM+"
-      )
-    )
-  ) |>
+    rm = factor(rm,
+                levels = c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre"),
+                ordered = TRUE)) |>
   select(-n, -ano) |>
   pivot_wider(
     names_from = raca,
     values_from = perc
-  )
+  ) |>
+  arrange(rm,SM_local)
 
 # Calculo do D ------------------------------------------------------------
 
@@ -241,13 +183,8 @@ for(k in 1: length(RMs)){
   censo <- censo_2010_RMs |> filter(rm == RM)
 
   # definindo variavel renda e tipo de variavel
-  if(RM %in% c("RMFortaleza","RMRecife")){
-    var_renda <- "SM_NE"
-    tipo <- "SM_NE"
-  } else{
-    var_renda <- "SM_SUL"
-    tipo <- "SM_SUL"
-  }
+  var_renda <- "SM_local"
+  tipo <- "SM_local"
 
 
   # Calcula D
@@ -264,7 +201,7 @@ for(k in 1: length(RMs)){
 
   # Proximo loop
   print(paste0("Finalizamos a RM: ",RM,"!!!"))
-  rm(censo, D, QL)
+  rm(censo, D)
   invisible(gc())
 }
 
@@ -308,8 +245,29 @@ for(k in 1: length(RMs)){
 # Resultados
 ###
 
+# Fortaleza
+output_RMFortaleza$D_resultado_geral
+output_RMFortaleza$D_resultado_classes
+
+clipr::write_last_clip()
+
+# Recife
 output_RMRecife$D_resultado_geral
 output_RMRecife$D_resultado_classes
+
+clipr::write_last_clip()
+
+# Curitiba
+output_RMCuritiba$D_resultado_geral
+output_RMCuritiba$D_resultado_classes
+
+clipr::write_last_clip()
+
+# PortoAlegre
+output_RMPortoAlegre$D_resultado_geral
+output_RMPortoAlegre$D_resultado_classes
+
+clipr::write_last_clip()
 
 # Calculo do QL ------------------------------------------------------------
 
@@ -327,13 +285,8 @@ for(k in 1: length(RMs)){
   censo <- censo_2010_RMs |> filter(rm == RM)
 
   # definindo variavel renda e tipo de variavel
-  if(RM %in% c("RMFortaleza","RMRecife")){
-    var_renda <- "SM_NE"
-    tipo <- "SM_NE"
-  } else{
-    var_renda <- "SM_SUL"
-    tipo <- "SM_SUL"
-  }
+  var_renda <- "SM_local"
+  tipo <- "SM_local"
 
   # Calcula QL
   QL <- func_calcula_quociente_locacional(
@@ -677,3 +630,33 @@ pvalue <- QL_2010_RMRecife$classe |>
   round(2)
 
 clipr::write_clip(pvalue)
+
+
+# QL - visualizacao -------------------------------------------------------
+
+# tabela
+
+tabela_ql <- QL_2010_RMFortaleza$classe_sintese |>
+  mutate(rm = "Fortaleza") |>
+  bind_rows(
+    QL_2010_RMRecife$classe_sintese |>
+      mutate(rm = "Recife")
+  ) |>
+  bind_rows(
+    QL_2010_RMCuritiba$classe_sintese |>
+      mutate(rm = "Curitiba")
+  ) |>
+  bind_rows(
+    QL_2010_RMPortoAlegre$classe_sintese |>
+      mutate(rm = "Porto Alegre")
+  ) |>
+  select(rm, everything()) |>
+  pivot_longer(1:length(QL_2010_RMPortoAlegre$classe_sintese)+1,
+               names_to = "group",
+               values_to = "value") |>
+  mutate(raca = c(rep(c(rep("Branco",8),rep("Preto",8),rep("Pardo",8)),4)),
+         classe = c(rep(c("[4SM+","[1,25-4SM)","[0,5-1,25SM)","[0-0,5SM)"),24)),
+         medida = c(rep(c(rep(c(rep("media",4),rep("sd",4)),3)),4))
+  ) |>
+  select(rm, raca, classe, medida, value)
+
