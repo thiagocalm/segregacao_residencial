@@ -74,6 +74,11 @@ censo_2010_RMs <- censo_2010_RMs |>
   mutate(
     decimos_renda_rm_raca = ntile(renda_pc, 10),
     .by = c(rm, cor_raca_d)
+  ) |>
+  # centesimos de renda rm e raca
+  mutate(
+    centesimos_renda_rm_raca = ntile(renda_pc, 100),
+    .by = c(rm, cor_raca_d)
   )
 
 ###
@@ -264,3 +269,126 @@ t2 |>
     legend.background = element_blank(),
     plot.caption = element_text(hjust = 0)
   )
+
+# Tabela 3 - Desigualdade de renda, Ratio 90/10 ----------------------------------
+
+t3_2010 <- censo_2010_RMs |>
+  summarise(
+    renda = weighted.mean(renda_pc,peso),
+    .by = c(rm, cor_raca_d, decimos_renda_rm_raca)
+  ) |>
+  filter(decimos_renda_rm_raca %in% c(1,10),
+         cor_raca_d != 0) |>
+  pivot_wider(names_from = decimos_renda_rm_raca,
+              values_from = renda,
+              names_prefix = "decil_") |>
+  mutate(ratio = decil_10 / decil_1) |>
+  # agregando resultados para populacao total
+  bind_rows(
+    censo_2010_RMs |>
+      summarise(
+        cor_raca_d = 0,
+        renda = weighted.mean(renda_pc,peso),
+        .by = c(rm, decimos_renda_rm_raca)
+      ) |>
+      filter(decimos_renda_rm_raca %in% c(1,10)) |>
+      pivot_wider(names_from = decimos_renda_rm_raca,
+                  values_from = renda,
+                  names_prefix = "decil_") |>
+      mutate(ratio = decil_10 / decil_1)
+  ) |>
+  arrange(rm, cor_raca_d) |>
+  select(-starts_with("decil_"))
+
+t3 <- t3_2010 |>
+  # bind_rows(t3_2000) |>
+  filter(rm %in% c("RMFortaleza","RMPortoAlegre","RMRecife","RMCuritiba")) |>
+  mutate(raca = factor(cor_raca_d,
+                       levels = c(0,1,2,4),
+                       labels = c("Total","Branco","Preto","Pardo")),
+         rm = factor(rm,
+                     levels = c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre"),
+                     ordered = TRUE)) |>
+  select(-cor_raca_d) |>
+  arrange(rm) |>
+  pivot_wider(names_from = raca,values_from = ratio)
+
+# Tabela 4 - Desigualdade de renda, Gini ----------------------------------
+
+t4_2010 <- censo_2010_RMs |>
+  arrange(rm, cor_raca_d, renda_pc) |>
+  summarise(
+    pop = sum(peso),
+    renda = weighted.mean(renda_pc,peso),
+    .by = c(rm, cor_raca_d, centesimos_renda_rm_raca)
+  ) |>
+  mutate(
+    pop_share = pop / sum(pop),
+    renda_share = renda / sum(renda),
+    pop_cum = cumsum(pop_share),
+    renda_cum = cumsum(renda_share),
+    .by = c(rm, cor_raca_d)
+  ) |>
+  select(rm, cor_raca_d, centesimos_renda_rm_raca, pop_cum, renda_cum) |>
+  filter(cor_raca_d != 0) |>
+  # agregando resultados para populacao total
+  bind_rows(
+    censo_2010_RMs |>
+      arrange(rm, renda_pc) |>
+      summarise(
+        cor_raca_d = 0,
+        pop = sum(peso),
+        renda = weighted.mean(renda_pc,peso),
+        .by = c(rm, centesimos_renda_rm_raca)
+      ) |>
+      mutate(
+        pop_share = pop / sum(pop),
+        renda_share = renda / sum(renda),
+        pop_cum = cumsum(pop_share),
+        renda_cum = cumsum(renda_share),
+        .by = c(rm, cor_raca_d)
+      ) |>
+      select(rm, cor_raca_d, centesimos_renda_rm_raca, pop_cum, renda_cum)
+  ) |>
+  arrange(rm, cor_raca_d)
+
+t4_gini <- t4_2010 |>
+  # bind_rows(t3_2000) |>
+  filter(rm %in% c("RMFortaleza","RMPortoAlegre","RMRecife","RMCuritiba")) |>
+  mutate(raca = factor(cor_raca_d,
+                       levels = c(0,1,2,4),
+                       labels = c("Total","Branco","Preto","Pardo")),
+         rm = factor(rm,
+                     levels = c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre"),
+                     ordered = TRUE)) |>
+  select(-cor_raca_d) |>
+  arrange(rm) |>
+  summarise(
+    gini = mean(2 * renda_cum) * 100,
+    .by = c(rm, raca)
+  )
+
+t4_curve <- t4_2010 |>
+  # bind_rows(t3_2000) |>
+  filter(rm %in% c("RMFortaleza","RMPortoAlegre","RMRecife","RMCuritiba")) |>
+  mutate(raca = factor(cor_raca_d,
+                       levels = c(0,1,2,4),
+                       labels = c("Total","Branco","Preto","Pardo")),
+         rm = factor(rm,
+                     levels = c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre"),
+                     ordered = TRUE)) |>
+  select(-cor_raca_d) |>
+  arrange(rm)
+
+t4_curve |>
+  ggplot() +
+  aes(x = pop_cum, y = renda_cum, color = raca, group = interaction(raca,raca)) +
+  geom_line(size = 1.2) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray40") +
+  facet_wrap(. ~ rm) +
+  labs(
+    title = "Curva de Lorenz para distribuição de renda domicilar total per capita por RMs e raça.",
+    x = "Distribuição da populalação acumulada",
+    y = "Distribuição da renda acumulada"
+  ) +
+  theme_classic()
