@@ -407,3 +407,4 @@ t4_curve |>
     legend.background = element_blank(),
     plot.caption = element_text(hjust = 0)
   )
+

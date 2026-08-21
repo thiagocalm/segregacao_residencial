@@ -167,6 +167,8 @@ t1 <- t1 |>
   ) |>
   arrange(rm,SM_local)
 
+clipr::write_clip(t1)
+
 # Calculo do D ------------------------------------------------------------
 
 # funcao
@@ -660,3 +662,105 @@ tabela_ql <- QL_2010_RMFortaleza$classe_sintese |>
   ) |>
   select(rm, raca, classe, medida, value)
 
+tabela_ql |>
+  pivot_wider(names_from = c(rm, medida), values_from = value)
+
+clipr::write_last_clip()
+
+# Visualizacao
+
+tabela_plot <- tabela_ql |>
+  mutate(classe1 = case_when(classe == "[4SM+" ~ "Classe Alta",
+                             classe == "[0-0,5SM)" ~ "Classe Baixa",
+                             TRUE ~ NA_character_),
+         regiao = case_when(rm %in% c("Fortaleza","Recife") ~ "Nordeste",
+                            TRUE ~ "Sul"),
+         medida = factor(medida,
+                         levels = c("media","sd"),
+                         labels = c("Média QL", "Desv. Padrão QL"))) |>
+  select(-classe) |>
+  drop_na() |>
+  pivot_wider(names_from = classe1, values_from = value)
+
+data_long <- tabela_plot |>
+  pivot_longer(
+    cols = c(`Classe Alta`, `Classe Baixa`),
+    names_to = "classe",
+    values_to = "valor"
+  ) |>
+  mutate(
+    classe = factor(
+      classe,
+      levels = c("Classe Baixa", "Classe Alta")
+    ),
+    raca = factor(
+      raca,
+      levels = c("Branco", "Preto", "Pardo")
+    ),
+    rm_raca = paste(rm, raca, sep = " — ")
+  )
+
+# plot
+
+ggplot(data_long,
+       aes(x = valor, y = rm_raca, color = classe)) +
+  # linha ligando Classe Baixa e Classe Alta
+  geom_segment(data = tabela_plot |> mutate(rm_raca = paste(rm, raca, sep = " — ")),
+               aes(x = `Classe Baixa`,xend = `Classe Alta`,y = rm_raca,yend = rm_raca),
+               inherit.aes = FALSE,
+               linewidth = 1.1,
+               color = "grey65"
+               ) +
+  # pontos
+  geom_point(size = 3.5) +
+  # uma coluna para cada região e uma linha para cada medida
+  facet_grid(regiao ~ medida,
+             scales = "free_y",
+             space = "free_y") +
+  scale_color_manual(values = c("Classe Baixa" = "#377EB8","Classe Alta"  = "#E41A1C")) +
+  labs(x = NULL,
+       y = NULL,
+       color = NULL,
+       title = "Quociente Locacional entre classes de renda e raça",
+       subtitle = "Classe Baixa: '[0 - 0,5 SM)'; Classe Alta: '[4 SM +'."
+       ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    # remove grades desnecessárias
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(),
+    # linha vertical de referência
+    panel.grid.major.x = element_line(
+      color = "grey85",
+      linewidth = 0.4
+    ),
+    # espaço entre regiões
+    panel.spacing.x = unit(1.5, "lines"),
+    panel.spacing.y = unit(0.8, "lines"),
+    # cabeçalho dos facets
+    strip.background = element_rect(
+      fill = "grey95",
+      color = NA
+    ),
+    strip.text = element_text(
+      face = "bold",
+      size = 12
+    ),
+    strip.text.y = element_blank(),
+    # nomes RM + raça
+    axis.text.y = element_text(
+      size = 10
+    ),
+    # legenda no topo
+    legend.position = "top",
+    legend.text = element_text(size = 11),
+    # título
+    plot.title = element_text(
+      face = "bold",
+      size = 16
+    ),
+    plot.subtitle = element_text(
+      color = "grey35",
+      size = 11
+    )
+  )
