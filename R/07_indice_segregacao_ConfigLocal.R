@@ -764,3 +764,68 @@ ggplot(data_long,
       size = 11
     )
   )
+
+
+# Bases de dados dos QL ---------------------------------------------------
+
+func_cria_base_export <- function(RM){
+  rm_censo <- paste0("RM",RM)
+  x <- get(glue::glue("QL_2010_RM{RM}"))$classe |>
+    select(area_ponderacao, starts_with("QL_")) |>
+    pivot_longer(2:13, names_to = "grupo", values_to = "valor") |>
+    arrange(grupo) |>
+    pivot_wider(names_from = grupo, values_from = valor) |>
+    left_join(
+      censo_2010_RMs |>
+        filter(rm == rm_censo) |>
+        mutate(raca_classe = case_when(cor_raca_d == 1 & SM_local == 1 ~ "Brancos_0a050",
+                                       cor_raca_d == 1 & SM_local == 2 ~ "Brancos_050a125",
+                                       cor_raca_d == 1 & SM_local == 3 ~ "Brancos_125a4SM",
+                                       cor_raca_d == 1 & SM_local == 4 ~ "Brancos_4SMmais",
+                                       # pretos
+                                       cor_raca_d == 2 & SM_local == 1 ~ "Pretos_0a050",
+                                       cor_raca_d == 2 & SM_local == 2 ~ "Pretos_050a125",
+                                       cor_raca_d == 2 & SM_local == 3 ~ "Pretos_125a4SM",
+                                       cor_raca_d == 2 & SM_local == 4 ~ "Pretos_4SMmais",
+                                       # pardos
+                                       cor_raca_d == 4  & SM_local == 1 ~ "Pardos_0a050",
+                                       cor_raca_d == 4 & SM_local == 2 ~ "Pardos_050a125",
+                                       cor_raca_d == 4 & SM_local == 3 ~ "Pardos_125a4SM",
+                                       cor_raca_d == 4 & SM_local == 4 ~ "Pardos_4SMmais")) |>
+        summarise(medida = "N",
+                  N = sum(peso),
+                  .by = c(rm, area_ponderacao,raca_classe)) |>
+        filter(!is.na(raca_classe)) |>
+        arrange(raca_classe) |>
+        pivot_wider(names_from = c(medida,raca_classe),values_from = N),
+      by = join_by(area_ponderacao)
+    ) |>
+    select(rm,area_ponderacao,starts_with("QL_"),starts_with("N_")) |>
+    mutate(across(everything(), ~replace_na(.,0)))
+
+  return(x)
+}
+
+# Fortaleza
+
+t_export <- func_cria_base_export("Fortaleza")
+
+clipr::write_clip(t_export)
+
+# Recife
+
+t_export <- func_cria_base_export("Recife")
+
+clipr::write_clip(t_export)
+
+# Curitiba
+
+t_export <- func_cria_base_export("Curitiba")
+
+clipr::write_clip(t_export)
+
+# Porto Alegre
+
+t_export <- func_cria_base_export("PortoAlegre")
+
+clipr::write_clip(t_export)
