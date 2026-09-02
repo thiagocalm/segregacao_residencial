@@ -203,9 +203,37 @@ t3 <- censo_2010_RMs |>
               values_from = perc) |>
   select(cor_raca_d, SM_local, everything())
 
+# por concentracao em areas nobres
+
+t4 <- censo_2010_RMs |>
+  summarise(
+    n = sum(peso),
+    .by = c(rm, cor_raca_d, area_nobre, SM_local)
+  ) |>
+  mutate(perc = n / sum(n) * 100,
+         .by = c(rm, cor_raca_d, SM_local)) |>
+  filter(cor_raca_d != 0, area_nobre == 1) |>
+  mutate(
+    cor_raca_d = factor(
+      cor_raca_d,
+      levels = c(1,2,4),
+      labels = c("Branco","Preto","Pardo")
+    ),
+    SM_local = factor(
+      SM_local,
+      levels = seq(1L,4L),
+      labels = c("[0 a 0,5 SM)", "[0,5 a 1,25 SM)",  "[1,25 a 4 SM)","[4 SM+")
+    )) |>
+  arrange(rm, cor_raca_d, SM_local) |>
+  select(-n, -area_nobre) |>
+  pivot_wider(names_from = c(rm),
+              values_from = perc)
+
 
 # exportacao --------------------------------------------------------------
 
 clipr::write_clip(t1)
 clipr::write_clip(t2)
 clipr::write_clip(t3)
+clipr::write_clip(t4)
+
