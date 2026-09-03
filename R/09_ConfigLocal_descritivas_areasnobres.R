@@ -229,6 +229,103 @@ t4 <- censo_2010_RMs |>
   pivot_wider(names_from = c(rm),
               values_from = perc)
 
+# Analises por casais -----------------------------------------------------
+
+df_casais <- censo_2010_RMs |>
+  mutate(tem_conjuge = if_else(relacao_dom == 2,1 , 0)) |>
+  # numero de pessoas por domicilio
+  mutate(val = 1,
+         num_pessoas = sum(val),
+         tem_conjuge = max(tem_conjuge),
+         .by = id_dom) |>
+  filter(num_pessoas >= 2,
+         tem_conjuge == 1) |>
+  arrange(id_dom, relacao_dom) |>
+  mutate(raca_conjuge = lead(cor_raca_d),
+         .by = id_dom) |>
+  filter(relacao_dom == 1) |>
+  mutate(raca_relacao = case_when(cor_raca_d == 1 & raca_conjuge == 1 ~ "Homogamia",
+                                  cor_raca_d == 1 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
+                                  cor_raca_d == 1 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
+                                  cor_raca_d == 2 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
+                                  cor_raca_d == 2 & raca_conjuge == 2 ~ "Homogamia",
+                                  cor_raca_d == 2 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 4 ~ "Homogamia"))
+
+# tabela - percentual
+
+t5 <- df_casais |>
+  summarise(n = sum(peso),
+            .by = c(rm, cor_raca_d, area_nobre, SM_local, raca_relacao)) |>
+  bind_rows(
+    df_casais |>
+      summarise(SM_local = 0,
+                n = sum(peso),
+                .by = c(rm, cor_raca_d, area_nobre, raca_relacao))
+  ) |>
+  mutate(perc = round(n / sum(n) * 100,2),
+         .by = c(rm, cor_raca_d, SM_local, area_nobre)) |>
+  filter(cor_raca_d != 0, !is.na(raca_relacao)) |>
+  mutate(
+    cor_raca_d = factor(
+      cor_raca_d,
+      levels = c(1,2,4),
+      labels = c("Branco","Preto","Pardo")
+    ),
+    SM_local = factor(
+      SM_local,
+      levels = seq(0L,4L),
+      labels = c("Total","[0 a 0,5 SM)", "[0,5 a 1,25 SM)",  "[1,25 a 4 SM)","[4 SM+")
+    ),
+    raca_relacao = factor(
+      raca_relacao,
+      levels = c("Homogamia", "Heterogamia - Preto(a)", "Heterogamia - Pardo(a)", "Heterogamia - Branco(a)")
+    ),
+    area_nobre = factor(
+      area_nobre,
+      levels = c(1,0),
+      labels = c("Area nobre","Area não-nobre"))) |>
+  arrange(rm, cor_raca_d, SM_local, area_nobre, raca_relacao) |>
+  select(-n) |>
+  pivot_wider(names_from = c(rm, SM_local,area_nobre),
+              values_from = perc)
+
+# tabela - proporção
+
+t6 <- df_casais |>
+  summarise(n = sum(peso),
+            .by = c(rm, cor_raca_d, area_nobre, SM_local, raca_relacao)) |>
+  bind_rows(
+    df_casais |>
+      summarise(SM_local = 0,
+                n = sum(peso),
+                .by = c(rm, cor_raca_d, area_nobre, raca_relacao))
+  ) |>
+  mutate(prop = round(n / sum(n) * 100,2),
+         .by = c(rm, cor_raca_d, SM_local, raca_relacao)) |>
+  filter(cor_raca_d != 0, area_nobre == 1, !is.na(raca_relacao)) |>
+  mutate(
+    cor_raca_d = factor(
+      cor_raca_d,
+      levels = c(1,2,4),
+      labels = c("Branco","Preto","Pardo")
+    ),
+    SM_local = factor(
+      SM_local,
+      levels = seq(0L,4L),
+      labels = c("Total","[0 a 0,5 SM)", "[0,5 a 1,25 SM)",  "[1,25 a 4 SM)","[4 SM+")
+    ),
+    raca_relacao = factor(
+      raca_relacao,
+      levels = c("Homogamia", "Heterogamia - Preto(a)", "Heterogamia - Pardo(a)", "Heterogamia - Branco(a)")
+    )) |>
+  arrange(rm, cor_raca_d, SM_local, raca_relacao) |>
+  select(-n, -area_nobre) |>
+  pivot_wider(names_from = c(rm,SM_local),
+              values_from = prop)
+
 
 # exportacao --------------------------------------------------------------
 
@@ -236,4 +333,5 @@ clipr::write_clip(t1)
 clipr::write_clip(t2)
 clipr::write_clip(t3)
 clipr::write_clip(t4)
-
+clipr::write_clip(t5)
+clipr::write_clip(t6)
