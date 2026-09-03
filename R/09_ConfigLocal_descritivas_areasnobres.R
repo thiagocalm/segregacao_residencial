@@ -265,9 +265,9 @@ t5 <- df_casais |>
                 n = sum(peso),
                 .by = c(rm, cor_raca_d, area_nobre, raca_relacao))
   ) |>
+  filter(cor_raca_d != 0, !is.na(raca_relacao)) |>
   mutate(perc = round(n / sum(n) * 100,2),
          .by = c(rm, cor_raca_d, SM_local, area_nobre)) |>
-  filter(cor_raca_d != 0, !is.na(raca_relacao)) |>
   mutate(
     cor_raca_d = factor(
       cor_raca_d,
