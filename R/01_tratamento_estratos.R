@@ -164,7 +164,8 @@ for(i in 1: length(ano)){
       select(id_dom, id_pes, peso, rm = v1004, municipio = v0002, area_ponderacao = v0011,
              idade = v6036, sexo = v0601, anos_estudo = v6400, especie_dom = v4001, situacao_dom = v1006,
              relacao_dom = v0502, cor_raca,cor_raca_d, v6527_defl, PEA, PO, PosicaoOcupacao, ISIC, ISCO,
-             EGP11, renda_pc_def,, renda_pc, estrato_renda,decimos_renda_br, v6513, estrato_renda_sm)
+             EGP11, renda_pc_def,, renda_pc, estrato_renda,decimos_renda_br, v6513, estrato_renda_sm,
+             id_conjuge = v0638)
 
     # Rendimento urbano-rural
 
@@ -206,7 +207,6 @@ for(i in 1: length(ano)){
     gc()
   }
 }
-
 
 # Exportacao dos dados para as RMs ----------------------------------------
 
