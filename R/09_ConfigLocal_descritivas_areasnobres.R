@@ -11,7 +11,7 @@ pacman::p_load(tidyverse, srvyr, readr, xlsx)
 ## Definicao de parametros de importacao
 
 anos <- 2010
-RMs <- c("RMFortaleza","RMRecife")
+RMs <- c("RMFortaleza","RMRecife", "RMCuritiba","RMPortoAlegre")
 
 for(i in 1: length(anos)){
   ANO = anos[i]
@@ -48,6 +48,48 @@ for(i in 1: length(anos)){
 
 invisible(gc())
 
+####
+# Base para casais
+####
+
+df_casais <- censo_2010_RMs |>
+  # extrair numero de ordem
+  mutate(id_ordem = as.numeric(str_sub(id_pes,-2))) |>
+  # calcula variaveis "tem_" em relacao ao responsavel
+  mutate(tem_conjuge_resp = case_when(relacao_dom %in% c(2,3) ~ 1, TRUE ~ 0),
+         ordem_conj_resp = case_when(relacao_dom %in% c(2,3) ~ relacao_dom, TRUE ~ 0)) |>
+  # expande variaveis em relacao ao responsavel para o domicilio
+  mutate(val = 1,
+         num_pessoas = sum(val),
+         tem_conjuge_resp = max(tem_conjuge_resp),
+         ordem_conj_resp = max(ordem_conj_resp),
+         .by = id_dom) |>
+  # extrair numero de ordem
+  mutate(
+    id_ordem = as.numeric(str_sub(id_pes,-2)),
+    id_conjuge = case_when(id_ordem == 1 & tem_conjuge_resp == 1 ~ ordem_conj_resp,
+                           is.na(id_conjuge) ~ 0,
+                           TRUE ~ id_conjuge)
+  ) |>
+  mutate(tem_conjuge = case_when(id_conjuge != 0 ~ 1,TRUE ~ 0))
+
+df_casais <- df_casais |>
+  left_join(
+    df_casais |> select(id_dom, id_ordem, "raca_conjuge" = cor_raca_d),
+    by = c("id_dom","id_conjuge" = "id_ordem")
+  ) |> arrange(id_dom, id_pes) |>
+  filter(!is.na(raca_conjuge),
+         raca_conjuge != 0 | cor_raca_d != 0) |>
+  mutate(raca_relacao = case_when(cor_raca_d == 1 & raca_conjuge == 1 ~ "Homogamia",
+                                  cor_raca_d == 1 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
+                                  cor_raca_d == 1 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
+                                  cor_raca_d == 2 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
+                                  cor_raca_d == 2 & raca_conjuge == 2 ~ "Homogamia",
+                                  cor_raca_d == 2 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 4 ~ "Homogamia"))
+
 
 # Criacao de grupos de areas nobres ---------------------------------------
 
@@ -70,17 +112,36 @@ AN_Fortaleza <- c(2304400005024,
                   2304400005011,
                   2304400005016)
 
+AN_Curitiba <- c(4106902005030,
+                 4106902005002,
+                 4106902005006,
+                 4106902005005,
+                 4106902005014)
+
+AN_PortoAlegre <- c(4314902004019,
+                    4314902004014,
+                    4314902004012,
+                    4314902004032,
+                    4314902004018,
+                    4314902004017,
+                    4314902004011)
+
 censo_2010_RMs <- censo_2010_RMs |>
   mutate(
     area_nobre = case_when(rm == "RMFortaleza" & area_ponderacao %in% AN_Fortaleza ~ 1,
                            rm == "RMRecife" & area_ponderacao %in% AN_Recife ~ 1,
+                           rm == "RMCuritiba" & area_ponderacao %in% AN_Curitiba ~ 1,
+                           rm == "RMPortoAlegre" & area_ponderacao %in% AN_PortoAlegre ~ 1,
                            TRUE ~ 0),
     SM_local = case_when(
       renda_pc < 510 * 0.5 ~ 1,
       renda_pc >= 510 * 0.5 & renda_pc < 510 * 1.25 ~ 2,
       renda_pc >= 510 * 1.25 & renda_pc < 510 * 4 ~ 3,
       renda_pc >= 510 * 4  ~ 4
-    ))
+    ),
+    rm = factor(rm,
+                levels = c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre"),
+                labels = c("Fortaleza","Recife","Curitiba","PortoAlegre")))
 
 
 # Tabelas descritivas -----------------------------------------------------
@@ -229,30 +290,7 @@ t4 <- censo_2010_RMs |>
   pivot_wider(names_from = c(rm),
               values_from = perc)
 
-# Analises por casais -----------------------------------------------------
-
-df_casais <- censo_2010_RMs |>
-  mutate(tem_conjuge = if_else(relacao_dom == 2,1 , 0)) |>
-  # numero de pessoas por domicilio
-  mutate(val = 1,
-         num_pessoas = sum(val),
-         tem_conjuge = max(tem_conjuge),
-         .by = id_dom) |>
-  filter(num_pessoas >= 2,
-         tem_conjuge == 1) |>
-  arrange(id_dom, relacao_dom) |>
-  mutate(raca_conjuge = lead(cor_raca_d),
-         .by = id_dom) |>
-  filter(relacao_dom == 1) |>
-  mutate(raca_relacao = case_when(cor_raca_d == 1 & raca_conjuge == 1 ~ "Homogamia",
-                                  cor_raca_d == 1 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
-                                  cor_raca_d == 1 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
-                                  cor_raca_d == 2 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
-                                  cor_raca_d == 2 & raca_conjuge == 2 ~ "Homogamia",
-                                  cor_raca_d == 2 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
-                                  cor_raca_d == 4 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
-                                  cor_raca_d == 4 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
-                                  cor_raca_d == 4 & raca_conjuge == 4 ~ "Homogamia"))
+# Analises por casais - via responsável do domicílio -----------------------
 
 # tabela - percentual
 
@@ -325,7 +363,6 @@ t6 <- df_casais |>
   select(-n, -area_nobre) |>
   pivot_wider(names_from = c(rm,SM_local),
               values_from = prop)
-
 
 # exportacao --------------------------------------------------------------
 
