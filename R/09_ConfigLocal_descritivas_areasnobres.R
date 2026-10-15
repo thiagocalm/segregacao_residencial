@@ -48,49 +48,6 @@ for(i in 1: length(anos)){
 
 invisible(gc())
 
-####
-# Base para casais
-####
-
-df_casais <- censo_2010_RMs |>
-  # extrair numero de ordem
-  mutate(id_ordem = as.numeric(str_sub(id_pes,-2))) |>
-  # calcula variaveis "tem_" em relacao ao responsavel
-  mutate(tem_conjuge_resp = case_when(relacao_dom %in% c(2,3) ~ 1, TRUE ~ 0),
-         ordem_conj_resp = case_when(relacao_dom %in% c(2,3) ~ relacao_dom, TRUE ~ 0)) |>
-  # expande variaveis em relacao ao responsavel para o domicilio
-  mutate(val = 1,
-         num_pessoas = sum(val),
-         tem_conjuge_resp = max(tem_conjuge_resp),
-         ordem_conj_resp = max(ordem_conj_resp),
-         .by = id_dom) |>
-  # extrair numero de ordem
-  mutate(
-    id_ordem = as.numeric(str_sub(id_pes,-2)),
-    id_conjuge = case_when(id_ordem == 1 & tem_conjuge_resp == 1 ~ ordem_conj_resp,
-                           is.na(id_conjuge) ~ 0,
-                           TRUE ~ id_conjuge)
-  ) |>
-  mutate(tem_conjuge = case_when(id_conjuge != 0 ~ 1,TRUE ~ 0))
-
-df_casais <- df_casais |>
-  left_join(
-    df_casais |> select(id_dom, id_ordem, "raca_conjuge" = cor_raca_d),
-    by = c("id_dom","id_conjuge" = "id_ordem")
-  ) |> arrange(id_dom, id_pes) |>
-  filter(!is.na(raca_conjuge),
-         raca_conjuge != 0 | cor_raca_d != 0) |>
-  mutate(raca_relacao = case_when(cor_raca_d == 1 & raca_conjuge == 1 ~ "Homogamia",
-                                  cor_raca_d == 1 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
-                                  cor_raca_d == 1 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
-                                  cor_raca_d == 2 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
-                                  cor_raca_d == 2 & raca_conjuge == 2 ~ "Homogamia",
-                                  cor_raca_d == 2 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
-                                  cor_raca_d == 4 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
-                                  cor_raca_d == 4 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
-                                  cor_raca_d == 4 & raca_conjuge == 4 ~ "Homogamia"))
-
-
 # Criacao de grupos de areas nobres ---------------------------------------
 
 AN_Recife <- c(2611606005032,
@@ -143,6 +100,47 @@ censo_2010_RMs <- censo_2010_RMs |>
                 levels = c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre"),
                 labels = c("Fortaleza","Recife","Curitiba","PortoAlegre")))
 
+####
+# Base para casais
+####
+
+df_casais <- censo_2010_RMs |>
+  # extrair numero de ordem
+  mutate(id_ordem = as.numeric(str_sub(id_pes,-2))) |>
+  # calcula variaveis "tem_" em relacao ao responsavel
+  mutate(tem_conjuge_resp = case_when(relacao_dom %in% c(2,3) ~ 1, TRUE ~ 0),
+         ordem_conj_resp = case_when(relacao_dom %in% c(2,3) ~ relacao_dom, TRUE ~ 0)) |>
+  # expande variaveis em relacao ao responsavel para o domicilio
+  mutate(val = 1,
+         num_pessoas = sum(val),
+         tem_conjuge_resp = max(tem_conjuge_resp),
+         ordem_conj_resp = max(ordem_conj_resp),
+         .by = id_dom) |>
+  # extrair numero de ordem
+  mutate(
+    id_ordem = as.numeric(str_sub(id_pes,-2)),
+    id_conjuge = case_when(id_ordem == 1 & tem_conjuge_resp == 1 ~ ordem_conj_resp,
+                           is.na(id_conjuge) ~ 0,
+                           TRUE ~ id_conjuge)
+  ) |>
+  mutate(tem_conjuge = case_when(id_conjuge != 0 ~ 1,TRUE ~ 0))
+
+df_casais <- df_casais |>
+  left_join(
+    df_casais |> select(id_dom, id_ordem, "raca_conjuge" = cor_raca_d),
+    by = c("id_dom","id_conjuge" = "id_ordem")
+  ) |> arrange(id_dom, id_pes) |>
+  filter(!is.na(raca_conjuge),
+         raca_conjuge != 0 | cor_raca_d != 0) |>
+  mutate(raca_relacao = case_when(cor_raca_d == 1 & raca_conjuge == 1 ~ "Homogamia",
+                                  cor_raca_d == 1 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
+                                  cor_raca_d == 1 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
+                                  cor_raca_d == 2 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
+                                  cor_raca_d == 2 & raca_conjuge == 2 ~ "Homogamia",
+                                  cor_raca_d == 2 & raca_conjuge == 4 ~ "Heterogamia - Pardo(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 1 ~ "Heterogamia - Branco(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 2 ~ "Heterogamia - Preto(a)",
+                                  cor_raca_d == 4 & raca_conjuge == 4 ~ "Homogamia"))
 
 # Tabelas descritivas -----------------------------------------------------
 
@@ -212,8 +210,10 @@ t2 <- censo_2010_RMs |>
   arrange(rm, cor_raca_d, area_nobre, SM_local) |>
   pivot_wider(names_from = c(rm, area_nobre),
               values_from = media) |>
-  mutate(RMFortaleza_razao = `RMFortaleza_AP - Area nobre` / `RMFortaleza_AP - Area não-nobre`,
-         RMRecife_razao = `RMRecife_AP - Area nobre` / `RMRecife_AP - Area não-nobre`) |>
+  mutate(Fortaleza_razao = `Fortaleza_AP - Area nobre` / `Fortaleza_AP - Area não-nobre`,
+         Recife_razao = `Recife_AP - Area nobre` / `Recife_AP - Area não-nobre`,
+         Curitiba_razao = `Curitiba_AP - Area nobre` / `Curitiba_AP - Area não-nobre`,
+         PortoAlegre_razao = `PortoAlegre_AP - Area nobre` / `PortoAlegre_AP - Area não-nobre`) |>
   select(cor_raca_d, SM_local, starts_with("RMFortaleza"),everything())
 
 # por escolaridade - pop 25 anos ou mais
@@ -290,7 +290,7 @@ t4 <- censo_2010_RMs |>
   pivot_wider(names_from = c(rm),
               values_from = perc)
 
-# Analises por casais - via responsável do domicílio -----------------------
+# Analises por casais - via responsável do domicílio + conjuge ----------------
 
 # tabela - percentual
 
@@ -327,7 +327,7 @@ t5 <- df_casais |>
       labels = c("Area nobre","Area não-nobre"))) |>
   arrange(rm, cor_raca_d, SM_local, area_nobre, raca_relacao) |>
   select(-n) |>
-  pivot_wider(names_from = c(rm, SM_local,area_nobre),
+  pivot_wider(names_from = c(SM_local,area_nobre),
               values_from = perc)
 
 # tabela - proporção
