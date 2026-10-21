@@ -262,7 +262,55 @@ t3 <- censo_2010_RMs |>
   select(-n) |>
   pivot_wider(names_from = c(rm, area_nobre),
               values_from = perc) |>
-  select(cor_raca_d, SM_local, everything())
+  select(cor_raca_d, SM_local, everything()) |>
+  arrange(cor_raca_d, SM_local,anos_estudo)
+
+# por escolaridade - absoluto
+
+t3_1 <- censo_2010_RMs |>
+  filter(idade >= 25) |>
+  summarise(
+    SM_local = 0,
+    n = sum(peso),
+    .by = c(rm, cor_raca_d, area_nobre,anos_estudo)
+  ) |>
+  bind_rows(
+    censo_2010_RMs |>
+      filter(idade >= 25) |>
+      summarise(
+        n = sum(peso),
+        .by = c(rm, cor_raca_d, area_nobre, SM_local,anos_estudo)
+      )
+  ) |>
+  filter(cor_raca_d != 0, anos_estudo != 5) |>
+  mutate(
+    cor_raca_d = factor(
+      cor_raca_d,
+      levels = c(1,2,4),
+      labels = c("Branco","Preto","Pardo")
+    ),
+    SM_local = factor(
+      SM_local,
+      levels = seq(0L,4L),
+      labels = c("Total","[0 a 0,5 SM)", "[0,5 a 1,25 SM)",  "[1,25 a 4 SM)","[4 SM+")
+    ),
+    area_nobre = factor(
+      area_nobre,
+      levels = c(1,0),
+      labels = c("AP - Area nobre","AP - Area não-nobre")
+    ),
+    anos_estudo = factor(
+      anos_estudo,
+      levels = seq(1L,4L),
+      labels = c("Sem instrução ou fund. incompleto","Fund. completo ou médio incompleto",
+                 "Médio completo ou superior incompleto","Superior completo")
+    )) |>
+  arrange(rm, cor_raca_d, area_nobre, SM_local,anos_estudo) |>
+  # select(-n) |>
+  pivot_wider(names_from = c(rm, area_nobre),
+              values_from = n) |>
+  select(cor_raca_d, SM_local, everything()) |>
+  arrange(cor_raca_d, SM_local,anos_estudo)
 
 # por concentracao em areas nobres
 
@@ -330,6 +378,43 @@ t5 <- df_casais |>
   pivot_wider(names_from = c(SM_local,area_nobre),
               values_from = perc)
 
+# tabela - absoluto
+
+t5_1 <- df_casais |>
+  summarise(n = sum(peso),
+            .by = c(rm, cor_raca_d, area_nobre, SM_local, raca_relacao)) |>
+  bind_rows(
+    df_casais |>
+      summarise(SM_local = 0,
+                n = sum(peso),
+                .by = c(rm, cor_raca_d, area_nobre, raca_relacao))
+  ) |>
+  filter(cor_raca_d != 0, !is.na(raca_relacao)) |>
+  mutate(
+    cor_raca_d = factor(
+      cor_raca_d,
+      levels = c(1,2,4),
+      labels = c("Branco","Preto","Pardo")
+    ),
+    SM_local = factor(
+      SM_local,
+      levels = seq(0L,4L),
+      labels = c("Total","[0 a 0,5 SM)", "[0,5 a 1,25 SM)",  "[1,25 a 4 SM)","[4 SM+")
+    ),
+    raca_relacao = factor(
+      raca_relacao,
+      levels = c("Homogamia", "Heterogamia - Preto(a)", "Heterogamia - Pardo(a)", "Heterogamia - Branco(a)")
+    ),
+    area_nobre = factor(
+      area_nobre,
+      levels = c(1,0),
+      labels = c("Area nobre","Area não-nobre"))) |>
+  arrange(rm, cor_raca_d, SM_local, area_nobre, raca_relacao) |>
+  pivot_wider(names_from = c(SM_local,area_nobre),
+              values_from = n) |>
+  arrange(rm, cor_raca_d, raca_relacao)
+
+
 # tabela - proporção
 
 t6 <- df_casais |>
@@ -369,6 +454,8 @@ t6 <- df_casais |>
 clipr::write_clip(t1)
 clipr::write_clip(t2)
 clipr::write_clip(t3)
+clipr::write_clip(t3_1)
 clipr::write_clip(t4)
 clipr::write_clip(t5)
+clipr::write_clip(t5_1)
 clipr::write_clip(t6)
