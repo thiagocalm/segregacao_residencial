@@ -408,3 +408,94 @@ t4_curve |>
     plot.caption = element_text(hjust = 0)
   )
 
+
+# Tabela 5 - Renda e escolaridade para EGP e raca ----------------------------
+
+# base de dados
+df_t5 <- censo_2010_RMs |>
+  mutate(
+    estratos_egp = case_when(
+      EGP11 %in% c(5, 1) ~ 2, # alto
+      EGP11 %in% c(2, 8, 3) ~ 1, # intermediario
+      EGP11 %in% c(4, 9, 10) ~ 0), # baixo
+    EGP11 = factor(
+      EGP11,
+      levels = c(1:11),
+      labels = c("I. Profissionais, nivel alto","II. Profissionais, nivel baixo",
+                 "IIIa. Não manuais, de rotina, nivel alto","IIIb. Não manuais, de rotina, nivel baixo",
+                 "IVa2. Proprietários e empregadores","IVc1. Empregadores rurais","IVc2. Agricultores para consumo",
+                 "V. Técnicos e supervisores do trabalho manual","VI. Manuais qualificados",
+                 "VIIa. Manuais semi ou não qualificados","VIIb. Trabalhadores da agricultura")),
+    estudo_superior = ifelse(anos_estudo == 4, 1, 0))
+
+# renda
+
+t5_renda <- df_t5 |>
+  filter(!is.na(EGP11),
+         !is.na(estratos_egp),
+         rm %in% c("RMFortaleza","RMPortoAlegre","RMRecife","RMCuritiba"),
+         cor_raca_d != 0) |>
+  summarise(
+    renda = weighted.mean(renda_pc,peso),
+    .by = c(rm, cor_raca_d, estratos_egp)
+  ) |>
+  bind_rows(
+    df_t5 |>
+      filter(!is.na(EGP11),
+             !is.na(estratos_egp),
+             rm %in% c("RMFortaleza","RMPortoAlegre","RMRecife","RMCuritiba")) |>
+      summarise(
+        cor_raca_d = 0,
+        renda = weighted.mean(renda_pc,peso),
+        .by = c(rm, estratos_egp)
+      ) |>
+      select(rm, cor_raca_d, estratos_egp, everything())
+  )
+
+# escolaridade
+
+t5_educ <- df_t5 |>
+  filter(!is.na(EGP11),
+         !is.na(estratos_egp),
+         rm %in% c("RMFortaleza","RMPortoAlegre","RMRecife","RMCuritiba"),
+         cor_raca_d != 0) |>
+  summarise(
+    superior = weighted.mean(estudo_superior,peso, na.rm = TRUE),
+    .by = c(rm, cor_raca_d, estratos_egp)
+  ) |>
+  bind_rows(
+    df_t5 |>
+      filter(!is.na(EGP11),
+             !is.na(estratos_egp),
+             rm %in% c("RMFortaleza","RMPortoAlegre","RMRecife","RMCuritiba")) |>
+      summarise(
+        cor_raca_d = 0,
+        superior = weighted.mean(estudo_superior,peso, na.rm = TRUE),
+        .by = c(rm, estratos_egp)
+      ) |>
+      select(rm, cor_raca_d, estratos_egp, everything())
+  )
+
+# juntando dados
+
+t5 <- t5_renda |>
+ left_join(
+   t5_educ,
+   by = join_by(rm, cor_raca_d, estratos_egp)
+ ) |>
+  mutate(raca = factor(cor_raca_d,
+                       levels = c(0,1,2,4),
+                       labels = c("Total","Branco","Preto","Pardo")),
+         rm = factor(rm,
+                     levels = c("RMFortaleza","RMRecife","RMCuritiba","RMPortoAlegre"),
+                     ordered = TRUE),
+         estratos_egp = factor(estratos_egp,
+                               levels = c(0,1,2),
+                               labels = c("Baixo","Intermediário","Alto"))) |>
+  select(-cor_raca_d) |>
+  arrange(rm, raca, estratos_egp) |>
+  pivot_wider(names_from = estratos_egp,
+              values_from = c(renda, superior))
+
+t5
+clipr::write_clip(t5)
